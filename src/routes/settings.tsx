@@ -222,7 +222,6 @@ function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [testing, setTesting] = useState(false);
   const [toolTesting, setToolTesting] = useState(false);
-  const [applyingRecommended, setApplyingRecommended] = useState(false);
   const [loadedModels, setLoadedModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [subjectModelsDialogOpen, setSubjectModelsDialogOpen] = useState(false);
@@ -349,32 +348,6 @@ function SettingsPage() {
       toast.error(e instanceof Error ? e.message : "submit_exam 探测失败");
     } finally {
       setToolTesting(false);
-    }
-  };
-
-  const handleApplyRecommended = async () => {
-    const next: AiSettingsForm = {
-      ...form,
-      mode: "local",
-      localBaseUrl: form.localBaseUrl?.trim() || DEFAULT_AI_SETTINGS.localBaseUrl,
-      localModel: DEFAULT_AI_SETTINGS.localModel,
-      localSubjectModels: { ...DEFAULT_AI_SETTINGS.localSubjectModels },
-    };
-
-    setForm(next);
-    saveAiSettings(next);
-    setApplyingRecommended(true);
-    try {
-      const res = await saveDbFn({ data: next });
-      if (res.ok) {
-        toast.success("已应用推荐配置并保存到本机与数据库");
-      } else if (res.reason === "no_supabase") {
-        toast.success("已应用推荐配置并保存到本机（服务端未配置 Supabase）");
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "应用推荐配置失败");
-    } finally {
-      setApplyingRecommended(false);
     }
   };
 
@@ -715,20 +688,6 @@ function SettingsPage() {
               >
                 <Save className="h-4 w-4" />
                 保存设置
-              </button>
-              <button
-                type="button"
-                disabled={applyingRecommended || (cloudMode && cloudModelLooksLikeKey)}
-                onClick={() => void handleApplyRecommended()}
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
-                title="一键覆盖为推荐模型并立即保存"
-              >
-                {applyingRecommended ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <SlidersHorizontal className="h-4 w-4" />
-                )}
-                应用推荐配置
               </button>
               <button
                 type="button"

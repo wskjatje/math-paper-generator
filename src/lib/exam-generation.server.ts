@@ -617,7 +617,8 @@ function extractMcqOptionsByLetter(content: string): { stem: string; options: st
  */
 function extractMcqOptionsInline(content: string): { stem: string; options: string[] } | undefined {
   const s = content.replace(/\r\n/g, "\n");
-  const re = /(?:^|[\n\s])([A-Z])([\.．、:：\)）])\s*/g;
+  /** 本地模型常输出 a. / b. 小写标签，须与大写 A. 同等识别 */
+  const re = /(?:^|[\n\s])([A-Za-z])([\.．、:：\)）])\s*/g;
   const hits: { start: number; endLabel: number; L: string }[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(s)) !== null) {
@@ -644,6 +645,48 @@ function extractMcqOptionsInline(content: string): { stem: string; options: stri
 }
 
 /**
+ * 英语听力常见 (A) ... (B) ... (C) ... (D) ...（括号+字母），options 常漏填时从题干恢复。
+ */
+function extractParenLetterMcqOptions(content: string): { stem: string; options: string[] } | undefined {
+  const s = content.replace(/\r\n/g, "\n");
+  const marker = /[（(]([A-Za-z])[）)]\s*/g;
+  const hits: { idx: number; letter: string; headerLen: number }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = marker.exec(s)) !== null) {
+    hits.push({
+      idx: m.index,
+      letter: m[1]!.toUpperCase(),
+      headerLen: m[0].length,
+    });
+  }
+  if (hits.length < 4) return undefined;
+  const options: string[] = [];
+  for (let i = 0; i < hits.length; i++) {
+    const { letter, idx, headerLen } = hits[i]!;
+    const textStart = idx + headerLen;
+    const textEnd = i + 1 < hits.length ? hits[i + 1]!.idx : s.length;
+    const text = s.slice(textStart, textEnd).trim().replace(/\s+/g, " ");
+    options.push(`${letter}. ${text}`);
+    if (options.length >= 8) break;
+  }
+  if (options.length < 4) return undefined;
+  const stem0 = hits[0] ? s.slice(0, hits[0]!.idx).trim() : s.trim();
+  return { stem: stem0 || s.trim(), options };
+}
+
+/** 按既有启发式依次尝试，从一段文稿中拆出至少 4 个选项 */
+function tryExtractMcqFromContentBlob(blob: string): { stem: string; options: string[] } | undefined {
+  const t = blob.trim();
+  if (!t) return undefined;
+  return (
+    extractTrailingMcqOptions(t) ??
+    extractMcqOptionsByLetter(t) ??
+    extractMcqOptionsInline(t) ??
+    extractParenLetterMcqOptions(t)
+  );
+}
+
+/**
  * 选择题 options 修复：空数组 / 漏填时从 content 拆出；合并字符串尝试切开。
  * 在 assertParsedQuestionsComplete 之前调用。
  */
@@ -661,37 +704,55 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
     return s.length >= 4 ? s : undefined;
   };
 
-  if (Array.isArray(q.options)) {
-    const ok = asCleanMinFour(q.options);
-    if (ok) return { ...q, options: ok };
+  const splitBlobIntoLabeledParts = (chunk: string): string[] | undefined => {
+    const parts = chunk
+      .split(/\s*(?=[A-Za-z][\.．、)\:：])/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return asCleanMinFour(parts);
+  };
 
-    if (q.options.length === 1 && typeof q.options[0] === "string") {
-      const chunk = q.options[0].trim();
-      const parts = chunk
-        .split(/\s*(?=[A-Za-z][\.．、)\:：])/)
-        .map((p) => p.trim())
-        .filter(Boolean);
-      const maybe = asCleanMinFour(parts);
-      if (maybe) return { ...q, options: maybe };
-    }
+  const rawOpts = (q as unknown as Record<string, unknown>)["options"];
+  let optArr: unknown[];
+  if (Array.isArray(rawOpts)) optArr = rawOpts;
+  else if (typeof rawOpts === "string") optArr = [rawOpts];
+  else if (rawOpts == null) optArr = [];
+  else optArr = [rawOpts];
+
+  const okDirect = asCleanMinFour(optArr);
+  if (okDirect) return { ...q, options: okDirect };
+
+  if (optArr.length === 1 && typeof optArr[0] === "string") {
+    const maybe = splitBlobIntoLabeledParts(optArr[0]!.trim());
+    if (maybe) return { ...q, options: maybe };
+  }
+
+  if (optArr.length >= 2) {
+    const merged = optArr
+      .map((x) => String(x ?? "").trim())
+      .filter(Boolean)
+      .join("\n");
+    const maybe = splitBlobIntoLabeledParts(merged);
+    if (maybe) return { ...q, options: maybe };
   }
 
   const content = String(q.content ?? "");
+  const tailFromOpts = optArr
+    .map((x) => String(x ?? "").trim())
+    .filter(Boolean)
+    .join("\n");
 
-  const trail = extractTrailingMcqOptions(content);
-  if (trail) {
-    return { ...q, content: trail.stem, options: trail.options };
+  /** 模型把 2～3 项写在 options、其余留在题干时，合并后再抽选项 */
+  if (tailFromOpts) {
+    const aug = `${content}\n${tailFromOpts}`;
+    const fromAug = tryExtractMcqFromContentBlob(aug);
+    if (fromAug) return { ...q, content: fromAug.stem, options: fromAug.options };
+    const fromAugRev = tryExtractMcqFromContentBlob(`${tailFromOpts}\n${content}`);
+    if (fromAugRev) return { ...q, content: fromAugRev.stem, options: fromAugRev.options };
   }
 
-  const byLetter = extractMcqOptionsByLetter(content);
-  if (byLetter) {
-    return { ...q, content: byLetter.stem, options: byLetter.options };
-  }
-
-  const inline = extractMcqOptionsInline(content);
-  if (inline) {
-    return { ...q, content: inline.stem, options: inline.options };
-  }
+  const solo = tryExtractMcqFromContentBlob(content);
+  if (solo) return { ...q, content: solo.stem, options: solo.options };
 
   return q;
 }
@@ -987,10 +1048,20 @@ async function runExamAiGenerationWithValidationRetryInner(
 
 /**
  * 按「题型组成」逐段调用模型并拼接题目。用于整卷一次生成题量不足（尤其自定义题型 + 长卷）时的自动回退。
+ * 分段命题时额外强调：避免模型只返回 stem、仅选项无题干等不可入库形态。
  */
-/** 分段命题时额外强调：避免模型只返回 stem、仅选项无题干等不可入库形态 */
 const SEGMENT_SUBMIT_EXAM_KEY_HINT =
   "【submit_exam 硬约束】questions 数组内每题必须含非空字符串字段 content（完整题干）与 answer（答案）；选择题须含至少 4 条 options。禁止使用空白或省略上述字段。";
+
+/** 听力型笔试常一次吐出两小题或漏填 options（题干里已有 (A)(B)…）*/
+function listeningCompositionExtraHint(typeLabel: string): string {
+  if (!/听力|口语|listening/i.test(typeLabel)) return "";
+  return (
+    "【听力/口语笔试·选择】multiple_choice 必须含 options 数组（≥4 条字符串）；题干也可用英文括号格式 (A)…(B)…(C)…(D)…。" +
+    "分段命题时 questions 条数须与本节题量完全一致；" +
+    "细粒度（本节每次仅生成 1 题）时 questions 必须恰好 1 个元素，禁止同一次返回两道题。"
+  );
+}
 
 async function generateQuestionsForOneCompositionRow(
   config: GenerationConfig,
@@ -1002,6 +1073,7 @@ async function generateQuestionsForOneCompositionRow(
 
   const sectionNotes = [
     SEGMENT_SUBMIT_EXAM_KEY_HINT,
+    listeningCompositionExtraHint(typeLabel),
     config.notes?.trim() ?? "",
     `【本节硬性要求】本段须且仅需 ${n} 道题；板块 / 题型名称：「${typeLabel}」。禁止省略题目。`,
   ]
@@ -1017,6 +1089,9 @@ async function generateQuestionsForOneCompositionRow(
 
   let parsed = await runExamAiGenerationResilient(segBase);
   let qs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
+  if (qs.length > n) {
+    qs = normalizeParsedQuestionsMcq(qs.slice(0, n));
+  }
   let segIssues = [...collectParsedQuestionsIssues(qs)];
   if (qs.length !== n) {
     segIssues.push(`本节须恰好 ${n} 道题，当前 ${qs.length} 道。`);
@@ -1030,6 +1105,9 @@ async function generateQuestionsForOneCompositionRow(
   };
   parsed = await runExamAiGenerationResilient(retrySeg);
   qs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
+  if (qs.length > n) {
+    qs = normalizeParsedQuestionsMcq(qs.slice(0, n));
+  }
   segIssues = [...collectParsedQuestionsIssues(qs)];
   if (qs.length !== n) {
     segIssues.push(`本节须恰好 ${n} 道题，当前 ${qs.length} 道。`);
@@ -1042,6 +1120,7 @@ async function generateQuestionsForOneCompositionRow(
   for (let i = 0; i < n; i++) {
     const microNotes = [
       SEGMENT_SUBMIT_EXAM_KEY_HINT,
+      listeningCompositionExtraHint(typeLabel),
       config.notes?.trim() ?? "",
       `【细粒度命题】板块「${typeLabel}」共 ${n} 题；此处仅生成第 ${i + 1}/${n} 题（与其它题独立）。`,
     ]
@@ -1057,6 +1136,9 @@ async function generateQuestionsForOneCompositionRow(
 
     let mp = await runExamAiGenerationResilient(microBase);
     let mq = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(mp));
+    if (mq.length > 1) {
+      mq = normalizeParsedQuestionsMcq(mq.slice(0, 1));
+    }
     let mi = [...collectParsedQuestionsIssues(mq)];
     if (mq.length !== 1) {
       mi.push(`须恰好 1 道题，当前 ${mq.length} 道。`);
@@ -1069,6 +1151,9 @@ async function generateQuestionsForOneCompositionRow(
       };
       mp = await runExamAiGenerationResilient(microRetry);
       mq = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(mp));
+      if (mq.length > 1) {
+        mq = normalizeParsedQuestionsMcq(mq.slice(0, 1));
+      }
       mi = [...collectParsedQuestionsIssues(mq)];
       if (mq.length !== 1) {
         mi.push(`须恰好 1 道题，当前 ${mq.length} 道。`);
