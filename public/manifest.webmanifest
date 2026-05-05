@@ -1,0 +1,25 @@
+{
+  "name": "知学 Zhixue — 竞赛试卷与 AI 命题",
+  "short_name": "知学",
+  "description": "AI 严谨命题、分步推导；浏览试卷库，导出 Markdown / PDF。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf8f5",
+  "theme_color": "#faf8f5",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/logo-zhixue-seal.png",
+      "sizes": "912x906",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

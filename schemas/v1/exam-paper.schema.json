@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://math-paper-generator.local/schemas/v1/exam-paper.schema.json",
+  "title": "MPG Exam Paper (v1)",
+  "description": "完整试卷：元数据、分卷/大题、小题与解答（含步骤与校验说明）。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "format_version", "metadata", "sections"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "exam_paper"
+    },
+    "format_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.\\d+$",
+      "description": "语义化版本，主版本 1 表示本 schema 族。"
+    },
+    "metadata": { "$ref": "#/$defs/PaperMetadata" },
+    "specification": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "对应定制需求/命题说明的可追溯引用。",
+      "properties": {
+        "requirement_doc_uri": {
+          "type": "string",
+          "description": "需求文档或 Issue 链接。"
+        },
+        "summary_markdown": {
+          "type": "string",
+          "description": "命题意图与覆盖知识点摘要。"
+        }
+      }
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/Section" }
+    }
+  },
+  "$defs": {
+    "PaperMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "locale",
+        "license_spdx",
+        "created",
+        "disciplines"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$",
+          "description": "试卷唯一标识（建议使用 slug 或 ULID）。"
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "subtitle": { "type": "string" },
+        "locale": {
+          "type": "string",
+          "description": "BCP 47 语言标签，如 zh-CN。"
+        },
+        "license_spdx": {
+          "type": "string",
+          "description": "SPDX 许可证表达式，如 CC-BY-SA-4.0。"
+        },
+        "created": {
+          "type": "string",
+          "format": "date"
+        },
+        "updated": { "type": "string", "format": "date" },
+        "disciplines": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Discipline" },
+          "description": "试卷涉及的主要学科/交叉方向。"
+        },
+        "difficulty_band": {
+          "type": "string",
+          "enum": [
+            "introductory",
+            "intermediate",
+            "advanced",
+            "competition_regional",
+            "competition_national",
+            "olympiad",
+            "research_flavored"
+          ]
+        },
+        "tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "generator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" },
+            "notes_markdown": { "type": "string" }
+          }
+        },
+        "quality": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "出版态质量闸门字段（可与校验脚本联动）。",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": ["draft", "review", "published"]
+            },
+            "last_reviewed": { "type": "string", "format": "date" },
+            "reviewer": { "type": "string" }
+          }
+        }
+      }
+    },
+    "Discipline": {
+      "type": "string",
+      "enum": [
+        "pure_mathematics",
+        "statistics",
+        "probability",
+        "computer_science",
+        "physics",
+        "chemistry",
+        "biology",
+        "economics",
+        "interdisciplinary",
+        "other"
+      ]
+    },
+    "QuestionType": {
+      "type": "string",
+      "enum": [
+        "multiple_choice",
+        "short_answer",
+        "computation",
+        "proof",
+        "true_false_multi",
+        "fill_blank",
+        "coding",
+        "data_analysis",
+        "modeling",
+        "experimental_design",
+        "interdisciplinary"
+      ]
+    },
+    "SolutionStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "detail_markdown"],
+      "properties": {
+        "step_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "detail_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "该步推导、变形或引用定理的完整叙述。"
+        },
+        "reasoning_tags": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "便于检索的逻辑标签，如 contradiction、induction、casework。"
+        }
+      }
+    },
+    "VerificationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["methods"],
+      "properties": {
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "algebraic_recheck",
+              "numerical_spot_check",
+              "alternative_solution",
+              "dimension_analysis",
+              "boundary_special_case",
+              "code_reproduction",
+              "symbolic_cas",
+              "literature_cross_check",
+              "peer_review"
+            ]
+          }
+        },
+        "notes_markdown": {
+          "type": "string",
+          "description": "校验过程简述：如何用上述方法确认答案无误。"
+        },
+        "limitations_markdown": {
+          "type": "string",
+          "description": "近似、数值试验或前提条件的适用范围说明。"
+        }
+      }
+    },
+    "Solution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["final_answer_markdown", "steps", "verification"],
+      "properties": {
+        "final_answer_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "简明的最终结论表述（可与步骤末重复呼应）。"
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/SolutionStep" }
+        },
+        "verification": { "$ref": "#/$defs/VerificationRecord" },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["citation_markdown"],
+            "properties": {
+              "citation_markdown": { "type": "string" },
+              "uri": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "MultipleChoiceOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choices"],
+      "properties": {
+        "choices": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "text_markdown"],
+            "properties": {
+              "key": {
+                "type": "string",
+                "pattern": "^[A-Z]$"
+              },
+              "text_markdown": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "correct_keys": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Z]$" },
+          "description": "支持单选或多选正确项。"
+        }
+      }
+    },
+    "Problem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "stem_markdown",
+        "question_type",
+        "disciplines",
+        "topics",
+        "solution"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+        },
+        "stem_markdown": {
+          "type": "string",
+          "minLength": 1,
+          "description": "题干（Markdown）。"
+        },
+        "question_type": { "$ref": "#/$defs/QuestionType" },
+        "points": { "type": "number", "minimum": 0 },
+        "disciplines": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Discipline" }
+        },
+        "topics": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "细粒度知识点标签，如 graph_theory、hypothesis_testing。"
+        },
+        "answer_format_hint": {
+          "type": "string",
+          "description": "作答格式说明：例如「最简分数」「保留两位小数」「给出 Python 函数签名」。"
+        },
+        "attachments": {
+          "type": "array",
+          "description": "图表、数据集 URI 或内嵌引用键。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "uri"],
+            "properties": {
+              "kind": {
+                "type": "string",
+                "enum": ["figure", "dataset", "code_stub", "other"]
+              },
+              "uri": { "type": "string" },
+              "caption_markdown": { "type": "string" }
+            }
+          }
+        },
+        "multiple_choice": { "$ref": "#/$defs/MultipleChoiceOptions" },
+        "solution": { "$ref": "#/$defs/Solution" },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "based_on": {
+              "type": "string",
+              "description": "改编来源或灵感出处（公开资料须可引用）。"
+            },
+            "is_original": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "Section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "order", "problems"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "order": { "type": "integer", "minimum": 1 },
+        "instructions_markdown": {
+          "type": "string",
+          "description": "本大题作答说明。"
+        },
+        "problems": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Problem" }
+        }
+      }
+    }
+  }
+}

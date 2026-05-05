@@ -1,0 +1,238 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://math-paper-generator.local/schemas/v1/worked-example-pack.schema.json",
+  "title": "MPG Worked Example Pack (v1)",
+  "description": "配套例题包：与指定试卷/题型对齐的练习与详解。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "format_version", "metadata", "items"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "const": "worked_example_pack"
+    },
+    "format_version": {
+      "type": "string",
+      "pattern": "^1\\.0\\.\\d+$"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "locale", "license_spdx", "created"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9._-]*$"
+        },
+        "title": { "type": "string", "minLength": 1 },
+        "locale": { "type": "string" },
+        "license_spdx": { "type": "string" },
+        "created": { "type": "string", "format": "date" },
+        "generator": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" },
+            "notes_markdown": { "type": "string" }
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "与主试卷的关联（可不填，用于孤儿例题包）。",
+      "properties": {
+        "exam_paper_id": { "type": "string" },
+        "exam_section_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes_markdown": { "type": "string" }
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/WorkedExampleItem" }
+    }
+  },
+  "$defs": {
+    "QuestionType": {
+      "type": "string",
+      "enum": [
+        "multiple_choice",
+        "short_answer",
+        "computation",
+        "proof",
+        "true_false_multi",
+        "fill_blank",
+        "coding",
+        "data_analysis",
+        "modeling",
+        "experimental_design",
+        "interdisciplinary"
+      ]
+    },
+    "Discipline": {
+      "type": "string",
+      "enum": [
+        "pure_mathematics",
+        "statistics",
+        "probability",
+        "computer_science",
+        "physics",
+        "chemistry",
+        "biology",
+        "economics",
+        "interdisciplinary",
+        "other"
+      ]
+    },
+    "SolutionStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "detail_markdown"],
+      "properties": {
+        "step_id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string" },
+        "detail_markdown": { "type": "string", "minLength": 1 },
+        "reasoning_tags": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "VerificationRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["methods"],
+      "properties": {
+        "methods": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "enum": [
+              "algebraic_recheck",
+              "numerical_spot_check",
+              "alternative_solution",
+              "dimension_analysis",
+              "boundary_special_case",
+              "code_reproduction",
+              "symbolic_cas",
+              "literature_cross_check",
+              "peer_review"
+            ]
+          }
+        },
+        "notes_markdown": { "type": "string" },
+        "limitations_markdown": { "type": "string" }
+      }
+    },
+    "Solution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["final_answer_markdown", "steps", "verification"],
+      "properties": {
+        "final_answer_markdown": { "type": "string", "minLength": 1 },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/SolutionStep" }
+        },
+        "verification": { "$ref": "#/$defs/VerificationRecord" },
+        "references": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["citation_markdown"],
+            "properties": {
+              "citation_markdown": { "type": "string" },
+              "uri": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "MultipleChoiceOptions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choices"],
+      "properties": {
+        "choices": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["key", "text_markdown"],
+            "properties": {
+              "key": { "type": "string", "pattern": "^[A-Z]$" },
+              "text_markdown": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "correct_keys": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[A-Z]$" }
+        }
+      }
+    },
+    "WorkedExampleItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "stem_markdown",
+        "targets_question_types",
+        "disciplines",
+        "topics",
+        "solution"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$"
+        },
+        "stem_markdown": { "type": "string", "minLength": 1 },
+        "targets_question_types": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/QuestionType" },
+          "description": "例题所示范的题型（可与试卷小题类型对齐）。"
+        },
+        "disciplines": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/Discipline" }
+        },
+        "topics": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "difficulty_band": {
+          "type": "string",
+          "enum": [
+            "introductory",
+            "intermediate",
+            "advanced",
+            "competition_regional",
+            "competition_national",
+            "olympiad",
+            "research_flavored"
+          ]
+        },
+        "multiple_choice": { "$ref": "#/$defs/MultipleChoiceOptions" },
+        "solution": { "$ref": "#/$defs/Solution" },
+        "related_problem_ids": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "同一试卷内可对标的正式题号 id。"
+        }
+      }
+    }
+  }
+}

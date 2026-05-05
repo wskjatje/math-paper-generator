@@ -1,0 +1,69 @@
+{
+  "kind": "worked_example_pack",
+  "format_version": "1.0.0",
+  "metadata": {
+    "id": "demo-examples-for-amc-style-01",
+    "title": "配套例题：估计量与容斥（演示）",
+    "locale": "zh-CN",
+    "license_spdx": "CC-BY-SA-4.0",
+    "created": "2026-05-01",
+    "generator": {
+      "name": "mpg-schema-init",
+      "version": "0.1.0",
+      "notes_markdown": "与 `sample-exam-paper.json` 题型对齐的最小例题包。"
+    }
+  },
+  "source": {
+    "exam_paper_id": "demo-2026-amc-style-01",
+    "exam_section_ids": ["sec-a"],
+    "notes_markdown": "例题难度略低于正式卷，用于演示解题模板。"
+  },
+  "items": [
+    {
+      "id": "EX-01",
+      "stem_markdown": "**例题 1（热身）** 若 \\(Y_i\\) i.i.d. \\(\\mathrm{Bernoulli}(p)\\)，给出 \\(p\\) 的无偏估计并写出 \\(E[\\hat p]=p\\) 的一步验证。",
+      "targets_question_types": ["short_answer"],
+      "disciplines": ["statistics"],
+      "topics": ["unbiased_estimator", "bernoulli"],
+      "difficulty_band": "introductory",
+      "related_problem_ids": ["A1"],
+      "solution": {
+        "final_answer_markdown": "\\(\\hat p = \\bar{Y}\\)，\\(E[\\bar{Y}] = p\\)。",
+        "steps": [
+          {
+            "step_id": "EX01-s1",
+            "detail_markdown": "取 \\(\\hat p = \\frac{1}{n}\\sum_i Y_i\\)。则 \\(E[\\hat p]=\\frac{1}{n}\\sum_i E[Y_i]=\\frac{1}{n}\\cdot np=p\\)。",
+            "reasoning_tags": ["expectation_linearity"]
+          }
+        ],
+        "verification": {
+          "methods": ["algebraic_recheck"],
+          "notes_markdown": "核对 Bernoulli 均值。"
+        }
+      }
+    },
+    {
+      "id": "EX-02",
+      "stem_markdown": "**例题 2（热身）** 将 4 个不同球放入 3 个 **有序** 盒子且 **每盒至少一球**，求方案数（数值答案）。",
+      "targets_question_types": ["computation"],
+      "disciplines": ["pure_mathematics"],
+      "topics": ["combinatorics", "surjection"],
+      "difficulty_band": "intermediate",
+      "related_problem_ids": ["A2"],
+      "solution": {
+        "final_answer_markdown": "36。",
+        "steps": [
+          {
+            "step_id": "EX02-s1",
+            "detail_markdown": "这是 \\(n=4,k=3\\) 的「有序盒子、非空」情形，计数为 \\(3!\\,S(4,3)\\)。已知 \\(S(4,3)=6\\)（把 4 元集分成 3 个非空块的分拆数），故 \\(6\\times 6=36\\)。也可用容斥：\\(\\sum_{j=0}^3 (-1)^{3-j}\\binom{3}{j} j^4 = 36\\)。",
+            "reasoning_tags": ["stirling", "inclusion_exclusion"]
+          }
+        ],
+        "verification": {
+          "methods": ["numerical_spot_check", "code_reproduction"],
+          "notes_markdown": "与容斥公式或枚举程序对照。"
+        }
+      }
+    }
+  ]
+}

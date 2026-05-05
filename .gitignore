@@ -1,0 +1,62 @@
+.venv/
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
+.pytest_cache/
+.DS_Store
+
+# Node / TanStack Start（应用位于仓库根目录）
+node_modules/
+dist/
+release/
+
+dist-ssr/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+*.local
+
+# Wrangler / Cloudflare
+.wrangler/
+.dev.vars
+
+.env
+
+# 无 Supabase 时服务端写入的本地简易题库
+data/local-exams/*.json
+!data/local-exams/.gitkeep
+
+# 命题「仅会话」临时快照（由 RPC 二次拉取后删除）
+data/generation-scratch/*.json
+!data/generation-scratch/.gitkeep
+
+# 设置页保存的本机 MySQL 连接（含密码）
+data/mysql-connection.json
+data/mysql-password-master.key
+
+# 一类｜试卷数学残串自学规则（服务端合并进修复链）
+data/exam-math-repair-overrides.json
+
+# 后台 dev（npm run dev:bg）
+.dev-server.pid
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
