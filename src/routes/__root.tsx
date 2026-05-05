@@ -1,7 +1,9 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { GenerationJobQueueRunner } from "@/components/generation/GenerationJobQueueRunner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Toaster } from "@/components/ui/sonner";
+import { useChatContextPeriodicSync } from "@/hooks/useChatContextPeriodicSync";
 
 import appCss from "../styles.css?url";
 
@@ -97,8 +99,10 @@ function RootShell({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  useChatContextPeriodicSync();
   return (
     <div className="flex min-h-screen flex-col">
+      <GenerationJobQueueRunner />
       <SiteHeader />
       <main className="flex-1">
         <Outlet />

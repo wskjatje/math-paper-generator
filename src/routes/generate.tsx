@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   useState,
   useMemo,
@@ -11,14 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  consumeGenerationScratch,
-  generateExam,
-  fetchAiSettingsFromDb,
-  getBackendCapabilities,
-  probeAiConnection,
-} from "@/lib/exam.functions.server";
-import { finalizeGenerateExamClientResult } from "@/lib/generateExamRpc.shared";
+import { fetchAiSettingsFromDb, getBackendCapabilities, probeAiConnection } from "@/lib/exam.functions.server";
 import {
   GRADE_LEVEL_OPTIONS,
   ALL_QUESTION_TYPES,
@@ -34,7 +27,7 @@ import {
   paperKindLabel,
   type PaperKindId,
 } from "@/lib/generateCatalog";
-import { loadAiSettings, saveAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
+import { loadAiSettings, saveAiSettings } from "@/lib/aiSettingsStorage";
 import {
   CUSTOM_COMPOSITION_TYPE_PREFIX,
   DIFFICULTY_LABELS,
@@ -58,20 +51,14 @@ import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useGenerationHabitsCloudSync } from "@/hooks/useGenerationHabitsCloudSync";
-import { downloadSnapshotBackup, writeExamSnapshot } from "@/lib/examSession";
 import type { PaperGenPayloadSnapshot } from "@/lib/generationJobs.types";
 import {
   consumePaperPrefillPayload,
-  loadPaperJob,
   PAPER_PREFILL_APPLY_EVENT,
-  patchPaperJob,
   upsertPaperJob,
 } from "@/lib/generationJobsStorage";
-import {
-  getQualityHintsForNextRequest,
-  recordGenerationFailure,
-  recordGenerationSuccess,
-} from "@/lib/generationHabits";
+import { requestGenerationQueueDrain } from "@/lib/generationQueueDrain";
+import { writePageFilterSnapshot } from "@/lib/pageFilterSync";
 import { PaperGenerationJobQueueControl } from "@/components/generation/GenerationJobQueues";
 
 const CONTROL =
@@ -186,9 +173,6 @@ function HelpTooltipIcon({ text, ariaLabel }: { text: string; ariaLabel: string 
 
 function Generate() {
   useGenerationHabitsCloudSync();
-  const router = useRouter();
-  const generateFn = useServerFn(generateExam);
-  const consumeScratchFn = useServerFn(consumeGenerationScratch);
   const fetchAiDbFn = useServerFn(fetchAiSettingsFromDb);
   const capsFn = useServerFn(getBackendCapabilities);
   const probeAiFn = useServerFn(probeAiConnection);
@@ -218,6 +202,19 @@ function Generate() {
   const [examPersistenceEnabled, setExamPersistenceEnabled] = useState<boolean | null>(null);
   /** 当前选云端且服务端未配置 LOVABLE_API_KEY 时为 false */
   const [cloudAiReady, setCloudAiReady] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    writePageFilterSnapshot("generate", {
+      grade: grade || undefined,
+      subject: subject || undefined,
+      difficulty: difficulty ?? null,
+      paperKind: paperKind || undefined,
+      scopes,
+      competitionFocus,
+      duration,
+      score,
+    });
+  }, [grade, subject, difficulty, paperKind, scopes, competitionFocus, duration, score]);
 
   /** 从队列「重新生成」预填表单后，跳过一次年级/学科变更时的题型矩阵清空 */
   const skipCompositionResetOnceRef = useRef(false);
@@ -475,7 +472,6 @@ function Generate() {
       return toast.error(`自定义题型名称最多 ${MAX_CUSTOM_HAN} 个汉字`);
     }
 
-    const habitHints = getQualityHintsForNextRequest();
     const compositionPayload = buildCompositionPayload(
       compositionRowOrder,
       composition,
@@ -515,102 +511,23 @@ function Generate() {
       subjectId: subject,
       gradeLabel: gradeLabelForJob,
       subjectLabel: subjectLabelForJob,
-      status: "running",
+      status: "queued",
       createdAt: nowIso,
       updatedAt: nowIso,
       payload: payloadSnapshot,
     });
-
-    const scopesPayload = scopeRestricted ? scopes : [];
-    const competitionPayload = isCompetitionUnrestricted(difficulty!) ? competitionFocus : [];
-    const difficultyFixed = difficulty!;
-    const paperKindFixed = paperKind;
-    const durationMin = duration;
-    const totalScore = score;
-    const notesPayload = notes.trim() ? notes.trim() : undefined;
-    const allowOverlapPayload = allowLibraryQuestionTypeOverlap;
 
     resetFormToNewPaper();
     if (typeof window !== "undefined") {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
     toast.success("已加入命题队列", {
-      description: "表单已清空，可继续填写下一份；生成在后台进行，请在右上角「命题队列」查看进度与结果。",
+      description:
+        "表单已清空，可继续提交多份；同一时间仅执行 1 个生成任务，其余按顺序排队，请在右上角「命题队列」查看。",
       duration: 9000,
     });
 
-    void (async () => {
-      try {
-        const rawRpc = await generateFn({
-          data: {
-            title: trimmedTitle,
-            grade,
-            subject,
-            scopes: scopesPayload,
-            competition_focus: competitionPayload,
-            paper_kind: paperKindFixed,
-            difficulty: difficultyFixed,
-            duration_min: durationMin,
-            total_score: totalScore,
-            composition: compositionPayload,
-            notes: notesPayload,
-            quality_hints: habitHints || undefined,
-            allow_overlap_with_library_question_types: allowOverlapPayload,
-            ai: toAiRuntimePayload(loadAiSettings()),
-          },
-        });
-
-        const finalized = await finalizeGenerateExamClientResult(rawRpc, consumeScratchFn);
-        const { examId, persisted, snapshot } = finalized;
-
-        recordGenerationSuccess({
-          grade,
-          subject,
-          paper_kind: paperKindFixed,
-          difficulty: difficultyFixed,
-          composition: compositionPayload,
-        });
-
-        const jobAfter = loadPaperJob(jobId);
-        const userCancelled = jobAfter?.status === "cancelled" || jobAfter?.cancelRequested;
-        if (userCancelled) {
-          return;
-        }
-
-        patchPaperJob(jobId, {
-          status: "success",
-          examId,
-          cancelRequested: false,
-        });
-
-        if (!persisted && snapshot) {
-          writeExamSnapshot(examId, snapshot);
-          downloadSnapshotBackup(snapshot);
-          toast.message("命题已完成（未入库）", {
-            description: "已尝试下载快照备份；请在「命题队列」中打开试卷或导入 JSON。",
-            duration: 8000,
-          });
-        } else {
-          void router.invalidate();
-          toast.message("命题已完成", {
-            description: "可在「命题队列」或试卷库打开试卷。",
-            duration: 6000,
-          });
-        }
-      } catch (e: unknown) {
-        console.error(e);
-        const msg = e instanceof Error ? e.message : "生成失败，请重试";
-        const jobAfter = loadPaperJob(jobId);
-        if (jobAfter?.status !== "cancelled" && !jobAfter?.cancelRequested) {
-          patchPaperJob(jobId, { status: "failed", errorMessage: msg });
-        }
-        recordGenerationFailure(msg);
-        toast.error(msg, {
-          description: "详情见右上角「命题队列」。",
-          duration: 8000,
-        });
-      }
-    })();
+    requestGenerationQueueDrain();
   };
 
   return (
@@ -619,7 +536,7 @@ function Generate() {
         <div>
           <h1 className="text-display text-3xl md:text-4xl">定制生成试卷</h1>
           <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
-            配置学段、学科、难度与题型。提交后任务进入「命题队列」，本页会清空表单以便继续拟题；是否生成成功请在队列中查看。
+            配置学段、学科、难度与题型。提交后任务进入「命题队列」，本页会清空表单以便继续拟题；可连续提交多份，系统一次只跑 1 个，其余「排队中」；结果与状态请在队列中查看。
           </p>
         </div>
         <div className="flex flex-col items-end gap-2">

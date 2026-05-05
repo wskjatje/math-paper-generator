@@ -13,7 +13,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { importOfflineExamFromDocument } from "@/lib/exam.functions.server";
-import { extractTextFromFiles } from "@/lib/offlineDocumentExtract";
 import { loadAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
 import { CURRICULUM_SUBJECT_OPTIONS, GRADE_LEVEL_OPTIONS } from "@/lib/generateCatalog";
 import type { Difficulty } from "@/lib/types";
@@ -103,6 +102,7 @@ export function ImportOfflineExamDialog({
           : undefined,
     });
     try {
+      const { extractTextFromFiles } = await import("@/lib/offlineDocumentExtract");
       const { text, warnings } = await extractTextFromFiles(files);
       setDocExtracted(text);
       setExtractWarnings(warnings);

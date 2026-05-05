@@ -2363,3 +2363,58 @@ export async function probeAiRuntime(
     };
   }
 }
+
+/**
+ * 将客户端习惯统计与页面筛选快照定时发送给聊天模型（预热用途）。
+ * 注意：该同步不替代显式对话上下文，仅用于轻量对齐与连通保活。
+ */
+export async function syncChatContextToModel(
+  ai: AiRuntimePayload | undefined,
+  context: Record<string, unknown>,
+): Promise<{ ok: true; profile?: { habitsHint: string; filterRequirements: string } }> {
+  const mode = ai?.mode ?? "cloud";
+  if (mode !== "local") return { ok: true };
+  if (!ai?.localBaseUrl?.trim() || !ai?.localModel?.trim()) return { ok: true };
+
+  const compact = JSON.stringify(context).slice(0, 12000);
+  const data = await callChatCompletions(
+    {
+      messages: [
+        {
+          role: "system",
+          content:
+            "你是一位资深教研老师（默认身份：老师）。请基于用户的自主学习统计与页面筛选信息，输出后续命题可直接使用的优化建议。只允许输出 JSON 对象，字段仅限 habitsHint 与 filterRequirements，且均为简洁中文字符串。",
+        },
+        {
+          role: "user",
+          content:
+            `请根据以下信息产出优化配置：\n` +
+            `1) habitsHint：用于提升命题准确率与稳定性的习惯优化提示（100-300字）。\n` +
+            `2) filterRequirements：用于提示字符过滤/文本清洗约束（80-220字，强调去噪、符号一致、避免乱码和重复片段）。\n\n` +
+            `额外要求：请综合 successReplay（近7日成功样本回放）提炼可复用的成功模式，不要只关注失败。\n\n` +
+            `同步快照：\n${compact}`,
+        },
+      ],
+      max_tokens: 320,
+    },
+    ai,
+    { purpose: "chat" },
+  );
+  const text = getAssistantTextContent(data).trim();
+  const parsed = tryParseJsonLenient(text);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { ok: true };
+  }
+  const obj = parsed as Record<string, unknown>;
+  const habitsHint = typeof obj.habitsHint === "string" ? obj.habitsHint.trim() : "";
+  const filterRequirements =
+    typeof obj.filterRequirements === "string" ? obj.filterRequirements.trim() : "";
+  if (!habitsHint && !filterRequirements) return { ok: true };
+  return {
+    ok: true,
+    profile: {
+      habitsHint: habitsHint.slice(0, 1200),
+      filterRequirements: filterRequirements.slice(0, 1200),
+    },
+  };
+}

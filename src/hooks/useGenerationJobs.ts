@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useSyncExternalStore } from "react";
 import {
   GENERATION_JOBS_STORAGE_KEY,
@@ -26,4 +27,15 @@ export function usePaperGenJobs(): PaperGenJob[] {
 
 export function useExampleGenJobs(): ExampleGenJob[] {
   return useSyncExternalStore(subscribeGenerationJobs, () => loadExampleJobs(), () => []);
+}
+
+/** 命题或例题队列中是否存在「生成中」（用于释放卡住任务按钮是否可用） */
+export function useHasRunningGenerationJob(): boolean {
+  const paper = usePaperGenJobs();
+  const example = useExampleGenJobs();
+  return useMemo(
+    () =>
+      paper.some((j) => j.status === "running") || example.some((j) => j.status === "running"),
+    [paper, example],
+  );
 }

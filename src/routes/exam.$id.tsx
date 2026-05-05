@@ -1,6 +1,11 @@
 import { createFileRoute, Link, notFound, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { getExamDetail, repairSessionExamSnapshot } from "@/lib/exam.functions.server";
+import {
+  generateListeningAudioForExam,
+  getExamDetail,
+  repairSessionExamSnapshot,
+} from "@/lib/exam.functions.server";
+import { examHasListeningStyleQuestions } from "@/lib/listeningAudio.shared";
 import { MathContent } from "@/components/MathContent";
 import {
   DIFFICULTY_LABELS,
@@ -24,6 +29,8 @@ import {
   Clock,
   Award,
   CalendarDays,
+  Headphones,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageShell } from "@/components/layout/PageShell";
@@ -296,6 +303,8 @@ function ExamPaperBody({
   examples: Example[];
   sessionBanner?: boolean;
 }) {
+  const genListeningFn = useServerFn(generateListeningAudioForExam);
+  const [listeningGenBusy, setListeningGenBusy] = useState(false);
   const [showAll, setShowAll] = useState(true);
   const printRootRef = useRef<HTMLDivElement>(null);
   const examplesPrintRootRef = useRef<HTMLDivElement>(null);
@@ -330,6 +339,36 @@ function ExamPaperBody({
       window.removeEventListener("afterprint", onAfterPrint);
     };
   }, [exam.title]);
+
+  const showListeningAudioButton =
+    !sessionBanner && examHasListeningStyleQuestions(questions);
+
+  const onGenerateListeningAudio = async () => {
+    setListeningGenBusy(true);
+    try {
+      const res = await genListeningFn({ data: { examId: exam.id } });
+      if (res.generated > 0) {
+        toast.success(`已生成 ${res.generated} 条听力音频`, {
+          description: res.outputDir
+            ? `文件目录：public/audio 下（部署路径视环境而定）`
+            : undefined,
+          duration: 8000,
+        });
+      } else if (res.skippedReason) {
+        toast.message(res.skippedReason, {
+          description:
+            res.skippedReason.includes("macOS") || res.skippedReason.includes("darwin")
+              ? "听力音频仅在开发机 macOS 上可用 say/afconvert"
+              : undefined,
+          duration: 9000,
+        });
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "生成失败");
+    } finally {
+      setListeningGenBusy(false);
+    }
+  };
 
   const saveExamplesPdfAsVector = () => {
     const el = examplesPrintRootRef.current;
@@ -380,6 +419,22 @@ function ExamPaperBody({
             {showAll ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             {showAll ? "隐藏答案" : "显示答案"}
           </button>
+          {showListeningAudioButton ? (
+            <button
+              type="button"
+              disabled={listeningGenBusy}
+              title="在本机（macOS）用系统语音合成听力音频并写入项目 public/audio"
+              onClick={() => void onGenerateListeningAudio()}
+              className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-60"
+            >
+              {listeningGenBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Headphones className="h-4 w-4" aria-hidden />
+              )}
+              {listeningGenBusy ? "生成中…" : "生成听力音频"}
+            </button>
+          ) : null}
           {examples.length > 0 ? (
             <button
               type="button"

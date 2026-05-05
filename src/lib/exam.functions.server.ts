@@ -15,6 +15,7 @@ import {
   probeAiRuntime,
   probeSubmitExamToolCall,
   runImportDocumentAiGeneration,
+  syncChatContextToModel,
 } from "@/lib/exam-generation.server";
 import {
   appendExamplesToLocalExam,
@@ -43,6 +44,7 @@ import {
   type CompositionRowPayload,
   type Difficulty,
   type Exam,
+  type Question,
   type QuestionType,
 } from "@/lib/types";
 import { isCompetitionUnrestricted, isValidCompetitionFocus } from "@/lib/generateCatalog";
@@ -51,6 +53,7 @@ import type { Json } from "@/integrations/supabase/types";
 import { SESSION_EXAM_ID_PREFIX, type SessionExamSnapshot } from "@/lib/examSession";
 import { getExamStoragePreferenceFromRequest } from "@/lib/examStoragePreference.server";
 import { saveGenerationScratch, takeGenerationScratch } from "@/lib/generationScratch.server";
+import { maybeGenerateListeningAudioForExam } from "@/lib/listeningAudio.server";
 
 const SessionExamSnapshotSchema = z.object({
   exam: z.any(),
@@ -179,6 +182,11 @@ const ListLocalModelsSchema = z.object({
   localApiKey: z.string().max(500).optional(),
 });
 
+const SyncChatContextSchema = z.object({
+  ai: AiRuntimeSchema.optional(),
+  context: z.record(z.string(), z.any()),
+});
+
 const QuestionTypeSchema = z.enum([
   "multiple_choice",
   "multiple_choice_multi",
@@ -271,6 +279,14 @@ export const generateExam = createServerFn({ method: "POST" })
         })
         .eq("id", examId);
       if (metaErr) console.error("[exam generation meta] update failed:", metaErr.message);
+      const { data: qRows, error: qErr } = await dbPersist
+        .from("questions")
+        .select("*")
+        .eq("exam_id", examId)
+        .order("order_index");
+      if (qErr) {
+        console.warn("[listening-audio] 读取云端题目失败:", qErr.message);
+      }
       return { examId, persisted: true as const };
     };
 
@@ -400,6 +416,63 @@ export const generateExamplesForExistingExam = createServerFn({ method: "POST" }
     return { ok: true as const };
   });
 
+const GenerateListeningAudioSchema = z.object({
+  examId: z.string().min(1).max(500),
+});
+
+/**
+ * 手动生成英语听力音频（macOS say/afconvert，写入 `public/audio/<examId>/`）。
+ * 入库 / 命题完成后不再自动生成，须在试卷详情页点击触发。
+ */
+export const generateListeningAudioForExam = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => GenerateListeningAudioSchema.parse(data))
+  .handler(async ({ data }) => {
+    const id = data.examId.trim();
+    if (id.startsWith(SESSION_EXAM_ID_PREFIX)) {
+      throw new Error("会话临时试卷无法在此生成听力音频，请先入库或使用备份导入后再打开试卷页操作");
+    }
+    if (isProjectBundledRouteId(id)) {
+      throw new Error("仓库内置演示卷不支持生成听力音频");
+    }
+
+    const db = getSupabaseAdmin();
+    let questions: Question[] | null = null;
+
+    if (db) {
+      const { data: examRow, error: exErr } = await db
+        .from("exams")
+        .select("id, deleted_at")
+        .eq("id", id)
+        .maybeSingle();
+      if (exErr) throw new Error(exErr.message);
+      if (examRow?.deleted_at) {
+        throw new Error(EXAM_NOT_FOUND_MSG);
+      }
+      if (examRow) {
+        const { data: qRows, error: qErr } = await db
+          .from("questions")
+          .select("*")
+          .eq("exam_id", id)
+          .order("order_index");
+        if (qErr) throw new Error(qErr.message);
+        questions = (qRows ?? []) as Question[];
+      }
+    }
+
+    if (questions === null) {
+      const local = await loadLocalExam(id);
+      if (!local) {
+        throw new Error(EXAM_NOT_FOUND_MSG);
+      }
+      if (local.exam.deleted_at) {
+        throw new Error(EXAM_NOT_FOUND_MSG);
+      }
+      questions = local.questions;
+    }
+
+    return maybeGenerateListeningAudioForExam(id, questions);
+  });
+
 export const getExamDetail = createServerFn({ method: "GET" })
   .inputValidator((data: unknown) => z.object({ id: z.string().min(1) }).parse(data))
   .handler(async ({ data }) => {
@@ -525,6 +598,16 @@ export const probeAiConnection = createServerFn({ method: "POST" })
 export const probeSubmitExamToolCallFn = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => ProbeAiSchema.parse(data))
   .handler(async ({ data }) => probeSubmitExamToolCall(data as AiRuntimePayload));
+
+/** 定时同步本机习惯与页面筛选快照到聊天模型（预热/上下文对齐） */
+export const syncChatContext = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => SyncChatContextSchema.parse(data))
+  .handler(async ({ data }) =>
+    syncChatContextToModel(
+      data.ai as AiRuntimePayload | undefined,
+      data.context as Record<string, unknown>,
+    ),
+  );
 
 /** 设置页：从 Ollama（/api/tags）或 OpenAI 兼容（/v1/models）拉取模型列表，服务端转发避免浏览器 CORS */
 export const listLocalModels = createServerFn({ method: "POST" })

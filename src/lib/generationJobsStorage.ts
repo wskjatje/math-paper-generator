@@ -5,11 +5,26 @@ import type {
   PaperGenPayloadSnapshot,
 } from "@/lib/generationJobs.types";
 
+export type QueuedJobRef =
+  | { kind: "paper"; job: PaperGenJob }
+  | { kind: "example"; job: ExampleGenJob };
+
 /** 与 localStorage 键一致；用于 `storage` 事件在多标签间同步队列视图 */
 export const GENERATION_JOBS_STORAGE_KEY = "zhixue.generationJobs.v1" as const;
 
 const STORAGE_KEY = GENERATION_JOBS_STORAGE_KEY;
 const MAX_JOBS = 40;
+
+/**
+ * 「生成中」超过此时长视为僵尸任务（异常退出、关标签后前端无法再收到完成回调）。
+ * 本地大模型极慢时可酌情改大；过小可能误杀长跑命题。
+ */
+export const STALE_RUNNING_JOB_MAX_MS = 4 * 60 * 60 * 1000;
+
+const STALE_RUNNING_AUTO_MESSAGE =
+  "任务超时中断（可能已关闭页面或浏览器崩溃），已自动标记失败并释放队列";
+
+const FORCE_FAIL_MANUAL_MESSAGE = "已手动标记失败以释放队列（原任务可能仍在服务端运行）";
 
 function emitUpdate(): void {
   if (typeof window === "undefined") return;
@@ -70,6 +85,40 @@ export function loadExampleJobs(): ExampleGenJob[] {
   return loadRoot().example;
 }
 
+/** 任一队列是否存在运行中任务（全局串行闸门） */
+export function hasAnyRunningGenerationJob(): boolean {
+  const root = loadRoot();
+  return (
+    root.paper.some((j) => j.status === "running") || root.example.some((j) => j.status === "running")
+  );
+}
+
+/** 命题与例题合并：按 createdAt 最早的一条排队任务（全局 FIFO） */
+export function getOldestQueuedJob(): QueuedJobRef | null {
+  const root = loadRoot();
+  let best: QueuedJobRef | null = null;
+  let bestTime = Infinity;
+  for (const j of root.paper) {
+    if (j.status !== "queued") continue;
+    const t = Date.parse(j.createdAt);
+    const tt = Number.isNaN(t) ? 0 : t;
+    if (tt < bestTime) {
+      bestTime = tt;
+      best = { kind: "paper", job: j };
+    }
+  }
+  for (const j of root.example) {
+    if (j.status !== "queued") continue;
+    const t = Date.parse(j.createdAt);
+    const tt = Number.isNaN(t) ? 0 : t;
+    if (tt < bestTime) {
+      bestTime = tt;
+      best = { kind: "example", job: j };
+    }
+  }
+  return best;
+}
+
 export function loadPaperJob(id: string): PaperGenJob | undefined {
   return loadPaperJobs().find((j) => j.id === id);
 }
@@ -120,14 +169,104 @@ export function requestCancelExampleJob(id: string): void {
 
 export function clearCompletedPaperJobs(): void {
   const root = loadRoot();
-  root.paper = root.paper.filter((j) => j.status === "running");
+  root.paper = root.paper.filter((j) => j.status === "running" || j.status === "queued");
   saveRoot(root);
 }
 
 export function clearCompletedExampleJobs(): void {
   const root = loadRoot();
-  root.example = root.example.filter((j) => j.status === "running");
+  root.example = root.example.filter((j) => j.status === "running" || j.status === "queued");
   saveRoot(root);
+}
+
+function runningJobAgeMs(job: { updatedAt: string }, nowMs: number): number {
+  const t = Date.parse(job.updatedAt);
+  if (Number.isNaN(t)) return Infinity;
+  return nowMs - t;
+}
+
+/**
+ * 将长期处于 `running` 的任务标记为 `failed`，避免异常退出后队列永久卡住。
+ * @returns 各自释放条数
+ */
+export function releaseStaleRunningGenerationJobs(nowMs?: number): { paper: number; example: number } {
+  if (typeof window === "undefined") return { paper: 0, example: 0 };
+  const t0 = typeof nowMs === "number" ? nowMs : Date.now();
+  const root = loadRoot();
+  let paper = 0;
+  let example = 0;
+  let changed = false;
+
+  root.paper = root.paper.map((j) => {
+    if (j.status !== "running") return j;
+    if (runningJobAgeMs(j, t0) <= STALE_RUNNING_JOB_MAX_MS) return j;
+    changed = true;
+    paper += 1;
+    return {
+      ...j,
+      status: "failed" as const,
+      errorMessage: STALE_RUNNING_AUTO_MESSAGE,
+      cancelRequested: false,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+
+  root.example = root.example.map((j) => {
+    if (j.status !== "running") return j;
+    if (runningJobAgeMs(j, t0) <= STALE_RUNNING_JOB_MAX_MS) return j;
+    changed = true;
+    example += 1;
+    return {
+      ...j,
+      status: "failed" as const,
+      errorMessage: STALE_RUNNING_AUTO_MESSAGE,
+      cancelRequested: false,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+
+  if (changed) saveRoot(root);
+  return { paper, example };
+}
+
+/**
+ * 将所有仍处于 `running` 的任务立即标为失败（用户确认队列卡住时使用）。
+ */
+export function forceFailAllRunningGenerationJobs(): { paper: number; example: number } {
+  if (typeof window === "undefined") return { paper: 0, example: 0 };
+  const root = loadRoot();
+  let paper = 0;
+  let example = 0;
+  let changed = false;
+
+  root.paper = root.paper.map((j) => {
+    if (j.status !== "running") return j;
+    changed = true;
+    paper += 1;
+    return {
+      ...j,
+      status: "failed" as const,
+      errorMessage: FORCE_FAIL_MANUAL_MESSAGE,
+      cancelRequested: false,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+
+  root.example = root.example.map((j) => {
+    if (j.status !== "running") return j;
+    changed = true;
+    example += 1;
+    return {
+      ...j,
+      status: "failed" as const,
+      errorMessage: FORCE_FAIL_MANUAL_MESSAGE,
+      cancelRequested: false,
+      updatedAt: new Date().toISOString(),
+    };
+  });
+
+  if (changed) saveRoot(root);
+  return { paper, example };
 }
 
 /** sessionStorage：生成页回填 */

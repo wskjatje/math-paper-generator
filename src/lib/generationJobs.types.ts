@@ -1,7 +1,7 @@
 import type { CompositionRowPayload, Difficulty, QuestionType } from "@/lib/types";
 import type { PaperKindId } from "@/lib/generateCatalog";
 
-export type GenJobStatus = "running" | "success" | "failed" | "cancelled";
+export type GenJobStatus = "queued" | "running" | "success" | "failed" | "cancelled";
 
 export type CustomCompositionSlotSnapshot = { id: string; name: string; count: number };
 

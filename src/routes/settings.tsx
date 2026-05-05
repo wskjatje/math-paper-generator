@@ -31,6 +31,8 @@ import {
   Server,
   SlidersHorizontal,
   ChevronDown,
+  RefreshCw,
+  Download,
 } from "lucide-react";
 import { FormPanel } from "@/components/layout/FormPanel";
 import {
@@ -47,6 +49,8 @@ import {
   getDataSettingsOverview,
   getBundledMigrationSql,
   runBundledMigrationsOnServer,
+  checkSystemUpdate,
+  type SystemUpdateCheckResult,
 } from "@/lib/dataSettings.functions.server";
 import type { MysqlUiState } from "@/lib/mysqlConnection.server";
 import {
@@ -87,6 +91,33 @@ const LOCAL_FIELD_CONTROL = cn(
 
 const LOAD_MODELS_BTN =
   "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-card px-3 py-2.5 text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-50";
+
+/** 学科命题模型弹窗：下拉选择「手动输入」时的哨兵值（不作为真实模型 id 储存） */
+const SUBJECT_MODEL_SELECT_OTHER = "__mpg_subject_other__";
+
+/** 选了「其他」尚未输入时的占位；应用设置时会剔除，不落库 */
+const SUBJECT_MODEL_OTHER_EMPTY = "\u00a0";
+
+function subjectModelSelectValue(
+  draftVal: string | undefined,
+  loaded: string[],
+): "" | typeof SUBJECT_MODEL_SELECT_OTHER | string {
+  const raw = draftVal ?? "";
+  if (raw === SUBJECT_MODEL_OTHER_EMPTY) return SUBJECT_MODEL_SELECT_OTHER;
+  const v = raw.trim();
+  if (!v) return "";
+  if (loaded.includes(v)) return v;
+  return SUBJECT_MODEL_SELECT_OTHER;
+}
+
+function normalizeSubjectModelsDraft(draft: Record<string, string>): Record<string, string> {
+  const next = { ...draft };
+  for (const k of Object.keys(next)) {
+    const v = next[k];
+    if (v === SUBJECT_MODEL_OTHER_EMPTY || !(v ?? "").trim()) delete next[k];
+  }
+  return next;
+}
 
 /** 一句话说明当前命题/导入默认落在何处（与 examStorage/policy、persistImported 模块行为一致） */
 function currentExamPersistenceSummary(
@@ -191,6 +222,7 @@ function SettingsPage() {
   const [mounted, setMounted] = useState(false);
   const [testing, setTesting] = useState(false);
   const [toolTesting, setToolTesting] = useState(false);
+  const [applyingRecommended, setApplyingRecommended] = useState(false);
   const [loadedModels, setLoadedModels] = useState<string[]>([]);
   const [loadingModels, setLoadingModels] = useState(false);
   const [subjectModelsDialogOpen, setSubjectModelsDialogOpen] = useState(false);
@@ -296,7 +328,9 @@ function SettingsPage() {
   };
 
   const applySubjectModelsDialog = () => {
-    setForm((f) => ({ ...f, localSubjectModels: { ...subjectModelsDraft } }));
+    const cleaned = normalizeSubjectModelsDraft(subjectModelsDraft);
+    setForm((f) => ({ ...f, localSubjectModels: cleaned }));
+    setSubjectModelsDraft(cleaned);
     setSubjectModelsDialogOpen(false);
     toast.success("学科命题模型已应用；若需持久化请点击「保存设置」");
   };
@@ -315,6 +349,32 @@ function SettingsPage() {
       toast.error(e instanceof Error ? e.message : "submit_exam 探测失败");
     } finally {
       setToolTesting(false);
+    }
+  };
+
+  const handleApplyRecommended = async () => {
+    const next: AiSettingsForm = {
+      ...form,
+      mode: "local",
+      localBaseUrl: form.localBaseUrl?.trim() || DEFAULT_AI_SETTINGS.localBaseUrl,
+      localModel: DEFAULT_AI_SETTINGS.localModel,
+      localSubjectModels: { ...DEFAULT_AI_SETTINGS.localSubjectModels },
+    };
+
+    setForm(next);
+    saveAiSettings(next);
+    setApplyingRecommended(true);
+    try {
+      const res = await saveDbFn({ data: next });
+      if (res.ok) {
+        toast.success("已应用推荐配置并保存到本机与数据库");
+      } else if (res.reason === "no_supabase") {
+        toast.success("已应用推荐配置并保存到本机（服务端未配置 Supabase）");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "应用推荐配置失败");
+    } finally {
+      setApplyingRecommended(false);
     }
   };
 
@@ -486,45 +546,126 @@ function SettingsPage() {
                     <DialogHeader className="px-6 pt-6 pb-2 shrink-0 border-b border-border/60">
                       <DialogTitle>设置学科命题模型</DialogTitle>
                       <DialogDescription className="text-left leading-relaxed">
-                        与命题页「学科」一致；未填写的学科将使用主界面「本地默认模型」
-                        {loadedModels.length ? "（输入框可联想已加载列表）" : ""}。
+                        与命题页「学科」一致；未填写的学科将使用主界面「本地默认模型」。
+                        {loadedModels.length
+                          ? " 已加载列表时可在此下栏选择；也可选「其他」后手动输入模型名。"
+                          : " 先点击主界面「加载模型列表」可在此用下栏快速选择；未加载时仅支持手动输入。"}
                       </DialogDescription>
                     </DialogHeader>
-                    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-2">
-                      {CURRICULUM_SUBJECT_OPTIONS.map((s) => (
-                        <div
-                          key={s.id}
-                          className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3"
-                        >
-                          <span className="shrink-0 text-sm text-muted-foreground sm:w-[8.5rem]">
-                            {s.label}
-                          </span>
-                          <input
-                            value={subjectModelsDraft[s.id] ?? ""}
-                            onChange={(e) => {
-                              const v = e.target.value;
-                              setSubjectModelsDraft((prev) => {
-                                const next = { ...prev };
-                                if (!v.trim()) delete next[s.id];
-                                else next[s.id] = v.trim();
-                                return next;
-                              });
-                            }}
-                            placeholder={`默认：${(form.localModel ?? "").trim() || "未填写主模型"}`}
-                            className={cn(CONTROL, "font-mono text-[13px]")}
-                            autoComplete="off"
-                            spellCheck={false}
-                            list={loadedModels.length ? `mpg-local-models-dlg-${s.id}` : undefined}
-                          />
-                          {loadedModels.length > 0 ? (
-                            <datalist id={`mpg-local-models-dlg-${s.id}`}>
-                              {loadedModels.map((m) => (
-                                <option key={m} value={m} />
-                              ))}
-                            </datalist>
-                          ) : null}
-                        </div>
-                      ))}
+                    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-3">
+                      {CURRICULUM_SUBJECT_OPTIONS.map((s) => {
+                        const sel = subjectModelSelectValue(
+                          subjectModelsDraft[s.id],
+                          loadedModels,
+                        );
+                        const showManual =
+                          loadedModels.length > 0 && sel === SUBJECT_MODEL_SELECT_OTHER;
+                        return (
+                          <div
+                            key={s.id}
+                            className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3"
+                          >
+                            <span className="shrink-0 text-sm text-muted-foreground sm:w-[8.5rem] pt-2 sm:pt-2.5">
+                              {s.label}
+                            </span>
+                            <div className="flex min-w-0 flex-1 flex-col gap-2">
+                              {loadedModels.length > 0 ? (
+                                <>
+                                  <div className="relative w-full">
+                                    <select
+                                      className={cn(
+                                        LOCAL_FIELD_CONTROL,
+                                        "w-full appearance-none cursor-pointer pr-9 font-mono text-[13px]",
+                                      )}
+                                      value={sel}
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setSubjectModelsDraft((prev) => {
+                                          const next = { ...prev };
+                                          if (val === "") {
+                                            delete next[s.id];
+                                          } else if (val === SUBJECT_MODEL_SELECT_OTHER) {
+                                            const raw = prev[s.id] ?? "";
+                                            const cur = raw.trim();
+                                            if (
+                                              raw === SUBJECT_MODEL_OTHER_EMPTY ||
+                                              !cur ||
+                                              loadedModels.includes(cur)
+                                            ) {
+                                              next[s.id] = SUBJECT_MODEL_OTHER_EMPTY;
+                                            }
+                                          } else {
+                                            next[s.id] = val;
+                                          }
+                                          return next;
+                                        });
+                                      }}
+                                      aria-label={`${s.label} 命题模型`}
+                                    >
+                                      <option value="">
+                                        使用本地默认模型（{(
+                                          form.localModel ?? ""
+                                        ).trim() || "未设置"}）
+                                      </option>
+                                      {loadedModels.map((m) => (
+                                        <option key={m} value={m}>
+                                          {m}
+                                        </option>
+                                      ))}
+                                      <option value={SUBJECT_MODEL_SELECT_OTHER}>
+                                        其他（手动输入）…
+                                      </option>
+                                    </select>
+                                    <ChevronDown
+                                      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                                      aria-hidden
+                                    />
+                                  </div>
+                                  {showManual ? (
+                                    <input
+                                      value={
+                                        subjectModelsDraft[s.id] === SUBJECT_MODEL_OTHER_EMPTY
+                                          ? ""
+                                          : (subjectModelsDraft[s.id] ?? "")
+                                      }
+                                      onChange={(e) => {
+                                        const v = e.target.value;
+                                        setSubjectModelsDraft((prev) => {
+                                          const next = { ...prev };
+                                          if (!v.trim()) delete next[s.id];
+                                          else next[s.id] = v.trim();
+                                          return next;
+                                        });
+                                      }}
+                                      placeholder="输入自定义模型名（如未在列表中）"
+                                      className={cn(CONTROL, "font-mono text-[13px]")}
+                                      autoComplete="off"
+                                      spellCheck={false}
+                                    />
+                                  ) : null}
+                                </>
+                              ) : (
+                                <input
+                                  value={subjectModelsDraft[s.id] ?? ""}
+                                  onChange={(e) => {
+                                    const v = e.target.value;
+                                    setSubjectModelsDraft((prev) => {
+                                      const next = { ...prev };
+                                      if (!v.trim()) delete next[s.id];
+                                      else next[s.id] = v.trim();
+                                      return next;
+                                    });
+                                  }}
+                                  placeholder={`默认：${(form.localModel ?? "").trim() || "未填写主模型"}`}
+                                  className={cn(CONTROL, "font-mono text-[13px]")}
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                     <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 px-6 py-4 shrink-0 bg-muted/20">
                       <button
@@ -577,6 +718,20 @@ function SettingsPage() {
               </button>
               <button
                 type="button"
+                disabled={applyingRecommended || (cloudMode && cloudModelLooksLikeKey)}
+                onClick={() => void handleApplyRecommended()}
+                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
+                title="一键覆盖为推荐模型并立即保存"
+              >
+                {applyingRecommended ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <SlidersHorizontal className="h-4 w-4" />
+                )}
+                应用推荐配置
+              </button>
+              <button
+                type="button"
                 disabled={testing || (cloudMode && cloudModelLooksLikeKey)}
                 onClick={handleTest}
                 title={
@@ -626,6 +781,7 @@ function SettingsPage() {
 function DataStorageTab() {
   const router = useRouter();
   const overviewFn = useServerFn(getDataSettingsOverview);
+  const checkUpdateFn = useServerFn(checkSystemUpdate);
   const sqlFn = useServerFn(getBundledMigrationSql);
   const runMigrateFn = useServerFn(runBundledMigrationsOnServer);
   const mysqlUiFn = useServerFn(getMysqlSettingsUiState);
@@ -654,6 +810,8 @@ function DataStorageTab() {
   const [cloudStorageConfigOpen, setCloudStorageConfigOpen] = useState(false);
   const [localStorageConfigOpen, setLocalStorageConfigOpen] = useState(false);
   const [habitSnap, setHabitSnap] = useState<StoredGenerationHabit>(() => loadGenerationHabits());
+  const [updateInfo, setUpdateInfo] = useState<SystemUpdateCheckResult | null>(null);
+  const [updateChecking, setUpdateChecking] = useState(false);
 
   useGenerationHabitsCloudSync();
   useEffect(() => {
@@ -866,6 +1024,25 @@ function DataStorageTab() {
     }
   };
 
+  const handleCheckUpdate = async () => {
+    setUpdateChecking(true);
+    try {
+      const res = await checkUpdateFn();
+      setUpdateInfo(res);
+      if (res.latestVersion == null) {
+        toast.error("检查失败：无法读取最新版本，请稍后再试");
+      } else if (res.hasUpdate) {
+        toast.success(`发现新版本 v${res.latestVersion}`);
+      } else {
+        toast.success("当前已是最新版本");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "检查更新失败");
+    } finally {
+      setUpdateChecking(false);
+    }
+  };
+
   const mysqlSettingsContent = (
     <>
       {mysqlUi?.configured ? (
@@ -1027,6 +1204,62 @@ function DataStorageTab() {
 
   return (
     <div className="space-y-8">
+      <FormPanel className="space-y-4">
+        <h2 className="text-base font-semibold text-foreground">系统更新</h2>
+        <p className="text-xs text-muted-foreground">
+          当前版本：<code className="rounded bg-muted px-1 text-[11px]">v{updateInfo?.currentVersion ?? "—"}</code>
+          {updateInfo?.checkedAtIso ? (
+            <>
+              {" · "}最近检查：{new Date(updateInfo.checkedAtIso).toLocaleString()}
+            </>
+          ) : null}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={updateChecking}
+            onClick={() => void handleCheckUpdate()}
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+          >
+            {updateChecking ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
+            检查更新
+          </button>
+          {updateInfo?.hasUpdate && updateInfo.releaseUrl ? (
+            <a
+              href={updateInfo.releaseUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-95"
+            >
+              <Download className="h-4 w-4" />
+              前往下载最新版
+            </a>
+          ) : null}
+        </div>
+        {updateInfo ? (
+          <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-foreground">
+            {updateInfo.latestVersion == null ? (
+              <p className="text-muted-foreground">未能获取远端版本信息（请检查网络或稍后重试）。</p>
+            ) : updateInfo.hasUpdate ? (
+              <p>
+                检测到新版本：<strong>v{updateInfo.latestVersion}</strong>
+                {updateInfo.releaseName ? `（${updateInfo.releaseName}）` : ""}。
+              </p>
+            ) : (
+              <p>
+                已是最新版本（当前 v{updateInfo.currentVersion}，远端 v{updateInfo.latestVersion}）。
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">点击“检查更新”后将从 GitHub Release 获取最新版本。</p>
+        )}
+      </FormPanel>
+
       <FormPanel className="space-y-3">
         <h2 className="text-base font-semibold text-foreground">本机命题习惯</h2>
         {overview && !loading ? (

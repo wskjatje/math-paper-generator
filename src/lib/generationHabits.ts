@@ -10,6 +10,7 @@ import {
   type GenerationErrorCategory,
 } from "@/lib/generationQuality.shared";
 import type { CompositionRowPayload } from "@/lib/types";
+import { buildChatOptimizationHints } from "@/lib/chatOptimizationProfile";
 
 const LS_KEY = "mpg_generation_habits_v2";
 const LS_META_KEY = "mpg_generation_habits_meta_v1";
@@ -374,5 +375,7 @@ export function getQualityHintsForNextRequest(): string {
       : "";
 
   const merged = `${parts.join("\n\n")}${recent}`.trim();
-  return merged.slice(0, 2500);
+  const chatOptimized = buildChatOptimizationHints();
+  const final = [merged.slice(0, 2500), chatOptimized].filter(Boolean).join("\n\n");
+  return final.slice(0, 3200);
 }

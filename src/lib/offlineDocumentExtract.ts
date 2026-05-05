@@ -1,16 +1,20 @@
 /**
  * 浏览器端从常见办公文档抽取纯文本，供「文档识别导入」走 AI 结构化。
- * 勿在服务端引用（依赖 pdf.js worker、tesseract 语言包等）。
+ * 勿在服务端调用（依赖 pdf.js worker、tesseract 语言包等）。
+ *
+ * `routeTree.gen.ts` 会静态导入所有路由；调用方（如 ImportOfflineExamDialog）应对本模块使用动态 import，
+ * 避免 SSR 阶段加载本文件；PDF 分支内仍对 pdfjs 使用动态 import，并在 extractPdfText 内用 import.meta.env.SSR 拦截。
  */
-import * as pdfjs from "pdfjs-dist";
-// vite 解析 worker 地址，避免 pdf.js 主线程报错
-import pdfWorkerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-
-pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
-
 const IMG_RE = /\.(png|jpe?g|webp|gif|bmp|tif?f)$/i;
 
 async function extractPdfText(data: ArrayBuffer): Promise<string> {
+  // SSR / Node：避免加载 pdf.mjs（会引用 DOMMatrix）；勿仅用 window 判断（部分环境会 polyfill）
+  if (import.meta.env.SSR || typeof window === "undefined") {
+    throw new Error("PDF 提取仅在浏览器环境可用");
+  }
+  const pdfjs = await import("pdfjs-dist");
+  const { default: pdfWorkerSrc } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
   const pdf = await pdfjs.getDocument({ data }).promise;
   const lines: string[] = [];
   for (let p = 1; p <= pdf.numPages; p++) {

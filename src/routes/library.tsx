@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import { ExamCardActionRow, EXAM_CARD_ACTION_LABEL_CLASS } from "@/components/exam/ExamCardActionRow";
 import { ExampleGenerationJobQueueControl } from "@/components/generation/GenerationJobQueues";
+import { useExampleGenJobs } from "@/hooks/useGenerationJobs";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,14 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  fetchAiSettingsFromDb,
-  generateExamplesForExistingExam,
-  getBackendCapabilities,
-  listExams,
-  softDeleteUserExam,
-} from "@/lib/exam.functions.server";
-import { loadAiSettings, saveAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
+import { fetchAiSettingsFromDb, getBackendCapabilities, listExams, softDeleteUserExam } from "@/lib/exam.functions.server";
+import { saveAiSettings } from "@/lib/aiSettingsStorage";
 import { syncExamStoragePreferenceToCookie } from "@/lib/examStoragePreference";
 import { examProvenance, userExamSoftDeletable } from "@/lib/examProvenance";
 import {
@@ -46,20 +41,18 @@ import {
   curriculumLabelFromExamSubjects,
   gradeLabelFromExamSubjects,
 } from "@/lib/examDisplayLabels";
+import { writePageFilterSnapshot } from "@/lib/pageFilterSync";
 import {
   EXAMPLE_PREFILL_APPLY_EVENT,
   EXAMPLE_PREFILL_STORAGE_KEY,
-  loadExampleJob,
-  patchExampleJob,
   upsertExampleJob,
 } from "@/lib/generationJobsStorage";
+import { requestGenerationQueueDrain } from "@/lib/generationQueueDrain";
 import {
   DIFFICULTY_LABELS,
   QUESTION_TYPE_LABELS,
   type Difficulty,
   type Exam,
-  type Example,
-  type Question,
   type QuestionType,
 } from "@/lib/types";
 
@@ -120,9 +113,8 @@ function Library() {
   const exams = rawExams as unknown as Exam[];
   const examsRef = useRef(exams);
   examsRef.current = exams;
+  const exampleGenJobs = useExampleGenJobs();
   const router = useRouter();
-  const navigate = useNavigate();
-  const examplesFn = useServerFn(generateExamplesForExistingExam);
   const deleteExamFn = useServerFn(softDeleteUserExam);
   const capsFn = useServerFn(getBackendCapabilities);
   const fetchAiDbFn = useServerFn(fetchAiSettingsFromDb);
@@ -133,12 +125,21 @@ function Library() {
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
   const [provenanceFilter, setProvenanceFilter] = useState<"all" | "generated" | "imported">("all");
 
+  useEffect(() => {
+    writePageFilterSnapshot("library", {
+      query: q || undefined,
+      diff,
+      gradeFilter,
+      subjectFilter,
+      provenanceFilter,
+    });
+  }, [q, diff, gradeFilter, subjectFilter, provenanceFilter]);
+
   const [persistEnabled, setPersistEnabled] = useState<boolean | null>(null);
   const [examplesExam, setExamplesExam] = useState<Exam | null>(null);
   const [removeExam, setRemoveExam] = useState<Exam | null>(null);
   const [removeBusy, setRemoveBusy] = useState(false);
   const [pickedTypes, setPickedTypes] = useState<QuestionType[]>([]);
-  const [examplesLoading, setExamplesLoading] = useState(false);
 
   useEffect(() => {
     syncExamStoragePreferenceToCookie();
@@ -239,7 +240,7 @@ function Library() {
     setPickedTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
   };
 
-  const submitExamples = async () => {
+  const submitExamples = () => {
     if (!examplesExam) return;
     if (!pickedTypes.length) {
       toast.error("请至少勾选一种题型");
@@ -257,50 +258,18 @@ function Library() {
       examId: exam.id,
       gradeLabel,
       subjectLabel,
-      status: "running",
+      status: "queued",
       createdAt: nowIso,
       updatedAt: nowIso,
       payload: { examId: exam.id, types },
     });
 
-    setExamplesLoading(true);
-    try {
-      await examplesFn({
-        data: {
-          examId: exam.id,
-          types,
-          ai: toAiRuntimePayload(loadAiSettings()),
-        },
-      });
-
-      const jobAfter = loadExampleJob(jobId);
-      const userCancelled = jobAfter?.status === "cancelled" || jobAfter?.cancelRequested;
-      if (userCancelled) {
-        return;
-      }
-
-      patchExampleJob(jobId, { status: "success", cancelRequested: false });
-
-      const openedExamId = exam.id;
-      toast.success("例题生成完成", {
-        description: "同型例题与试卷正文分开展示；可打开试卷页使用「打印例题」等导出方式",
-        action: {
-          label: "打开试卷",
-          onClick: () => void navigate({ to: "/exam/$id", params: { id: openedExamId } }),
-        },
-      });
-      setExamplesExam(null);
-      void router.invalidate();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "生成失败";
-      const jobAfter = loadExampleJob(jobId);
-      if (jobAfter?.status !== "cancelled" && !jobAfter?.cancelRequested) {
-        patchExampleJob(jobId, { status: "failed", errorMessage: msg });
-      }
-      toast.error(msg);
-    } finally {
-      setExamplesLoading(false);
-    }
+    setExamplesExam(null);
+    toast.success("已加入例题队列", {
+      description: "同一时间仅执行 1 个生成任务，其余按顺序排队；进度见右上角「例题队列」。",
+      duration: 8000,
+    });
+    requestGenerationQueueDrain();
   };
 
   const submitRemoveExam = async () => {
@@ -443,6 +412,12 @@ function Library() {
                 const canExamples =
                   persistEnabled === true && types.length > 0 && e.storage_source !== "project";
 
+                const exampleJobPending = exampleGenJobs.find(
+                  (j) =>
+                    j.examId === e.id && (j.status === "queued" || j.status === "running"),
+                );
+                const isExampleJobBusy = Boolean(exampleJobPending);
+
                 return (
                   <div
                     key={e.id}
@@ -539,31 +514,53 @@ function Library() {
                             type="button"
                             variant="outline"
                             size="sm"
-                            className="h-8 w-full min-w-0 gap-1.5 border-border bg-card shadow-sm hover:bg-muted/55"
+                            className="h-8 w-full min-w-0 gap-1.5 border-border bg-card shadow-sm hover:bg-muted/55 disabled:opacity-80"
                             disabled={
-                              !canExamples || examplesLoading || e.storage_source === "project"
+                              !canExamples || e.storage_source === "project" || isExampleJobBusy
                             }
                             title={
-                              persistEnabled === false
-                                ? "配置云端或本地可写后可持久化并生成例题"
-                                : types.length === 0
-                                  ? "无题型数据"
-                                  : e.storage_source === "project"
-                                    ? "内置演示卷不支持生成例题"
-                                    : e.storage_source === "local"
-                                      ? "例题将追加写入本地"
-                                      : "按勾选题型写入云端并生成配套例题"
+                              isExampleJobBusy
+                                ? "例题任务已在队列中，请在右上角「例题队列」查看进度"
+                                : persistEnabled === false
+                                  ? "配置云端或本地可写后可持久化并生成例题"
+                                  : types.length === 0
+                                    ? "无题型数据"
+                                    : e.storage_source === "project"
+                                      ? "内置演示卷不支持生成例题"
+                                      : e.storage_source === "local"
+                                        ? "例题将追加写入本地"
+                                        : "按勾选题型写入云端并生成配套例题"
                             }
                             onClick={() => setExamplesExam(e)}
                           >
-                            <BookOpenCheck
-                              className="h-3.5 w-3.5 shrink-0"
-                              strokeWidth={2}
-                              aria-hidden
-                            />
-                            <span className={cn(EXAM_CARD_ACTION_LABEL_CLASS, "truncate")}>
-                              生成例题
-                            </span>
+                            {isExampleJobBusy ? (
+                              <>
+                                <Loader2
+                                  className={cn(
+                                    "h-3.5 w-3.5 shrink-0",
+                                    exampleJobPending?.status === "running" && "animate-spin",
+                                  )}
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                <span className={cn(EXAM_CARD_ACTION_LABEL_CLASS, "truncate")}>
+                                  {exampleJobPending?.status === "queued"
+                                    ? "排队中…"
+                                    : "生成中…"}
+                                </span>
+                              </>
+                            ) : (
+                              <>
+                                <BookOpenCheck
+                                  className="h-3.5 w-3.5 shrink-0"
+                                  strokeWidth={2}
+                                  aria-hidden
+                                />
+                                <span className={cn(EXAM_CARD_ACTION_LABEL_CLASS, "truncate")}>
+                                  生成例题
+                                </span>
+                              </>
+                            )}
                           </Button>
                         )
                       }
@@ -661,19 +658,11 @@ function Library() {
               type="button"
               variant="outline"
               onClick={() => setExamplesExam(null)}
-              disabled={examplesLoading}
             >
               取消
             </Button>
-            <Button type="button" onClick={() => void submitExamples()} disabled={examplesLoading}>
-              {examplesLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  生成中…
-                </>
-              ) : (
-                "开始生成"
-              )}
+            <Button type="button" onClick={() => submitExamples()}>
+              开始生成
             </Button>
           </DialogFooter>
         </DialogContent>

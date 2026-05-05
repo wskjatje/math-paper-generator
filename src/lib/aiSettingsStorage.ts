@@ -9,9 +9,26 @@ export const DEFAULT_AI_SETTINGS: AiSettingsForm = {
   mode: "local",
   cloudModel: "",
   localBaseUrl: "http://127.0.0.1:11434",
-  /** Ollama 需与本机 `ollama list` 中的名称一致，常见带 :latest 或具体标签 */
-  localModel: "llama3.2:latest",
-  localSubjectModels: {},
+  /** 聊天/连通测试推荐默认模型 */
+  localModel: "glm-4.7-flash:latest",
+  /** 学科命题推荐映射（未配置学科时回退 localModel）；仅使用本机常见清单中的标签 */
+  localSubjectModels: {
+    chinese: "glm4:latest",
+    math: "gemma4:26b",
+    english: "qwen2.5:7b-32k",
+    science: "qwen2.5:7b",
+    morality: "glm4:latest",
+    physics: "gemma4:26b",
+    chemistry: "gemma4:26b",
+    biology: "glm4:latest",
+    history: "glm4:latest",
+    geography: "glm4:latest",
+    politics: "glm4:latest",
+    it: "qwen3-coder:30b",
+    pe: "glm-4.7-flash:latest",
+    music: "glm-4.7-flash:latest",
+    art: "glm-4.7-flash:latest",
+  },
   localApiKey: "",
 };
 

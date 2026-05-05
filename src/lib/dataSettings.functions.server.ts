@@ -1,6 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { z } from "zod";
 import { getSupabaseAdmin } from "@/lib/supabaseOptional.server";
+import { resolveProjectRoot } from "@/lib/projectRoot.server";
 import {
   deleteLocalExamFile,
   isLocalExamPersistenceAvailable,
@@ -94,3 +97,75 @@ export const runBundledMigrationsOnServer = createServerFn({ method: "POST" }).h
   const { applied } = await executeMigrationsWithDatabaseUrl(url);
   return { ok: true as const, applied };
 });
+
+export type SystemUpdateCheckResult = {
+  currentVersion: string;
+  latestVersion: string | null;
+  hasUpdate: boolean;
+  releaseUrl: string | null;
+  releaseName: string | null;
+  checkedAtIso: string;
+  source: string;
+};
+
+function normalizeVersionTag(v: string | null | undefined): string | null {
+  const t = v?.trim();
+  if (!t) return null;
+  return t.replace(/^v/i, "");
+}
+
+async function readCurrentAppVersion(): Promise<string> {
+  const pkgPath = path.join(resolveProjectRoot(), "package.json");
+  const raw = await readFile(pkgPath, "utf8");
+  const parsed = JSON.parse(raw) as { version?: unknown };
+  return typeof parsed.version === "string" && parsed.version.trim() ? parsed.version.trim() : "0.0.0";
+}
+
+/** 设置页「系统更新」：读取本地版本并检查 GitHub 最新 release。 */
+export const checkSystemUpdate = createServerFn({ method: "GET" }).handler(
+  async (): Promise<SystemUpdateCheckResult> => {
+    const currentVersion = await readCurrentAppVersion();
+    const repo = (process.env.MPG_UPDATE_REPO ?? "wskjatje/math-paper-generator").trim();
+    const api = `https://api.github.com/repos/${repo}/releases/latest`;
+
+    try {
+      const res = await fetch(api, {
+        headers: {
+          Accept: "application/vnd.github+json",
+          "User-Agent": "math-paper-generator-update-check",
+        },
+      });
+      if (!res.ok) {
+        throw new Error(`GitHub API ${res.status}`);
+      }
+      const j = (await res.json()) as {
+        tag_name?: string;
+        name?: string;
+        html_url?: string;
+      };
+      const latestVersion = normalizeVersionTag(j.tag_name);
+      const currentNorm = normalizeVersionTag(currentVersion);
+      const hasUpdate = !!latestVersion && !!currentNorm && latestVersion !== currentNorm;
+
+      return {
+        currentVersion,
+        latestVersion,
+        hasUpdate,
+        releaseUrl: j.html_url?.trim() || null,
+        releaseName: j.name?.trim() || null,
+        checkedAtIso: new Date().toISOString(),
+        source: repo,
+      };
+    } catch {
+      return {
+        currentVersion,
+        latestVersion: null,
+        hasUpdate: false,
+        releaseUrl: null,
+        releaseName: null,
+        checkedAtIso: new Date().toISOString(),
+        source: repo,
+      };
+    }
+  },
+);

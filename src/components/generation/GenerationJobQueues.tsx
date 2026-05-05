@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useExampleGenJobs, usePaperGenJobs } from "@/hooks/useGenerationJobs";
+import {
+  useExampleGenJobs,
+  useHasRunningGenerationJob,
+  usePaperGenJobs,
+} from "@/hooks/useGenerationJobs";
 import type { ExampleGenJob, GenJobStatus, PaperGenJob } from "@/lib/generationJobs.types";
 import {
   EXAMPLE_PREFILL_STORAGE_KEY,
@@ -22,11 +27,15 @@ import {
   patchPaperJob,
   clearCompletedExampleJobs,
   clearCompletedPaperJobs,
+  forceFailAllRunningGenerationJobs,
 } from "@/lib/generationJobsStorage";
+import { requestGenerationQueueDrain } from "@/lib/generationQueueDrain";
 import { cn } from "@/lib/utils";
 
 function statusLabel(s: GenJobStatus): string {
   switch (s) {
+    case "queued":
+      return "排队中";
     case "running":
       return "生成中";
     case "success":
@@ -42,6 +51,8 @@ function statusLabel(s: GenJobStatus): string {
 
 function statusBadgeClass(s: GenJobStatus): string {
   switch (s) {
+    case "queued":
+      return "border-amber-500/45 bg-amber-500/10 text-amber-950 dark:text-amber-100";
     case "running":
       return "border-sky-500/40 bg-sky-500/10 text-sky-900 dark:text-sky-100";
     case "success":
@@ -105,7 +116,7 @@ function PaperJobTable({
                 </td>
                 <td className="px-3 py-2 text-right">
                   <div className="flex flex-wrap justify-end gap-1.5">
-                    {j.status === "running" && (
+                    {(j.status === "running" || j.status === "queued") && (
                       <Button
                         type="button"
                         variant="outline"
@@ -195,7 +206,7 @@ function ExampleJobTable({
                 </td>
                 <td className="px-3 py-2 text-right">
                   <div className="flex flex-wrap justify-end gap-1.5">
-                    {j.status === "running" && (
+                    {(j.status === "running" || j.status === "queued") && (
                       <Button
                         type="button"
                         variant="outline"
@@ -239,8 +250,12 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
   const jobs = usePaperGenJobs();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const hasRunningGlobal = useHasRunningGenerationJob();
 
-  const running = useMemo(() => jobs.filter((j) => j.status === "running").length, [jobs]);
+  const activeCount = useMemo(
+    () => jobs.filter((j) => j.status === "running" || j.status === "queued").length,
+    [jobs],
+  );
 
   const onCancel = useCallback((id: string) => {
     patchPaperJob(id, { status: "cancelled", cancelRequested: true });
@@ -273,12 +288,12 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
       >
         <ClipboardList className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
         命题队列
-        {running > 0 ? (
+        {activeCount > 0 ? (
           <Badge
             variant="secondary"
             className="ml-0.5 h-5 min-w-[1.25rem] justify-center px-1.5 text-[10px]"
           >
-            {running}
+            {activeCount}
           </Badge>
         ) : null}
       </Button>
@@ -287,13 +302,43 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
           <SheetHeader>
             <SheetTitle>命题任务队列</SheetTitle>
             <SheetDescription>
-              本机浏览器记录；换设备或清缓存会丢失。定制生成页提交后仅在队列中跟踪进度与结果；生成中可取消；失败或已取消可重新生成并带入表单。
+              本机浏览器记录；换设备或清缓存会丢失。可连续提交多份，同一时间仅执行 1 个任务，其余「排队中」；执行中或排队可取消；失败或已取消可重新生成并带入表单。
+              若异常退出导致任务长期停在「生成中」，系统在继续排队时会自动超时标记失败；也可手动「释放卡住任务」。
             </SheetDescription>
           </SheetHeader>
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
             <PaperJobTable jobs={jobs} onCancel={onCancel} onRegenerate={onRegenerate} />
           </div>
-          <div className="mt-4 flex justify-end border-t border-border/60 pt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              disabled={!hasRunningGlobal}
+              title="将所有「生成中」任务标为失败（命题与例题队列一并处理），以便排队任务继续"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "将把当前所有「生成中」任务（命题 + 例题）标为失败，后续排队任务会继续执行。若任务实际仍在服务端运行，标记后前端将不再等待其结果。确定？",
+                  )
+                ) {
+                  return;
+                }
+                const r = forceFailAllRunningGenerationJobs();
+                const n = r.paper + r.example;
+                if (n === 0) {
+                  toast.message("没有处于生成中的任务");
+                  return;
+                }
+                toast.success(`已标记 ${n} 条任务为失败`, {
+                  description: "排队任务将随后自动开始",
+                });
+                requestGenerationQueueDrain();
+              }}
+            >
+              释放卡住任务
+            </Button>
             <Button
               type="button"
               variant="ghost"
@@ -314,8 +359,12 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
   const jobs = useExampleGenJobs();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const hasRunningGlobal = useHasRunningGenerationJob();
 
-  const running = useMemo(() => jobs.filter((j) => j.status === "running").length, [jobs]);
+  const activeCount = useMemo(
+    () => jobs.filter((j) => j.status === "running" || j.status === "queued").length,
+    [jobs],
+  );
 
   const onCancel = useCallback((id: string) => {
     patchExampleJob(id, { status: "cancelled", cancelRequested: true });
@@ -350,12 +399,12 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
       >
         <ClipboardList className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
         例题队列
-        {running > 0 ? (
+        {activeCount > 0 ? (
           <Badge
             variant="secondary"
             className="ml-0.5 h-5 min-w-[1.25rem] justify-center px-1.5 text-[10px]"
           >
-            {running}
+            {activeCount}
           </Badge>
         ) : null}
       </Button>
@@ -364,13 +413,43 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
           <SheetHeader>
             <SheetTitle>例题生成队列</SheetTitle>
             <SheetDescription>
-              本机浏览器记录。重新生成将把试卷与题型选项写回「生成例题」对话框（请在试卷库页面确认后提交）。
+              本机浏览器记录。可连续加入多条例题任务，同一时间仅执行 1 个，其余「排队中」。重新生成将把试卷与题型选项写回「生成例题」对话框（请在试卷库页面确认后提交）。
+              若异常退出导致长期「生成中」，系统会在继续排队时自动超时标记失败；也可手动「释放卡住任务」（与命题队列共用）。
             </SheetDescription>
           </SheetHeader>
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
             <ExampleJobTable jobs={jobs} onCancel={onCancel} onRegenerate={onRegenerate} />
           </div>
-          <div className="mt-4 flex justify-end border-t border-border/60 pt-4">
+          <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-4">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              disabled={!hasRunningGlobal}
+              title="将所有「生成中」任务标为失败（命题与例题队列一并处理），以便排队任务继续"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "将把当前所有「生成中」任务（命题 + 例题）标为失败，后续排队任务会继续执行。若任务实际仍在服务端运行，标记后前端将不再等待其结果。确定？",
+                  )
+                ) {
+                  return;
+                }
+                const r = forceFailAllRunningGenerationJobs();
+                const n = r.paper + r.example;
+                if (n === 0) {
+                  toast.message("没有处于生成中的任务");
+                  return;
+                }
+                toast.success(`已标记 ${n} 条任务为失败`, {
+                  description: "排队任务将随后自动开始",
+                });
+                requestGenerationQueueDrain();
+              }}
+            >
+              释放卡住任务
+            </Button>
             <Button
               type="button"
               variant="ghost"

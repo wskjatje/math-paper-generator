@@ -15,6 +15,7 @@
     "electron": "electron .",
     "desktop": "npm run build && electron .",
     "desktop:dmg": "npm run build && electron-builder --mac dmg",
+    "audio:temp": "node scripts/generate-listening-audio-temp.mjs",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
