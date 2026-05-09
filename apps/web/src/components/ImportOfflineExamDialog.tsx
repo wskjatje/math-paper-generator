@@ -22,6 +22,7 @@ import {
   type OfflineImportImageAnnotation,
 } from "@/lib/offlineImportAnnotation.shared";
 import { importOfflineExamFromDocument } from "@/lib/exam.functions.server";
+import { preservePersistedFigureMarkdown } from "@/lib/importFigureMarkdownPreserve.shared";
 import { gatewayOcrJson } from "@/lib/gatewayOcr.functions.server";
 import { repairOfflineOcrTextWithAi } from "@/lib/ocrRepair.functions.server";
 import {
@@ -176,9 +177,10 @@ export function ImportOfflineExamDialog({
       },
     });
     if (repaired.ok) {
-      setExtractedFromPipeline(repaired.text);
+      const withFigures = preservePersistedFigureMarkdown(sourceText, repaired.text);
+      setExtractedFromPipeline(withFigures);
       setPreviewAiRepairApplied(true);
-      return { ok: true, text: repaired.text };
+      return { ok: true, text: withFigures };
     }
     toast.warning(`AI 修复未生效：${repaired.message}，预览仍为抽取原文`);
     setExtractedFromPipeline(sourceText);
