@@ -1,0 +1,484 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+@import "katex/dist/katex.min.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================
+   Design System — "Academia"
+   Deep ink + parchment + scholarly gold.
+   For a serious, peer-reviewed feel suitable for an open-source
+   competition / olympiad question bank.
+   ============================================================ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-ink: var(--ink);
+  --color-parchment: var(--parchment);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-serif: "Cormorant Garamond", "Source Han Serif SC", "Songti SC", Georgia, serif;
+  --font-sans: "Inter", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --shadow-paper: 0 1px 2px oklch(0.2 0.04 250 / 0.06), 0 8px 24px -12px oklch(0.2 0.04 250 / 0.12);
+  --shadow-elevated:
+    0 4px 12px -2px oklch(0.2 0.04 250 / 0.1), 0 24px 48px -16px oklch(0.2 0.04 250 / 0.2);
+
+  --gradient-ink: linear-gradient(135deg, oklch(0.22 0.04 250), oklch(0.32 0.06 240));
+  --gradient-gold: linear-gradient(135deg, oklch(0.78 0.12 80), oklch(0.68 0.14 60));
+}
+
+:root {
+  --radius: 0.5rem;
+
+  /* Parchment / ink palette */
+  --background: oklch(0.985 0.008 80); /* warm off-white parchment */
+  --foreground: oklch(0.22 0.04 250); /* deep ink */
+  --parchment: oklch(0.97 0.012 80);
+  --ink: oklch(0.18 0.04 250);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.22 0.04 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.22 0.04 250);
+
+  --primary: oklch(0.28 0.06 250); /* deep ink blue */
+  --primary-foreground: oklch(0.97 0.012 80);
+
+  --secondary: oklch(0.94 0.012 80);
+  --secondary-foreground: oklch(0.28 0.06 250);
+
+  --muted: oklch(0.95 0.01 80);
+  --muted-foreground: oklch(0.48 0.02 250);
+
+  --accent: oklch(0.93 0.025 80);
+  --accent-foreground: oklch(0.28 0.06 250);
+
+  --gold: oklch(0.72 0.13 75); /* scholarly gold accent */
+  --gold-foreground: oklch(0.18 0.04 250);
+
+  --destructive: oklch(0.55 0.22 27);
+  --destructive-foreground: oklch(0.985 0 0);
+
+  --border: oklch(0.88 0.012 80);
+  --input: oklch(0.9 0.012 80);
+  --ring: oklch(0.4 0.06 250);
+
+  --chart-1: oklch(0.45 0.15 250);
+  --chart-2: oklch(0.65 0.14 75);
+  --chart-3: oklch(0.55 0.12 160);
+  --chart-4: oklch(0.6 0.18 30);
+  --chart-5: oklch(0.5 0.14 300);
+
+  --sidebar: oklch(0.97 0.012 80);
+  --sidebar-foreground: oklch(0.22 0.04 250);
+  --sidebar-primary: oklch(0.28 0.06 250);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.93 0.025 80);
+  --sidebar-accent-foreground: oklch(0.28 0.06 250);
+  --sidebar-border: oklch(0.88 0.012 80);
+  --sidebar-ring: oklch(0.4 0.06 250);
+}
+
+.dark {
+  --background: oklch(0.16 0.025 250);
+  --foreground: oklch(0.95 0.01 80);
+  --parchment: oklch(0.2 0.03 250);
+  --ink: oklch(0.95 0.01 80);
+
+  --card: oklch(0.2 0.03 250);
+  --card-foreground: oklch(0.95 0.01 80);
+  --popover: oklch(0.2 0.03 250);
+  --popover-foreground: oklch(0.95 0.01 80);
+
+  --primary: oklch(0.78 0.12 75);
+  --primary-foreground: oklch(0.16 0.025 250);
+
+  --secondary: oklch(0.26 0.03 250);
+  --secondary-foreground: oklch(0.95 0.01 80);
+
+  --muted: oklch(0.24 0.03 250);
+  --muted-foreground: oklch(0.7 0.02 80);
+
+  --accent: oklch(0.28 0.04 250);
+  --accent-foreground: oklch(0.95 0.01 80);
+
+  --gold: oklch(0.78 0.13 75);
+  --gold-foreground: oklch(0.16 0.025 250);
+
+  --destructive: oklch(0.65 0.2 27);
+  --destructive-foreground: oklch(0.97 0 0);
+
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.78 0.12 75);
+
+  --sidebar: oklch(0.18 0.03 250);
+  --sidebar-foreground: oklch(0.95 0.01 80);
+  --sidebar-primary: oklch(0.78 0.12 75);
+  --sidebar-primary-foreground: oklch(0.16 0.025 250);
+  --sidebar-accent: oklch(0.26 0.03 250);
+  --sidebar-accent-foreground: oklch(0.95 0.01 80);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.78 0.12 75);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    font-family: var(--font-sans);
+  }
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-feature-settings: "ss01", "cv11";
+    background-image:
+      radial-gradient(circle at 12% 8%, oklch(0.72 0.13 75 / 0.06), transparent 40%),
+      radial-gradient(circle at 90% 6%, oklch(0.28 0.06 250 / 0.05), transparent 45%);
+    background-attachment: fixed;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+}
+
+/* Decorative utility classes */
+@utility text-display {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+}
+
+@utility paper-card {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-paper);
+}
+
+@utility gold-divider {
+  height: 2px;
+  width: 3rem;
+  background: var(--gradient-gold);
+  border-radius: 2px;
+}
+
+/* Header seal logo: nudge cinnabar toward Academia gold / ink harmony */
+.logo-seal {
+  filter: sepia(0.22) saturate(1.08) hue-rotate(18deg) brightness(1.03) contrast(1.02);
+}
+
+.dark .logo-seal {
+  filter: sepia(0.14) saturate(0.88) hue-rotate(12deg) brightness(1.14) contrast(1.04);
+}
+
+/* Print styles for PDF export（正式卷面：A4、边距、隐藏站内导航等已由 .no-print 处理） */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm;
+  }
+
+  body {
+    background: white !important;
+    background-image: none !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* 试卷详情：打印时占满可印区域，避免仍按窄屏栏宽留白 */
+  .exam-print-shell {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .exam-print-root {
+    color: #111 !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 标准卷面打印模板：版心、题区间距（与「紧凑快照」类并存时，后者仍靠后覆盖） */
+  .exam-print-root.exam-print-root--paper-cn {
+    max-width: 186mm;
+    margin-inline: auto;
+    font-size: 11.5pt;
+  }
+
+  .exam-print-root.exam-print-root--paper-cn .space-y-8 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .exam-print-root.exam-print-root--paper-cn article.paper-card {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 导出试卷 PDF：隐藏页面下方的「同型例题」整块（由脚本设置 data-print-scope="paper"） */
+  html[data-print-scope="paper"] #exam-examples-print-root {
+    display: none !important;
+  }
+
+  /* 导出例题 PDF：隐藏试卷题目区域，仅印同型例题 */
+  html[data-print-scope="examples"] #exam-print-root {
+    display: none !important;
+  }
+
+  html[data-print-scope="examples"] .no-print {
+    display: none !important;
+  }
+
+  /* 打印 PDF 时公式略放大，减轻矢量化栅格化的模糊感 */
+  .exam-print-root .katex {
+    font-size: 1.07em !important;
+  }
+
+  /* 题干 Markdown 附图：可打印、避免在图中间断页 */
+  .exam-print-root img.exam-figure-markdown {
+    max-width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* 打印 / 另存 PDF：去掉题卡灰框，接近纸质试卷 */
+  .exam-print-root .paper-card {
+    box-shadow: none !important;
+    border: none !important;
+    outline: none !important;
+  }
+
+  /* 紧凑排版、节约用纸：允许题目在页间断开，多题连续排在同一页 */
+  .exam-print-root > header.paper-card {
+    padding: 0.65rem 0.85rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .exam-print-root > header.paper-card .gold-divider {
+    margin-top: 0.45rem !important;
+    margin-bottom: 0.45rem !important;
+  }
+
+  .exam-print-root > header.paper-card h1 {
+    font-size: 1.35rem !important;
+    line-height: 1.2 !important;
+    margin-top: 0.2rem !important;
+  }
+
+  .exam-print-root .space-y-8 > * + * {
+    margin-top: 0.55rem !important;
+  }
+
+  .exam-print-root article.paper-card {
+    padding: 0.5rem 0.65rem !important;
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  .exam-print-root article .mb-4 {
+    margin-bottom: 0.35rem !important;
+  }
+
+  .exam-print-root article .mt-4 {
+    margin-top: 0.4rem !important;
+  }
+
+  .exam-print-root article .mt-6 {
+    margin-top: 0.45rem !important;
+  }
+
+  .exam-print-root article details .rounded-md {
+    padding: 0.45rem 0.55rem !important;
+  }
+
+  .exam-print-root article .space-y-3 > * + * {
+    margin-top: 0.35rem !important;
+  }
+
+  .exam-print-root .exam-choice-options {
+    column-gap: 0.65rem !important;
+    row-gap: 0.2rem !important;
+  }
+
+  details {
+    display: block !important;
+  }
+
+  /* 打印版不显示「折叠摘要」行，直接展开正文，更像纸质答卷解析 */
+  .exam-print-root details summary {
+    display: none !important;
+  }
+
+  .katex,
+  .katex * {
+    color: #000 !important;
+  }
+
+  .prose {
+    color: #111 !important;
+  }
+
+  .exam-print-root .prose p {
+    margin-top: 0.3em !important;
+    margin-bottom: 0.3em !important;
+  }
+
+  .exam-print-root .katex-display {
+    margin: 0.35em 0 !important;
+  }
+}
+
+/*
+ * 快照 PDF（html2canvas）：不触发 print 媒体查询，用修饰类复用与上方 @media print 一致的紧凑卷面。
+ * class 名需与 src/lib/downloadExamPdf.ts 中 EXAM_SNAPSHOT_COMPACT_CLASS 一致。
+ */
+.exam-print-root.exam-print-root--snapshot-compact {
+  color: #111 !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .katex {
+  font-size: 1.07em !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact img.exam-figure-markdown {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .paper-card {
+  box-shadow: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact > header.paper-card {
+  padding: 0.65rem 0.85rem !important;
+  margin-bottom: 0.5rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact > header.paper-card .gold-divider {
+  margin-top: 0.45rem !important;
+  margin-bottom: 0.45rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact > header.paper-card h1 {
+  font-size: 1.35rem !important;
+  line-height: 1.2 !important;
+  margin-top: 0.2rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .space-y-8 > * + * {
+  margin-top: 0.55rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact article.paper-card {
+  padding: 0.5rem 0.65rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact article .mb-4 {
+  margin-bottom: 0.35rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact article .mt-4 {
+  margin-top: 0.4rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact article .mt-6 {
+  margin-top: 0.45rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact article details .rounded-md {
+  padding: 0.45rem 0.55rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact article .space-y-3 > * + * {
+  margin-top: 0.35rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .exam-choice-options {
+  column-gap: 0.65rem !important;
+  row-gap: 0.2rem !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact details {
+  display: block !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact details summary {
+  display: none !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .katex,
+.exam-print-root.exam-print-root--snapshot-compact .katex * {
+  color: #000 !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .prose {
+  color: #111 !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .prose p {
+  margin-top: 0.3em !important;
+  margin-bottom: 0.3em !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact .katex-display {
+  margin: 0.35em 0 !important;
+}
+
+/* KaTeX small tweak so display math has comfortable spacing */
+.katex-display {
+  margin: 0.6em 0 !important;
+}
