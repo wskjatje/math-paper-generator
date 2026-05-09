@@ -1,6 +1,6 @@
 /**
  * 线下导入：AI 整理 submit_exam 时可能删掉 ![](… ) 附图行。
- * 根据合并前的正文（含 <<< 文件: >>> 分段）把 `/import-figures/` 图片重新挂回题目。
+ * 根据合并前的正文（含 <<< 文件: >>> 分段）把导入附图（本地 `/import-figures/` 或 Supabase `…/offline-import/…`）挂回题目。
  *
  * 优先按 OCR 段内题号与题干中的题号匹配（如 (10)、（10）、第10题）；失败则按文件分段回退。
  *
@@ -8,8 +8,6 @@
  */
 
 import { normalizeSubmitExamPayloadShape } from "@/lib/exam-generation.server";
-
-const IMPORT_FIGURE_URL_NEEDLE = "/import-figures/";
 
 /** 与 extractQuestionsFromSubmitExamPayload 一致：题目数组可能出现的字段名顺序 */
 const QUESTION_ARRAY_KEYS = [
@@ -20,7 +18,19 @@ const QUESTION_ARRAY_KEYS = [
   "exam_questions",
 ] as const;
 
-/** 提取正文中的 Markdown 图片语法（仅保留本站导入附图路径） */
+function urlFromMarkdownFigure(token: string): string | null {
+  const m = /\(([^)]+)\)/.exec(token);
+  const u = m?.[1]?.trim();
+  return u || null;
+}
+
+/** 与 `persistOfflineImportFigures` 一致：本地 public 或 Storage 的 `offline-import/…` 对象键 */
+function isPersistedImportFigureUrl(url: string): boolean {
+  const u = url.trim();
+  return u.includes("/import-figures/") || u.includes("/offline-import/");
+}
+
+/** 提取正文中的 Markdown 图片语法（仅保留本流程持久化过的附图 URL） */
 export function extractImportFigureMarkdownTokens(text: string): string[] {
   const normalized = text.replace(/\r\n/g, "\n");
   const re = /!\[[^\]]*\]\([^)]+\)/g;
@@ -29,18 +39,13 @@ export function extractImportFigureMarkdownTokens(text: string): string[] {
   let m: RegExpExecArray | null;
   while ((m = re.exec(normalized))) {
     const token = m[0];
-    if (!token.includes(IMPORT_FIGURE_URL_NEEDLE)) continue;
+    const u = urlFromMarkdownFigure(token);
+    if (!u || !isPersistedImportFigureUrl(u)) continue;
     if (seen.has(token)) continue;
     seen.add(token);
     out.push(token);
   }
   return out;
-}
-
-function urlFromMarkdownFigure(token: string): string | null {
-  const m = /\(([^)]+)\)/.exec(token);
-  const u = m?.[1]?.trim();
-  return u || null;
 }
 
 function combinedQuestionsContent(questions: Array<Record<string, unknown>>): string {

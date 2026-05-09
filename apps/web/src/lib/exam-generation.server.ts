@@ -1443,8 +1443,8 @@ export async function runImportDocumentAiGeneration(
 - 若局部无法辨认，在 description 中简要说明，题干中尽量依据上下文补全。
 
 【附图 / Markdown 图片】
-- 若正文中含 ![](…) 行（常见 URL 以 \`/import-figures/\` 开头），表示该页扫描图或几何原图。**必须**把每一行 **完整写入对应题目的 content**（建议放在该题文字题干之后），不得删除或仅改写为「如图所示」而无图。
-- **严禁**丢弃、改写或合并掉上述 Markdown 图片行；即便重排题号，也必须让每个 \`/import-figures/\` 地址仍出现在某一题的 content 字符串中（可与题干同一字段，多行书写）。
+- 若正文中含 ![](…) 行（常见：本站路径 \`/import-figures/\`，或云端 Storage 的完整 URL 且路径中含 \`/offline-import/\`），表示该页扫描图或几何原图。**必须**把每一行 **完整写入对应题目的 content**（建议放在该题文字题干之后），不得删除或仅改写为「如图所示」而无图。
+- **严禁**丢弃、改写或合并掉上述 Markdown 图片行；即便重排题号，也必须让每个附图 URL（上述两种之一）仍出现在某一题的 content 字符串中（可与题干同一字段，多行书写）。
 
 【图片 OCR 常见误差（请结合几何与上下文纠错）】
 - 「△」「△ABC」易被误成「A4」「A4BC」；D、E、H 易被误成「刀」「巴」「碧」「太万」等。
@@ -1908,7 +1908,7 @@ const SYSTEM_PROMPT = `你是一位资深的国际竞赛命题专家，长期参
 返回前必须自检：每道题独立解一遍，**凡有小问则逐问解完**再写 answer；**方程组题禁止**「验算只代入一条方程」或明显算术错误（如 7y=14 却写 y=1）。凡命中服务端验算的一元一次、二元一次、一元二次等，**答案与题干矛盾将无法入库**。
 7. 每道题的 content 必须为非空完整题干（选择题必须把题面写在 content，不得只填 options）；answer 必须非空；选择题 options 至少 4 条。
 8. JSON 字符串里的 LaTeX：勿在文本字段里写出会被 JSON 解析成制表符的前缀（典型地反斜杠加字母 t，会变成 Tab，卷面漏字成「imes」「ext」）；乘号可优先写 Unicode「×」，或在 JSON 内对每个反斜杠按 RFC 正确转义（例如需要 \\times 时须在 JSON 源码里写成双反斜杠加 times）。
-9. 卷面附图：content 支持 Markdown；可用 ![](URL) 嵌入插图（须为可访问 URL；线下导入常见本站路径 \`/import-figures/<批次>/<序号>.png\`）。若用户导入的正文含此类图片行，必须写入对应题目的 content 并**保留 URL**，勿改成无链接的「如图所示」。`;
+9. 卷面附图：content 支持 Markdown；可用 ![](URL) 嵌入插图（须为可访问 URL；线下导入常见本站 \`/import-figures/…\` 或云端完整 URL 中含 \`/offline-import/…\`）。若用户导入的正文含此类图片行，必须写入对应题目的 content 并**保留 URL**，勿改成无链接的「如图所示」。`;
 
 const examTool = {
   type: "function",
@@ -1954,7 +1954,7 @@ const examTool = {
                 type: "string",
                 minLength: 1,
                 description:
-                  "完整题干（Markdown + LaTeX）；可含附图 ![](URL)，导入时常为 /import-figures/… 本站路径，须保留",
+                  "完整题干（Markdown + LaTeX）；可含附图 ![](URL)，导入时常为 /import-figures/… 或 https… 中含 /offline-import/…，须保留",
               },
               options: {
                 type: "array",
