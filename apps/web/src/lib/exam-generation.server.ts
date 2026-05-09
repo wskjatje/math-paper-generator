@@ -4,6 +4,7 @@
 import { getSupabaseAdmin } from "@/lib/supabaseOptional.server";
 import {
   compositionRowDisplayLabel,
+  CUSTOM_COMPOSITION_TYPE_PREFIX,
   QUESTION_TYPE_LABELS,
   type CompositionRowPayload,
   type Difficulty,
@@ -1359,12 +1360,14 @@ async function mergeCompositionSegmented(
 async function runExamAiGenerationWithValidationRetry(
   config: GenerationConfig,
 ): Promise<Record<string, unknown>> {
+  let parsed: Record<string, unknown>;
   try {
-    return await runExamAiGenerationWithValidationRetryInner(config);
+    parsed = await runExamAiGenerationWithValidationRetryInner(config);
   } catch (e) {
     if (!isCompositionCountMismatchFailure(e)) throw e;
-    return await mergeCompositionSegmented(config);
+    parsed = await mergeCompositionSegmented(config);
   }
+  return applyCompositionQuestionTypeCoercionToParsed(parsed, config.composition);
 }
 
 /**
@@ -1838,6 +1841,66 @@ function expandCompositionDisplayLabels(composition: CompositionRowPayload[]): s
   return labels;
 }
 
+/** 与 {@link expandCompositionDisplayLabels} 同序展开，供强制对齐 AI 返回的 `type` */
+function expandCompositionCanonicalQuestionTypes(
+  composition: CompositionRowPayload[],
+): (QuestionType | undefined)[] {
+  const types: (QuestionType | undefined)[] = [];
+  for (const c of composition) {
+    const n = Math.max(0, Math.min(999, Math.floor(Number(c.count))));
+    const key = String(c.type ?? "").trim();
+    if (!key || n === 0) continue;
+    if (key.startsWith(CUSTOM_COMPOSITION_TYPE_PREFIX)) {
+      for (let i = 0; i < n; i++) types.push(undefined);
+      continue;
+    }
+    const qt: QuestionType | undefined = DB_QUESTION_TYPES.has(key)
+      ? (key as QuestionType)
+      : undefined;
+    for (let i = 0; i < n; i++) types.push(qt);
+  }
+  return types;
+}
+
+function applyCompositionQuestionTypeCoercionToParsed(
+  parsed: Record<string, unknown>,
+  composition: CompositionRowPayload[],
+): Record<string, unknown> {
+  const canonical = expandCompositionCanonicalQuestionTypes(composition);
+  if (!canonical.length) return parsed;
+
+  function patchArray(arr: unknown[]): unknown[] | null {
+    if (arr.length !== canonical.length) return null;
+    return arr.map((item, i) => {
+      const ct = canonical[i];
+      if (!ct || typeof item !== "object" || !item) return item;
+      return { ...(item as Record<string, unknown>), type: ct };
+    });
+  }
+
+  const root = normalizeSubmitExamPayloadShape(parsed);
+  const keys = ["questions", "problems", "items", "question_list", "exam_questions"] as const;
+  for (const k of keys) {
+    const raw = root[k];
+    if (Array.isArray(raw) && raw.length > 0) {
+      const patched = patchArray(raw);
+      if (patched) return { ...parsed, ...root, [k]: patched };
+    }
+  }
+  const exam = root.exam;
+  if (exam && typeof exam === "object" && !Array.isArray(exam)) {
+    const e = exam as Record<string, unknown>;
+    for (const k of keys) {
+      const raw = e[k];
+      if (Array.isArray(raw) && raw.length > 0) {
+        const patched = patchArray(raw);
+        if (patched) return { ...parsed, ...root, exam: { ...e, [k]: patched } };
+      }
+    }
+  }
+  return parsed;
+}
+
 /** 题型组成中各题型题量之和（与 expandCompositionDisplayLabels 长度一致） */
 function expectedQuestionCountFromComposition(composition: CompositionRowPayload[]): number {
   return expandCompositionDisplayLabels(composition).length;
@@ -1908,7 +1971,9 @@ const SYSTEM_PROMPT = `你是一位资深的国际竞赛命题专家，长期参
 返回前必须自检：每道题独立解一遍，**凡有小问则逐问解完**再写 answer；**方程组题禁止**「验算只代入一条方程」或明显算术错误（如 7y=14 却写 y=1）。凡命中服务端验算的一元一次、二元一次、一元二次等，**答案与题干矛盾将无法入库**。
 7. 每道题的 content 必须为非空完整题干（选择题必须把题面写在 content，不得只填 options）；answer 必须非空；选择题 options 至少 4 条。
 8. JSON 字符串里的 LaTeX：勿在文本字段里写出会被 JSON 解析成制表符的前缀（典型地反斜杠加字母 t，会变成 Tab，卷面漏字成「imes」「ext」）；乘号可优先写 Unicode「×」，或在 JSON 内对每个反斜杠按 RFC 正确转义（例如需要 \\times 时须在 JSON 源码里写成双反斜杠加 times）。
-9. 卷面附图：content 支持 Markdown；可用 ![](URL) 嵌入插图（须为可访问 URL；线下导入常见本站 \`/import-figures/…\` 或云端完整 URL 中含 \`/offline-import/…\`）。若用户导入的正文含此类图片行，必须写入对应题目的 content 并**保留 URL**，勿改成无链接的「如图所示」。`;
+9. 卷面附图：content 支持 Markdown；可用 ![](URL) 嵌入插图（须为可访问 URL；线下导入常见本站 \`/import-figures/…\` 或云端完整 URL 中含 \`/offline-import/…\`）。若用户导入的正文含此类图片行，必须写入对应题目的 content 并**保留 URL**，勿改成无链接的「如图所示」。**禁止编造**不存在的本地路径（如 \`/import-figures/3.png\` 而无对应上传）；命题页未附图的 generated 卷应以文字与 LaTeX 描述几何关系，勿杜撰插图链接。
+10. **插图与公式分界**：\`![](URL)\` **禁止**写在 \`$...$\` 或 \`$$...$$\` 数学公式内，须单独成行放在题干段落中；三角形记号须写 \`$\\\\triangle ABC$\`（JSON 字符串内双反斜杠），禁止裸写 \`\\triangle\`（易被解析成 Tab 导致卷面出现「riangle」乱码）。
+11. **题型组成一致**：用户在命题表单「题型组成」中为某行指定的内置题型，必须与返回的 \`questions[].type\` **按顺序严格对应**——该行选择「选择题（多选）」时 type **必须**为 \`multiple_choice_multi\`，「单选」则为 \`multiple_choice\`；多选题 \`answer\` 须列出全部正确项（如 \`A、C\`）。`;
 
 const examTool = {
   type: "function",

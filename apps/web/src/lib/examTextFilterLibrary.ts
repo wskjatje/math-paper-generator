@@ -29,6 +29,7 @@ export {
   repairExamMathCanonicalSync,
   repairLatexJsonTabCorruption,
   repairSolutionStepsFromJsonCorruption,
+  extractMarkdownFiguresOutOfDollarMath,
   sanitizeExamMathDisplay,
   stripExamUiNoiseForPlainExport,
 } from "@/lib/sanitizeExamMathDisplay";

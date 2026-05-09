@@ -24,10 +24,37 @@ export function normalizeExamTextUnicodeNoise(s: string): string {
   return out;
 }
 
+/**
+ * 模型常把 Markdown 附图写在 `$...$` 内，remark-math 会把整段当公式，卷面显示为乱码。
+ * 将 dollar 对内的 `![](url)` 移到公式外（保留其余公式片段）。
+ */
+export function extractMarkdownFiguresOutOfDollarMath(raw: string): string {
+  const imgRe = /!\[[^\]]*\]\([^)]+\)/g;
+  let s = raw.replace(/\r\n/g, "\n");
+  for (let iter = 0; iter < 80; iter++) {
+    const m = /\$([^$\n]+)\$/.exec(s);
+    if (!m) break;
+    const inner = m[1]!;
+    const imgs = inner.match(imgRe);
+    if (!imgs?.length) break;
+    let inner2 = inner;
+    for (const im of imgs) inner2 = inner2.replace(im, "");
+    inner2 = inner2.replace(/\s+/g, " ").trim();
+    const imgsBlock = `${imgs.join("\n\n")}\n`;
+    const mathPart = inner2.length > 0 ? `$${inner2}$` : "";
+    const replacement = mathPart ? `${mathPart}\n\n${imgsBlock}` : imgsBlock;
+    s = s.slice(0, m.index!) + replacement + s.slice(m.index! + m[0].length);
+  }
+  return s;
+}
+
 /** Tab/JSON 断裂修复（第一层） */
 export function repairLatexJsonTabCorruption(s: string): string {
   if (!s || typeof s !== "string") return s;
   let out = s;
+
+  // JSON 中单反斜杠 `\t` 变 Tab 后，`\triangle` → Tab+「riangle」，卷面成「( riangle …)」
+  out = out.replace(/\(\s+riangle\s+([A-Za-z][A-Za-z0-9']*)\)/g, "($\\triangle $1$)");
 
   // —— Tab 吞噬反斜杠的常见残余 ——
   out = out.replace(/\t+imes\b/g, "\\times");
@@ -214,7 +241,8 @@ export function prepareExamTextForMarkdownExport(fragment: string): string {
 export function sanitizeExamMathDisplay(raw: string): string {
   if (!raw || typeof raw !== "string") return raw;
 
-  let s = applyExamTextCanonicalFilters(raw);
+  let s = extractMarkdownFiguresOutOfDollarMath(raw);
+  s = applyExamTextCanonicalFilters(s);
 
   // 行尾：$\…$ 后多写一个 `}`（如 $\text{________}$}）
   s = s.replace(/(\$[^\n$]+\$)\s*\}\s*$/gm, "$1");
