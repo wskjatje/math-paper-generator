@@ -19,7 +19,10 @@ import {
   runImportDocumentAiGeneration,
   syncChatContextToModel,
 } from "@/lib/exam-generation.server";
-import { reconcileSubmitExamPayloadWithImportFigures } from "@/lib/importFigureReconcile.server";
+import {
+  extractImportFigureMarkdownTokens,
+  reconcileSubmitExamPayloadWithImportFigures,
+} from "@/lib/importFigureReconcile.server";
 import {
   appendExamplesToLocalExam,
   isLocalExamPersistenceAvailable,
@@ -261,12 +264,31 @@ const EXAM_NOT_FOUND_MSG =
 
 const ImportOfflineDocumentSchema = z.object({
   text: z.string().min(30).max(500_000),
+  /**
+   * AI 语义修复前的合并正文备份（通常仍含 `![](/import-figures/…)`）。
+   * 修复稿 `text` 常删掉 Markdown 图片行，附图 reconcile 需用备份比对 token 数量择优。
+   */
+  figure_reconcile_source: z.string().max(500_000).optional(),
   grade: z.string().max(80).optional(),
   subject: z.string().max(80).optional(),
   difficulty: z.enum(["beginner", "intermediate", "competition", "advanced"]).optional(),
   duration_min: z.number().int().min(30).max(360).optional(),
   ai: AiRuntimeSchema.optional(),
 });
+
+/** 选用含持久化附图 Markdown 较多的一份，避免 AI 修复稿删掉 `![](…)` 导致入库无图 */
+function mergedTextForImportFigureReconcile(
+  editedPipelineText: string,
+  preRepairBackup?: string,
+): string {
+  const edited = editedPipelineText.trim();
+  const backup = preRepairBackup?.trim() ?? "";
+  if (backup.length < 30) return edited;
+  const nEdited = extractImportFigureMarkdownTokens(edited).length;
+  const nBackup = extractImportFigureMarkdownTokens(backup).length;
+  if (nBackup > nEdited) return backup;
+  return edited;
+}
 
 /**
  * 在 Zod 校验前修复常见载荷问题：旧队列 / 部分字段缺失 / 竞赛侧重与学科不一致 / 自定义题型缺 type_label 等。
@@ -1040,7 +1062,10 @@ export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
       { subjectId: data.subject?.trim() || undefined },
     );
     parsed = canonicalizeImportedExamPayload(parsed);
-    parsed = reconcileSubmitExamPayloadWithImportFigures(data.text, parsed);
+    parsed = reconcileSubmitExamPayloadWithImportFigures(
+      mergedTextForImportFigureReconcile(data.text, data.figure_reconcile_source),
+      parsed,
+    );
     const bundle = buildImportedExamSnapshotFromAiParsed(parsed, {
       grade: data.grade?.trim() || undefined,
       subject: data.subject?.trim() || undefined,
