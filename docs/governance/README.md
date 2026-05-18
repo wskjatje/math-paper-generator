@@ -21,6 +21,17 @@
 
 **Constitutional principle**：`semantic ≠ authoritative`（RFC-0001 §5–§8）— 防止 artifact / semantic / runtime 三种 truth 塌缩。
 
+## 四层权威模型（ratification 后）
+
+| 层 | 角色 |
+|----|------|
+| Capability | 能产生语义；**≠** authoritative |
+| Governance | 裁决 legitimacy（RFC、ADR） |
+| Executable | 强制执行；faithful implementation |
+| Runtime | 遵守 Accepted ADR 约束 |
+
+**Ontology ratified at**：见 [RFC-0001](rfcs/RFC-0001-governance-ontology.md) 元数据（会后落态 → [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)）。
+
 ## PR 分类（长期）
 
 → [PR-CLASSIFICATION.md](PR-CLASSIFICATION.md)（Constitution / Executable / Runtime 分 PR 审）
@@ -34,6 +45,7 @@ docs/governance/
   ONTOLOGY-REVIEW-AGENDA-v1.md
   PR-CLASSIFICATION.md
   decisions/              ← ADR-O1…O15
+  RATIFICATION-CHECKLIST-v1.md
   rfcs/
     RFC-0001-governance-ontology.md
     RFC-0002-projection-stability.md

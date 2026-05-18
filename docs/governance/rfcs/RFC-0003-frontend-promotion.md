@@ -2,7 +2,8 @@
 
 | 字段 | 值 |
 |------|-----|
-| Status | **Draft** |
+| Status | **Draft**（随 RFC-0001 constitution bundle ratify） |
+| **Ontology ratified at** | *(同 [RFC-0001](RFC-0001-governance-ontology.md) — pending)* |
 | Scope | OCR engine / adapter 生命周期 |
 | 实现 | `ocrFrontendAdapter.shared.ts`、`importPipelineDualRun.*` |
 

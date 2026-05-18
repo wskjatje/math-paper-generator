@@ -8,9 +8,26 @@
 
 | 字段 | 值 |
 |------|-----|
-| Status | **Draft** — *Governance Constitution v1*（foundation 已落地；§6–§8 冻结语义边界；**protocol review phase**） |
+| Status | **Draft** — *Governance Constitution v1*（foundation 已落地；§6–§8 冻结语义边界；**formal ontology review pending**） |
+| **Ontology ratified at** | *(pending — 会后写入 ISO 日期；见 [RATIFICATION-CHECKLIST-v1.md](../RATIFICATION-CHECKLIST-v1.md))* |
+| Ratification record | [ADR-O1–O15](../decisions/)（Accept / Defer / Frozen） |
 | Scope | 导入图链 / OCR frontend 比较治理 |
 | 权威数据 | `apps/web/tests/fixtures/import-pipeline/failure-taxonomy.v1.json` |
+
+> **Semantic time boundary:** `Ontology ratified at` 是 constitution 生效的历史点。凡主张在 **ratified_at 之后** 改变 truth semantics 的变更（redraw promotion、frontend canonical candidacy、IR v2、multimodal ownership 扩张等），须 cite 对应 ADR/RFC 修订，不得援引「会前共识」或「实现已存在」。
+
+## 0. 四层权威模型（ratification 后约束关系）
+
+| 层 | 角色 | 与 truth semantics |
+|----|------|-------------------|
+| **Capability** | 能产生语义（OCR、redraw、推断） | **不得**默认等于 authoritative |
+| **Governance** | 裁决 legitimacy（RFC、ADR、taxonomy） | **唯一**有权定义 / 扩展 truth semantics |
+| **Executable** | 强制执行（corpus、bench、dual-run、CI） | faithful implementation，**不得** reinterpret semantics |
+| **Runtime** | 运行时行为 | **必须**遵守 Accepted ADR；违反 → Constitution 修订，非口头豁免 |
+
+**Ontology supremacy:** Accepted ADR = **future constraint**。违反 Accept → 须 Constitution 修订；禁止「先 merge，再补 RFC」「CI 先放行」「只是 redraw」类侵蚀。
+
+**Legitimacy 纪律：** capability exists ≠ governance legitimacy exists；reserved lexicon ≠ corpus/gate legitimacy（见 ADR-O9、O15）。
 
 ## 1. 目的
 
@@ -229,3 +246,4 @@ Phase-2 L3 须 **taxonomy identity 最纯**：单一 mixed-topology 故事（例
 |------|------|
 | 2026-05 | 初稿：foundation set + expected/detected 分离 + L3 signals |
 | 2026-05 | §6–§8：Phase-2 semantic boundary、topology/semantic-preserving、mixed-topology、redraw≠materialize |
+| *(TBD)* | Formal ontology review ratified — 填写 `Ontology ratified at` + ADR 落态（见 RATIFICATION-CHECKLIST-v1） |

@@ -86,7 +86,9 @@
 
 ## 0:38 — 会后一句（1 min）
 
-> Review 关闭后顺序：**Constitution Accepted → Executable PR（faithful companion）→ Phase-2 按 ADR-O11**。
+> Review 关闭后：**ADR 落态 + 在 RFC-0001 写入 `Ontology ratified at`（语义时间边界）** → Constitution PR → 再 Executable PR。
+>
+> 落态清单：[RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)
 >
 > 散会。细节争论去 ADR 修订 PR，不拉长本场。
 

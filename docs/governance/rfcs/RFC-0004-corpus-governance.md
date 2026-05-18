@@ -2,7 +2,8 @@
 
 | 字段 | 值 |
 |------|-----|
-| Status | **Draft** |
+| Status | **Draft**（随 RFC-0001 constitution bundle ratify） |
+| **Ontology ratified at** | *(同 [RFC-0001](RFC-0001-governance-ontology.md) — pending)* |
 | Scope | `apps/web/tests/fixtures/import-pipeline/corpus/` |
 | 工具 | `import-pipeline:bench`、`:dual-run`、`:taxonomy-coverage` |
 

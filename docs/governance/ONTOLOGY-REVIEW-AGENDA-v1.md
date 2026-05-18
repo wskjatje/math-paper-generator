@@ -92,9 +92,12 @@ Constitution
 
 ## Review 通过后（不在会上执行）
 
-1. RFC-0001–0004 标 **Accepted**（或 v1.0）
-2. 开 [EXECUTABLE-GOVERNANCE-SCOPE-v1.md](EXECUTABLE-GOVERNANCE-SCOPE-v1.md) 范围内 PR
-3. Phase-2：按 ADR-O11 顺序启动 signal 草案 → redraw L3
+→ 按 [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md) 落态（含 **`Ontology ratified at` 写入 RFC-0001 顶部**）。
+
+1. ADR 终态 + RFC-0001–0004 标 **Accepted** + 同一 `ratified_at` 日期
+2. Constitution-only PR merge
+3. 开 [EXECUTABLE-GOVERNANCE-SCOPE-v1.md](EXECUTABLE-GOVERNANCE-SCOPE-v1.md) 范围内 PR
+4. Phase-2：按 ADR-O11 顺序（O4/O10/O15 仍 Defer）
 
 ---
 
