@@ -34,7 +34,7 @@
 
 ## Constitutional stack（当前状态）
 
-对 **semantic authority** 建立可审计宪制 — 非仅 OCR pipeline 文档。
+**Semantic governance bootstrap** — 对 **semantic authority** 建立可审计宪制（substrate 之上的 enactment / lineage / epoch）；非仅 OCR pipeline 文档。
 
 | 层 | 当前状态 | Authority |
 |----|----------|-----------|
@@ -47,6 +47,29 @@
 **待办（唯一）**：[Enactment ceremony](RATIFICATION-CHECKLIST-v1.md) — ADR status flip → `ratified_at` → Constitution-only PR merge。
 
 Ratify 后：semantic time 存在；pre-constitutional 实现史失去 binding authority；ontology amendment 须正式 lineage。
+
+**Constitutional invariants**（全体系根）：`semantic ≠ authoritative` · `capability ≠ legitimacy`。
+
+### Semantic legal order（制度 ↔ 仓库）
+
+| 制度角色 | 仓库对应 | 路径 |
+|----------|----------|------|
+| **Legislature**（semantic law） | RFC-0001–0004、`ratified_at` | [rfcs/](rfcs/) |
+| **Case law / precedent** | ADR-O1–O15 | [decisions/](decisions/) |
+| **Enactment** | Ratification ceremony | [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md) |
+| **Legal vocabulary** | Taxonomy + traceability | [taxonomy/](taxonomy/) · [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md) |
+| **Temporal law** | Semantic epoch | RFC-0001 `Ontology ratified at` |
+| **Judiciary**（enforce，非立法） | Bench、dual-run、gates | `importPipeline*` · CI workflow（ratify 后 merge） |
+| **Evidence** | Foundation + L3 corpus | `tests/fixtures/import-pipeline/` |
+| **Separation of powers** | PR 分类 | [PR-CLASSIFICATION.md](PR-CLASSIFICATION.md) |
+| **Promotion law** | Frontend 晋升 | [RFC-0003](rfcs/RFC-0003-frontend-promotion.md) |
+| **Citizenship / ancestry** | Chain of custody、四问 | TRACEABILITY · [EXECUTABLE-GOVERNANCE-SCOPE-v1.md](EXECUTABLE-GOVERNANCE-SCOPE-v1.md) |
+
+**Capability producers**（OCR/GOT/Paddle）≠ **authoritative pipeline**（IR/materialize/linker）≠ **executable judiciary**（bench/dual-run）≠ **legislature**（RFC/ADR/ratified_at）。
+
+**正确顺序**：ontology → constitution → **ratification** → executable legitimacy → runtime enforcement（禁止 gate 先行反向定义 ontology）。
+
+**Pre-ratification 现状**：bench / dual-run / reserved lexicon / experimental frontend = **无 constitutional citizenship**；见 checklist 纪律。
 
 **Foundation 五条** = constitutional **calibration baselines**（非普通测试样例）：未来 capability 须相对其报告 drift，不得自定义「看起来更好」。
 
