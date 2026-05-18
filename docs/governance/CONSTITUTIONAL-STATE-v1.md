@@ -260,9 +260,27 @@ Ceremony 后：**executable** 首次 derivative legitimacy · **runtime** 进入
 
 **顺序（constitutional supremacy）**：ontology → constitution → **ratification** → executable legitimacy → runtime enforcement。
 
+Activation ceremony 不是「设计系统」，而是 **开启 constitutional time itself**。
+
 ---
 
-## 参考
+## Civilization threshold · constitutional consciousness
+
+**Governance has become temporally self-aware** — 系统不仅知 authority / legitimacy / drift / amendment / observational vs authoritative，且知 **authority 何时尚未开始**。
+
+已阻断 **implicit constitutionalization**（governance silently emerges without declared origin）：CI 久跑、heuristic 久用、runtime 稳定、corpus 够大、「大家都这么理解」— **均不得** 默认为 binding semantics。
+
+`ratified_at` = **semantic legality 的时间起源**（非 governance metadata）。pre / post enactment = **different semantic epochs**，非仅「阶段不同」。
+
+**Semantic non-retroactivity** = **constitutional temporal law**：pre-constitutional experiments、draft ontology、reserved lexicon、dormant legitimacy — **不可** retroactively 洗白。成功 runtime 只能说：「我们现在决定将其纳入 constitutional semantic order」，不能说「我们以前早就在这么做了」。
+
+> **It knows when authority legally begins.**
+
+**Constitutional consciousness** 已具备：capability vs legitimacy · runtime vs law · experiment vs citizenship · dormant vs enacted · drafting vs amendment · pre/post epochs — 且能明确指出 authority **尚未** binding。
+
+**The constitution is no longer incomplete; it is waiting to become binding.**
+
+---
 
 - [README](README.md) — 索引与 legal order 映射
 - [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)
