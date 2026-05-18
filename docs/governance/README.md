@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| **Bootstrap** | **Complete** — constitutional topology 已形成（legislature、judiciary、evidence、promotion law、temporal model） |
-| **Enactment** | **Pending** — 唯一待办：[Ratification ceremony](RATIFICATION-CHECKLIST-v1.md) |
+| **Bootstrap** | **Complete** — structurally complete；binding authority **dormant** |
+| **Enactment** | **Pending** — [Ratification ceremony](RATIFICATION-CHECKLIST-v1.md) = **turning constitutional time on** |
 
 ```
 draft constitutional order  →  [ ADR flip · ratified_at · Constitution-only merge ]  →  enacted semantic legal order
@@ -115,6 +115,7 @@ docs/governance/
   PR-CLASSIFICATION.md
   decisions/              ← ADR-O1…O15
   RATIFICATION-CHECKLIST-v1.md
+  CONSTITUTIONAL-STATE-v1.md
   CONSTITUTIONAL-TRACEABILITY-v1.md
   rfcs/
     RFC-0001-governance-ontology.md

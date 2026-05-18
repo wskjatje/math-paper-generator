@@ -44,6 +44,42 @@ Enactment pending.
 
 除 [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)（enactment ceremony）外，**无结构性缺口**。
 
+### Constitutionally dormant · structurally complete
+
+系统 **拥有** 完整宪制 substrate，但 **尚未 activate binding authority** — constitutional clock 尚未启动。
+
+| 后续工作类型 | 阶段 |
+|--------------|------|
+| Constitutional **construction** | **已结束** |
+| Constitutional **operation** | ratify **后**（amendment、promotion、citizenship） |
+
+**Activation boundary** = `ratified_at`（**turning constitutional time on** / semantic time begins here）。
+
+| 已拥有 | 尚未发生 |
+|--------|----------|
+| constitutional temporality | constitutional **activation** |
+| semantic historicity | semantic **epoch origin** |
+| admissibility law | **binding** authority |
+| governance substrate | **enacted** legitimacy |
+
+可描述 **law before enactment** 与 **law after enactment** 之差 — 成熟宪制系统才有的能力。
+
+**Semantic non-retroactivity**：`pre ≠ post enactment` — 事后合法 authority **不得** retroactively 将 pre-constitutional 实验、draft judiciary、experimental semantics 洗白为一直合法（防 retroactive semantic laundering）。
+
+| Layer | Status |
+|-------|--------|
+| Constitutional substrate | Complete |
+| Constitutional geometry | Complete |
+| Constitutional semantics | Complete |
+| Constitutional temporality | Defined |
+| Constitutional activation | **Pending** |
+| Semantic epoch | **Not yet started** |
+| Binding authority | **Dormant** |
+
+**Before activation**：executable = dormant judiciary · dual-run = pre-constitutional review · taxonomy = draft ontology · corpus = evidentiary substrate · promotion = non-binding procedure.
+
+**After activation**：authority binding · epoch exists · amendment 合法 · citizenship 可授予 · runtime → constitutional era.
+
 ---
 
 ## Constitutional mission statement
