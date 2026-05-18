@@ -32,6 +32,26 @@
 
 **Ontology ratified at**：见 [RFC-0001](rfcs/RFC-0001-governance-ontology.md) 元数据（会后落态 → [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)）。Authority 扩张四问 → [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)。
 
+## Constitutional stack（当前状态）
+
+对 **semantic authority** 建立可审计宪制 — 非仅 OCR pipeline 文档。
+
+| 层 | 当前状态 | Authority |
+|----|----------|-----------|
+| Capability | 可快速实验 | 无 semantic legitimacy |
+| Runtime | 可实现 heuristic | 必须服从 constitution |
+| Executable governance | faithful enforcement（待 ratify 后 merge PR） | 派生 authority |
+| Governance constitution | semantic judiciary（ADR/RFC 草案） | **唯一** truth semantics 来源 |
+| **Ratification ceremony** | **待执行** | **semantic epoch 起点** |
+
+**待办（唯一）**：[Enactment ceremony](RATIFICATION-CHECKLIST-v1.md) — ADR status flip → `ratified_at` → Constitution-only PR merge。
+
+Ratify 后：semantic time 存在；pre-constitutional 实现史失去 binding authority；ontology amendment 须正式 lineage。
+
+**Foundation 五条** = constitutional **calibration baselines**（非普通测试样例）：未来 capability 须相对其报告 drift，不得自定义「看起来更好」。
+
+**几年后仍须能回答**（见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)）：何时合法化？哪个 epoch？cite 哪条 ADR？capability / promotion / amendment？CI fail 是 bug 还是 constitutional violation？
+
 ## PR 分类（长期）
 
 → [PR-CLASSIFICATION.md](PR-CLASSIFICATION.md)（Constitution / Executable / Runtime 分 PR 审）
