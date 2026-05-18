@@ -19,6 +19,31 @@ Enactment pending.
 
 **topology complete ≠ constitutional time has begun** — pre-enactment 与 post-enactment 是 **different semantic epochs**，非连续默许。
 
+### 两类「未完成」（勿混淆）
+
+| 类型 | 状态 |
+|------|------|
+| **Structural incompleteness** | **已解决** — 无剩余 constitutional design gaps |
+| **Temporal incompleteness** | **尚未解决** — 缺 enactment event / `ratified_at` |
+
+**structure-complete but time-pending** — 不再缺 architecture，缺 **constitutional activation**（semantic time begins here）。
+
+### Dimension status
+
+| Dimension | Status |
+|-----------|--------|
+| Constitutional architecture | Complete |
+| Constitutional semantics | Complete |
+| Constitutional phenomenology | Complete |
+| Constitutional temporality | Defined（origin **pending**） |
+| Constitutional enactment | Pending |
+| Semantic epoch origin | Pending |
+| Binding authority | Pending |
+
+**Temporal doctrine**：`pre-enactment governance ≠ post-enactment governance` — 防 **retroactive semantic laundering**（事后 authority 不得将 pre-constitutional 实验洗白为一直合法）。**Constitutional historicity**：未来可答「何时合法化、哪条 ADR enact、哪段 runtime 仅 experiment、哪项 capability 从未 citizenship」。
+
+除 [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)（enactment ceremony）外，**无结构性缺口**。
+
 ---
 
 ## Constitutional mission statement
