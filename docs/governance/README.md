@@ -91,15 +91,22 @@ docs/governance/
 | Dual-run fixture | `expected.dual-run.v1.json` | 1 |
 | Governance gate | `evaluateDualRunGovernanceGate` / `evaluateImportPipelineGovernanceGate` | 隐式 v1 |
 
-## Foundation ontology set（当前）
+## Foundation ontology set（constitutional calibration baselines）
 
-| Archetype | Corpus | 层级 |
-|-----------|--------|------|
-| `healthy_materialized_bind` | `materialized-bind-01` | synthetic |
-| `markdown_reconcile_gap` | `placeholder-token-01` | synthetic |
-| `degraded_global_pool` | `degraded-global-01` | synthetic |
-| `ownership_scope_missing` | `q24-double-figure` | L3 |
-| `no_materialization` | `ocr-no-crop` | L3 |
+Substrate（OCR、linker、bench、dual-run、CI）之上的 **semantic collapse 校准** — 后续 redraw / GOT / multimodal 争论须回答：是否跨越下列 authority boundary？
+
+| Baseline (archetype) | Corpus | 卡住的 semantic collapse |
+|----------------------|--------|---------------------------|
+| `healthy_materialized_bind` | `materialized-bind-01` | materialization ↔ ownership |
+| `markdown_reconcile_gap` | `placeholder-token-01` | placeholder ↔ real artifact |
+| `degraded_global_pool` | `degraded-global-01` | degraded ↔ authoritative |
+| `ownership_scope_missing` | `q24-double-figure` | availability ↔ binding legitimacy |
+| `no_materialization` | `ocr-no-crop` | OCR plan ↔ persisted topology |
+
+| 层级 | synthetic / L3 |
+|------|----------------|
+| 上表前三 | synthetic |
+| 后二 | L3 |
 
 **Phase-2**（`redraw_only_fallback` 等）：语义 fallback / mixed-topology — 边界见 [RFC-0001 §6–§8](rfcs/RFC-0001-governance-ontology.md#8-phase-2-semantic-boundary冻结前不得扩-l3)。**冻结前不得扩 redraw L3。**
 

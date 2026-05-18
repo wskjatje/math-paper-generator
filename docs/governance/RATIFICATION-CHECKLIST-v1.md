@@ -6,6 +6,17 @@
 
 **目标**：Constitution **生效时间点**可审计（**semantic legality begins here**）；executable PR 获得 **constitutional authority source**。追溯纪律见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)。
 
+## Pre-ratification 纪律（ceremony 完成前 **唯一** 允许推进 governance 的工作）
+
+| 禁止 | 允许 |
+|------|------|
+| 扩 capability 求 legitimacy | ADR 落态、RFC 措辞、review 会议 |
+| 扩 ontology / 新 taxonomy class | Constitution-only 文档 PR |
+| 新增 semantic legitimacy（含 redraw L3） | 本地 pre-constitutional 实验（**不** merge 为 binding） |
+| 「模型效果不错」替代 ancestry | 完成本 checklist |
+
+**原则**：pre-ratification 一切实现与 CI 行为均属 **pre-constitutional experimentation**，不得偷渡 authority。
+
 ---
 
 ## 1. ADR 状态（同日完成）
