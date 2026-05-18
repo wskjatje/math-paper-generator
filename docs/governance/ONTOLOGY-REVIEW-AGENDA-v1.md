@@ -34,9 +34,13 @@ Constitution
 ## 纪律（会上强制执行）
 
 1. 每项议题 **仅** 投：`Accept` | `Reject` | `Defer` — 禁止「再想想」不落态。
-2. `Defer` 必须写：**阻塞条件** + **负责跟进 RFC/ADR** + **目标会议/日期**。
-3. **禁止** scope diffusion：不讨论 GOT 准确率、不讨论 linker 调参、不现场新增 taxonomy class。
-4. **Executable merge 暂停**直至本 review 关闭（见 [ADR-O13](decisions/ADR-O13-executable-merge-gate.md)）。
+2. **`Accept` = future constraint**（不是「听起来合理」）：未来 runtime / executable **必须**受该 ADR 约束；违反即 governance defect，须 Constitution 修订或 Reject 旧 ADR，不得口头豁免。
+3. **`Defer` = no legitimacy`**：未解除 Defer 前，不得将相关能力当作已获授权的 truth semantics（含 corpus、gate、promotion）。
+4. `Defer` 必须写：**阻塞条件** + **负责跟进 RFC/ADR** + **目标会议/日期**。
+5. **禁止** scope diffusion：不讨论 GOT 准确率、不讨论 linker 调参、不现场新增 taxonomy class。
+6. **Executable merge 暂停**直至本 review 关闭（见 [ADR-O13](decisions/ADR-O13-executable-merge-gate.md)）。
+
+主持人稿（宣读用）：[ONTOLOGY-REVIEW-FACILITATOR-v1.md](ONTOLOGY-REVIEW-FACILITATOR-v1.md)
 
 ---
 

@@ -31,7 +31,9 @@
 docs/governance/
   README.md                 ← 本文件
   ONTOLOGY-REVIEW-v1.md
+  ONTOLOGY-REVIEW-AGENDA-v1.md
   PR-CLASSIFICATION.md
+  decisions/              ← ADR-O1…O15
   rfcs/
     RFC-0001-governance-ontology.md
     RFC-0002-projection-stability.md
@@ -84,6 +86,7 @@ CI：`.github/workflows/import-pipeline-governance.yml`（governance-sensitive p
 
 → [ONTOLOGY-REVIEW-v1.md](ONTOLOGY-REVIEW-v1.md)  
 → [ONTOLOGY-REVIEW-AGENDA-v1.md](ONTOLOGY-REVIEW-AGENDA-v1.md)（待决清单）  
+→ [ONTOLOGY-REVIEW-FACILITATOR-v1.md](ONTOLOGY-REVIEW-FACILITATOR-v1.md)（主持人稿）  
 → [decisions/](decisions/)（ADR-O* 裁决记录）
 
 通过后：冻结 vocabulary → 再考虑 redraw signal 草案 → 最后 redraw L3。

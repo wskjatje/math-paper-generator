@@ -4,10 +4,12 @@
 
 | 状态 | 含义 |
 |------|------|
-| **Accepted** | 纳入 Constitution；RFC 可标 Accepted |
+| **Accepted** | 纳入 Constitution；**对未来构成约束**（future constraint），非「共识好听」 |
 | **Rejected** | 不得按此文实施；须 RFC 修订或另开 ADR |
-| **Deferred** | 有意暂缓；须写阻塞条件，不得 silent drift |
+| **Deferred** | **无 legitimacy**；须写阻塞条件，不得 silent drift |
 | **Frozen** | Review 期间禁止变更（直至 review 关闭） |
+
+**Accept ≠ 合理**：Accept = 未来 runtime 必须遵守，违反须走 Constitution 修订，不得口头豁免。
 
 ## 索引
 
