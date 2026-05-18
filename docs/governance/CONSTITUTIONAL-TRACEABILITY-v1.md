@@ -63,6 +63,24 @@ pre-ratification  ≠  post-ratification
 
 ---
 
+## 制度词汇（constitutional continuity）
+
+| 术语 | 含义 |
+|------|------|
+| **Constitutional continuity** | 未来 semantic authority 须可追溯到某次正式 **enactment**（ADR + `ratified_at`），非工程默契 |
+| **Semantic epoch** | 以 `ratified_at` 为界的 **semantic epoch boundary**；变更须声明属于哪一 epoch |
+| **Enacted constitutional era** | Constitution-only PR merge 之后；runtime legitimacy 仅在此 timeline 内获得 |
+| **Semantic chain of custody** | 从 capability 实验 → comparative review → promotion → ratification 的可审计谱系 |
+| **Semantic citizenship** | existence ≠ legitimacy；须完成 promotion + ratification 方获 constitutional citizenship |
+| **Semantic ancestry** | 四问齐备的 cite 链；不齐 → 实现存在但 **无合法 authority** |
+| **Semantic rule of law** | evolution 纳入法治时间线；**runtime drift 不得 retroactively redefine ontology** |
+
+**Retroactivity 纪律**：禁止「这个 signal 当年其实不是这个意思」「taxonomy 以前这样定义但 runtime 后来变了」式 **semantic retroactive reinterpretation**。历史实现、历史 CI 行为若无 ratified 谱系，不构成 grandfathering 或 tacit approval。
+
+**Tooling cannot silently legislate**：bench / corpus / projection / gate 仅 **faithful enforce**；不得反向定义或重写 ontology（与 PR 分类、executable scope、non-creativity Doctrine 同构）。
+
+---
+
 ## 参考
 
 - [RFC-0001 §0](rfcs/RFC-0001-governance-ontology.md) — 四层权威、semantic time boundary

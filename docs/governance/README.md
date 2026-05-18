@@ -1,6 +1,6 @@
 # 导入图链 Governance（宪法索引）
 
-**Governance Constitution v1 (draft)** — protocol review phase：先冻结 ontology 词汇与边界，再接纳 semantic-fallback archetype（含 `redraw_only`）。**暂缓** redraw signal 草案与 redraw L3 corpus。
+**Governance Constitution v1 (draft)** — formal ontology review / **pre-ratification** 阶段；ratify 后进入 **enacted constitutional era**（见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)）。**暂缓** redraw signal 草案与 redraw L3 corpus。
 
 > **Core methodology:** Governance semantics evolve more slowly than runtime capability.
 > The governance lifecycle has higher priority than the runtime lifecycle.
@@ -46,6 +46,7 @@ docs/governance/
   PR-CLASSIFICATION.md
   decisions/              ← ADR-O1…O15
   RATIFICATION-CHECKLIST-v1.md
+  CONSTITUTIONAL-TRACEABILITY-v1.md
   rfcs/
     RFC-0001-governance-ontology.md
     RFC-0002-projection-stability.md
