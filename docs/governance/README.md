@@ -80,9 +80,11 @@ CI：`.github/workflows/import-pipeline-governance.yml`（governance-sensitive p
 
 ## Protocol review（当前阶段）
 
-团队 **ontology semantics review**（非 OCR / renderer / heuristic 评审）：
+团队 **formal ontology review**（非 OCR / renderer / heuristic 评审）：
 
-→ [ONTOLOGY-REVIEW-v1.md](ONTOLOGY-REVIEW-v1.md)
+→ [ONTOLOGY-REVIEW-v1.md](ONTOLOGY-REVIEW-v1.md)  
+→ [ONTOLOGY-REVIEW-AGENDA-v1.md](ONTOLOGY-REVIEW-AGENDA-v1.md)（待决清单）  
+→ [decisions/](decisions/)（ADR-O* 裁决记录）
 
 通过后：冻结 vocabulary → 再考虑 redraw signal 草案 → 最后 redraw L3。
 

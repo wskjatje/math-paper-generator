@@ -1,6 +1,8 @@
 # Ontology Semantics Review（v1）
 
-**阶段**：Protocol review — 验证 governance **语言**是否稳定，而非扩展 archetype 或 redraw 能力。
+**阶段**：Formal ontology review — 验证 governance **语言**是否稳定，而非扩展 archetype 或 redraw 能力。
+
+**会议议程（待决清单 + ADR）**：[ONTOLOGY-REVIEW-AGENDA-v1.md](ONTOLOGY-REVIEW-AGENDA-v1.md) → [decisions/](decisions/)（Accept / Reject / Defer，非开放式纪要）。
 
 **范围外**：OCR 准确率、renderer 效果、具体 heuristic 调参。
 
@@ -30,18 +32,18 @@
 
 ## 评审议题
 
-| # | Topic | 问题 | 结论（团队填写） |
-|---|--------|------|------------------|
-| 1 | **topology-preserving** | 定义是否足够严格？是否覆盖全部 foundation gate？ | |
-| 2 | **semantic-preserving** | 是否允许未来 relaxation？何种条件下可讨论？ | |
-| 3 | **mixed-topology** | artifact / semantic / runtime 三平面边界是否明确？何时允许共存于同一 specimen？ | |
-| 4 | **observational-first** | semantic fallback 默认不得写 authoritative — 是否有例外清单？ | |
-| 5 | **suppression semantics** | `shouldSuppressVectorDiagramSchema…` 是否属于 governance ABI 变更？ | |
-| 6 | **redraw ≠ materialize** | 是否全员共识：schema 存在 ≠ materialized？ | |
-| 7 | **expected vs detected** | 档案身份与 classifier 分离是否可长期维护？ | |
-| 8 | **redraw promotion** | 是否需要单独 RFC（强于 RFC-0003 frontend promotion）？ | |
-| 9 | **Phase-2 gate** | §8.6 顺序是否同意：先 vocabulary 冻结，再 signal，再 L3？ | |
-| 10 | **Reserved lexicon** | `redraw_only_fallback` 仅词汇预留、尚无 governance legitimacy — 是否接受？ | |
+| # | Topic | ADR | 建议票 | 结论（会上填） |
+|---|--------|-----|--------|----------------|
+| 1 | **topology-preserving** | [ADR-O3](decisions/ADR-O3-topology-preserving.md) | Accept | |
+| 2 | **semantic-preserving** | [ADR-O4](decisions/ADR-O4-semantic-preserving.md) | Defer | |
+| 3 | **mixed-topology** | [ADR-O5](decisions/ADR-O5-mixed-topology-phase-boundary.md) | Accept | |
+| 4 | **observational-first** | [ADR-O6](decisions/ADR-O6-observational-first.md) | Accept | |
+| 5 | **suppression semantics** | [ADR-O7](decisions/ADR-O7-suppression-governance.md) | Accept | |
+| 6 | **redraw ≠ materialize** | [ADR-O8](decisions/ADR-O8-redraw-not-materialize.md) | Accept | |
+| 7 | **expected vs detected** | [ADR-O1](decisions/ADR-O1-expected-vs-detected.md) | Accept | |
+| 8 | **redraw promotion** | [ADR-O10](decisions/ADR-O10-redraw-promotion.md) | Defer | |
+| 9 | **Phase-2 gate** | [ADR-O11](decisions/ADR-O11-phase2-sequence.md) | Accept | |
+| 10 | **Reserved lexicon** | [ADR-O9](decisions/ADR-O9-reserved-lexicon.md) / [O15](decisions/ADR-O15-redraw-legitimacy.md) | Accept / Defer legitimacy | |
 
 ### 议题 #10 说明：`redraw_only_fallback`
 
