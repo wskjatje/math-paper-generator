@@ -1,6 +1,8 @@
-# Ontology Ratification — 会后落态清单 v1
+# Semantic Activation Protocol（Ontology Ratification）v1
 
- aka **Enactment ceremony** — 使 **semantic authority timeline** 首次存在（[CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)）。
+ aka **Enactment ceremony** — 执行 **authority instantiation**（非 review 讨论、非一般 merge 流程）：**semantic time begins here**。
+
+状态背景：[CONSTITUTIONAL-STATE-v1.md](CONSTITUTIONAL-STATE-v1.md)（constitutionally dormant · structurally complete · binding authority dormant）。
 
 **触发**：Formal ontology review 关闭（[ONTOLOGY-REVIEW-AGENDA-v1.md](ONTOLOGY-REVIEW-AGENDA-v1.md) 关闭标准全部勾选）。
 

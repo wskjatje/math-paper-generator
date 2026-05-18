@@ -78,7 +78,31 @@ Enactment pending.
 
 **Before activation**：executable = dormant judiciary · dual-run = pre-constitutional review · taxonomy = draft ontology · corpus = evidentiary substrate · promotion = non-binding procedure.
 
-**After activation**：authority binding · epoch exists · amendment 合法 · citizenship 可授予 · runtime → constitutional era.
+**After activation**：authority binding · epoch exists · amendment 合法 · citizenship 可授予 · runtime → constitutional era → **constitutional semantic civilization**（自 dormant constitutional order 转入）。
+
+### Dormant legitimacy · pre-operational constitutional state
+
+**Legally dormant semantic order** — 非 draft architecture、非 evolving ontology、非 unstable governance。
+
+**Dormant legitimacy**：合法性**结构**已存在（能定义 / 限制 / 追溯 / 冻结 / 延迟 / 拒绝 authority；能区分 capability、epoch；能防 retroactive reinterpretation；能定义 admissibility、citizenship、promotion lineage），但 **authority 尚未激活**。
+
+**Legitimacy 不再依赖** 更多 RFC、taxonomy、corpus、gates、CI、ontology prose — **只依赖 enactment**（constitution 无需再扩张即可成为 legitimate，仅需 **authority instantiation**）。
+
+| Question | Answer |
+|----------|--------|
+| Can the system govern semantics? | **Yes** |
+| Distinguish legal vs experimental authority? | **Yes** |
+| Define epochs? | **Yes** |
+| Reject retroactive legitimacy? | **Yes** |
+| Enforce promotion lineage? | **Yes** |
+| Is authority binding yet? | **No** |
+| Why not? | **Enactment pending** |
+
+**Constitutional capacity formation** ✓ · **Constitutional activation** ✗ — 见 [RATIFICATION-CHECKLIST](RATIFICATION-CHECKLIST-v1.md)（**semantic activation protocol**，非 mere 流程文件）。
+
+### Pre-enactment：勿 mutate structurally complete constitution
+
+ratify 前继续「补治理设计」= **mutating a structurally complete constitution before enactment**（不同于 completing the constitution）。**Constitutional activation must occur on a stable semantic substrate** — 故 redraw、新 taxonomy、ontology 扩张、semantic legitimacy 扩展在 enactment 前 **freeze** 正确。
 
 ---
 
