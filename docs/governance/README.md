@@ -2,6 +2,8 @@
 
 ## 系统状态
 
+→ 完整声明：[CONSTITUTIONAL-STATE-v1.md](CONSTITUTIONAL-STATE-v1.md)（**constitutional state declaration**）
+
 | | |
 |---|---|
 | **Bootstrap** | **Complete** — constitutional topology 已形成（legislature、judiciary、evidence、promotion law、temporal model） |
