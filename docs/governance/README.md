@@ -1,6 +1,23 @@
 # 导入图链 Governance（宪法索引）
 
-**Governance Constitution v1 (draft)** — formal ontology review / **pre-ratification** 阶段；ratify 后进入 **enacted constitutional era**（见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)）。**暂缓** redraw signal 草案与 redraw L3 corpus。
+## 系统状态
+
+| | |
+|---|---|
+| **Bootstrap** | **Complete** — constitutional topology 已形成（legislature、judiciary、evidence、promotion law、temporal model） |
+| **Enactment** | **Pending** — 唯一待办：[Ratification ceremony](RATIFICATION-CHECKLIST-v1.md) |
+
+```
+draft constitutional order  →  [ ADR flip · ratified_at · Constitution-only merge ]  →  enacted semantic legal order
+```
+
+**Pre-enactment**：dual-run = pre-constitutional judiciary · redraw = reserved lexicon · GOT = experimental citizen · bench = draft enforcement · runtime = capability substrate only。
+
+**Post-enactment**：executable 首次获得 derivative legitimacy · runtime 进入 constitutional era · semantic citizenship 可授予 · ontology amendment 须合法 lineage。
+
+---
+
+**Governance Constitution v1 (draft)** — **pre-ratification**；ratify 后进入 **enacted constitutional era**（见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)）。**暂缓** redraw signal 草案与 redraw L3 corpus。
 
 > **Core methodology:** Governance semantics evolve more slowly than runtime capability.
 > The governance lifecycle has higher priority than the runtime lifecycle.
@@ -48,7 +65,14 @@
 
 Ratify 后：semantic time 存在；pre-constitutional 实现史失去 binding authority；ontology amendment 须正式 lineage。
 
-**Constitutional invariants**（全体系根）：`semantic ≠ authoritative` · `capability ≠ legitimacy`。
+**Anti-semantic-collapse axioms**（全体系根）：
+
+| Invariant | 防止 |
+|-----------|------|
+| `semantic ≠ authoritative` | redraw / heuristic 冒充 authority |
+| `capability ≠ legitimacy` | 「效果更好」自动升格 truth |
+
+Foundation 五条 = 上述公理在 OCR/materialization/linker 上的首批司法化体现。
 
 ### Semantic legal order（制度 ↔ 仓库）
 
