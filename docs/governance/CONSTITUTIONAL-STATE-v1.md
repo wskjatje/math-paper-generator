@@ -102,7 +102,34 @@ Enactment pending.
 
 ### Pre-enactment：勿 mutate structurally complete constitution
 
-ratify 前继续「补治理设计」= **mutating a structurally complete constitution before enactment**（不同于 completing the constitution）。**Constitutional activation must occur on a stable semantic substrate** — 故 redraw、新 taxonomy、ontology 扩张、semantic legitimacy 扩展在 enactment 前 **freeze** 正确。
+ratify 前继续「补治理设计」= **mutating a structurally complete constitution before enactment**（不同于 completing the constitution）。**Constitutional activation must occur on a stable semantic substrate** — 故 redraw、新 taxonomy、ontology 扩张、semantic legitimacy 扩展在 enactment 前 **freeze** 正确（保护 **epoch boundary integrity**；否则 `ratified_at` 退化为 mere merge 时间戳，而非 **constitutional activation event**）。
+
+| Action | Constitutional meaning |
+|--------|-------------------------|
+| Completing constitution | 合法结构尚未完备 |
+| Mutating complete constitution | 结构已完备，仍修改 semantic law（**amendment territory**，非 foundational drafting） |
+| Activating constitution | 开始 **binding authority** |
+
+**The constitution is already sufficient to govern future semantics** — 不应再「补治理层」。
+
+### Legitimacy detached from implementation momentum
+
+**Constitutionalization 已成功** 的标志：capability growth、runtime success、heuristic  sophistication、corpus 扩张、CI 成熟、observational richness — **均不再自动生成 authority**。
+
+| Layer | Exists? |
+|-------|---------|
+| Semantic capability | Yes |
+| Semantic governance | Yes |
+| Semantic legality model | Yes |
+| Semantic judiciary | Yes (pre-enactment) |
+| Semantic admissibility | Yes |
+| Semantic temporality | Yes |
+| Semantic legitimacy | **Dormant** |
+| Binding semantic authority | **Not yet** |
+
+**Not yet** = **deliberate constitutional suspension** — 系统已知如何赋予 authority，但 **consciously 尚未正式开始**（成熟宪制的 self-restraint）。
+
+系统最重要的性质不是「治理得多聪明」，而是：**it knows when authority legally begins** — activation ceremony：`dormant constitutional order` → `constitutional semantic civilization`。
 
 ---
 
