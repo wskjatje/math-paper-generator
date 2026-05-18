@@ -86,6 +86,8 @@ CI：`.github/workflows/import-pipeline-governance.yml`（governance-sensitive p
 
 通过后：冻结 vocabulary → 再考虑 redraw signal 草案 → 最后 redraw L3。
 
+Executable PR 范围（review 通过后）：[EXECUTABLE-GOVERNANCE-SCOPE-v1.md](EXECUTABLE-GOVERNANCE-SCOPE-v1.md)。
+
 ## RFC 阅读顺序
 
 1. [RFC-0001 治理 Ontology](rfcs/RFC-0001-governance-ontology.md)（含 §6–§8 semantic boundary 冻结）
