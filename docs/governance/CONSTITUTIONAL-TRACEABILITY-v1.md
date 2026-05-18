@@ -63,7 +63,9 @@ pre-ratification  ≠  post-ratification
 
 ---
 
-## 制度词汇（constitutional continuity）
+## 制度词汇（jurisprudential / citable）
+
+本页术语为 **citable constitutional terminology** — 讨论时直接引用 `RFC-0001 §0`、`CONSTITUTIONAL-TRACEABILITY-v1`、`ADR-O*`，无需每次重述哲学（**institutional semantics**，非个人记忆）。
 
 | 术语 | 含义 |
 |------|------|
@@ -73,11 +75,37 @@ pre-ratification  ≠  post-ratification
 | **Semantic chain of custody** | 从 capability 实验 → comparative review → promotion → ratification 的可审计谱系 |
 | **Semantic citizenship** | existence ≠ legitimacy；须完成 promotion + ratification 方获 constitutional citizenship |
 | **Semantic ancestry** | 四问齐备的 cite 链；不齐 → 实现存在但 **无合法 authority** |
-| **Semantic rule of law** | evolution 纳入法治时间线；**runtime drift 不得 retroactively redefine ontology** |
+| **Semantic rule of law** | evolution 纳入法治时间线；**governance by ratified semantic law**（非 governance by consensus） |
+| **Semantic separation of powers** | 见下表；**tooling cannot silently legislate** = 权力分立的可执行表述 |
+| **Enactment ceremony** | ADR status flip → `ratified_at` → Constitution-only PR merge；见 [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md) |
+
+### Semantic separation of powers
+
+| Layer | 权限 | 禁止 |
+|-------|------|------|
+| **Governance** | 定义 truth semantics | — |
+| **Executable** | enforce、observe、project、benchmark | 立法 / reinterpret ontology |
+| **Runtime** | produce observations；遵守 Accepted ADR | 偷扩 authority |
+| **Capability** | propose new semantics（实验） | 自动获得 legitimacy |
+
+最高 authority：**ratified ontology**，非「实现已经存在」。
 
 **Retroactivity 纪律**：禁止「这个 signal 当年其实不是这个意思」「taxonomy 以前这样定义但 runtime 后来变了」式 **semantic retroactive reinterpretation**。历史实现、历史 CI 行为若无 ratified 谱系，不构成 grandfathering 或 tacit approval。
 
 **Tooling cannot silently legislate**：bench / corpus / projection / gate 仅 **faithful enforce**；不得反向定义或重写 ontology（与 PR 分类、executable scope、non-creativity Doctrine 同构）。
+
+**Meaning stability > implementation convenience** — 禁止 retrospectively reinterpret ontology（「当时 signal 是 A，现在决定它代表 B」）。
+
+### Post-ratification 扩张（须齐备，否则无 legitimacy）
+
+| # | 须定位 |
+|---|--------|
+| 1 | **Semantic epoch**（相对 `ratified_at`） |
+| 2 | **Ancestry**（authority 扩张四问） |
+| 3 | **Promotion lineage**（如 RFC-0003；ADR-O10 未 Defer 解除则无效） |
+| 4 | **Ratified authority source**（Accepted ADR/RFC cite） |
+
+齐备 → constitutional legitimacy；不齐 → capability 可存在，**无** semantic authority。
 
 ---
 
