@@ -4,6 +4,23 @@
 
 后来者须知：本仓库 **存在** 完整 constitutional framework，但 **authority 尚未 enact**。Pre-enactment 的 bench / dual-run / CI / corpus **≠** binding semantic law。
 
+本文档 = **constitutional self-awareness**：系统能声明当前 phase、哪些 authority 已生效、semantic epoch 是否已开始 — 防止 **implicit enactment**（工具/CI 被默认真立法）。
+
+---
+
+## Constitutional mission statement
+
+> **Bootstrap 目标不是 smarter OCR，而是 legitimate semantic authority.**
+
+| Domain | Objective |
+|--------|-----------|
+| Runtime | capability |
+| Governance | legitimacy |
+| Constitution | authority |
+| Promotion | lawful transition |
+
+团队争论须先分清：**我们在讨论 capability，还是在讨论 legitimacy？**
+
 ---
 
 ## Semantic constitutional geometry
@@ -12,7 +29,8 @@
 |----------------------|----------|
 | Ontology | Drafted（RFC-0001、taxonomy JSON） |
 | Constitution | Written（RFC-0001–0004、ADR-O1–O15 草案） |
-| Judiciary | Implemented（gates、dual-run — **pre-constitutional**） |
+| **State declaration** | **Written**（本文档 — phase / binding 边界） |
+| Judiciary | Operational（gates、dual-run — **pre-enactment**） |
 | Evidence system | Operational（foundation + L3 corpus） |
 | Promotion law | Defined（RFC-0003） |
 | Temporal model | Defined（`ratified_at` 字段 **待填**） |
@@ -21,6 +39,26 @@
 | Enactment | **Pending** |
 
 **缺的不是结构，而是 enactment event** — [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)。
+
+拥有 **constitutional topology** 且拥有 **constitutional phase model**（见上表 Ratification / Enactment = Pending）。
+
+---
+
+## 防 semantic collapse（已制度化边界）
+
+| Dangerous collapse | 边界 |
+|--------------------|------|
+| semantic ↔ authoritative | constitutional axiom |
+| capability ↔ legitimacy | constitutional axiom |
+| executable ↔ legislature | supremacy order |
+| runtime ↔ ontology | ratification / `ratified_at` |
+| implementation ↔ law | state declaration（本文档） |
+| experimental ↔ canonical | promotion lineage（RFC-0003） |
+| existence ↔ citizenship | legitimacy doctrine |
+
+**Accidental constitutionalization**：长期使用 CI / benchmark / taxonomy / heuristic 后「默认已是 law」— **禁止**；须 ceremony 后 derivative legitimacy。
+
+争议先答五问：capability 还是 authority？observational 还是 authoritative？promotion lineage？哪个 semantic epoch？constitutional citizenship？
 
 ---
 
