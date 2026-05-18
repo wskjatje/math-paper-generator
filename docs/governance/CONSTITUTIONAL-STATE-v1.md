@@ -4,7 +4,20 @@
 
 后来者须知：本仓库 **存在** 完整 constitutional framework，但 **authority 尚未 enact**。Pre-enactment 的 bench / dual-run / CI / corpus **≠** binding semantic law。
 
-本文档 = **constitutional self-awareness**：系统能声明当前 phase、哪些 authority 已生效、semantic epoch 是否已开始 — 防止 **implicit enactment**（工具/CI 被默认真立法）。
+本文档 = **constitutional self-awareness**（constitutional phenomenology）：系统不仅定义规则，还定义自身 **constitutional state** — 哪些 authority 已存在、哪些尚未 enact、哪些 enforcement 仍 **provisional**、哪些 capability 尚无 **citizenship**。防止 **implicit enactment** / **de facto constitutional authority**（长期 CI/benchmark 引用后无人知 enact 时刻与 epoch）。
+
+### 精确状态（当前）
+
+```
+Bootstrap complete.
+Topology complete.
+Phase model complete.
+Self-awareness complete.
+Constitutional time pending.
+Enactment pending.
+```
+
+**topology complete ≠ constitutional time has begun** — pre-enactment 与 post-enactment 是 **different semantic epochs**，非连续默许。
 
 ---
 
@@ -58,7 +71,19 @@
 
 **Accidental constitutionalization**：长期使用 CI / benchmark / taxonomy / heuristic 后「默认已是 law」— **禁止**；须 ceremony 后 derivative legitimacy。
 
-争议先答五问：capability 还是 authority？observational 还是 authoritative？promotion lineage？哪个 semantic epoch？constitutional citizenship？
+### Constitutional admissibility test（五问）
+
+任何 **semantic authority claim**（redraw、semantic fallback、multimodal ownership、GOT canonical、topology-preserving equivalence、IR v2）须先进入 **constitutional process space**，并回答：
+
+| # | 问题 |
+|---|------|
+| 1 | **Capability** 还是 **authority**？ |
+| 2 | **Observational** 还是 **authoritative**？ |
+| 3 | 属于哪个 **semantic epoch**（相对 `ratified_at`）？ |
+| 4 | 是否拥有 **constitutional citizenship**？ |
+| 5 | 是否具有合法 **ancestry**（promotion lineage + Accepted ADR/RFC）？ |
+
+不得以「效果已经很好」绕过。详见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md) 四问/四定位器（与上表互补）。
 
 ---
 
@@ -79,7 +104,19 @@
 
 ## `ratified_at` = semantic epoch origin
 
-**Constitutional time begins here.** 之后争议须用 epoch / ADR / promotion lineage 回答，不得用「当时实现如此」「经验上合理」「CI 已 enforce」「模型已经能做」。
+**不是 metadata 装饰，而是制度事件：constitutional time begins here**（semantic time origin creation）。
+
+| Layer | 状态 |
+|-------|------|
+| Constitutional geometry | Complete |
+| Constitutional phase model | Complete |
+| Constitutional self-awareness | Complete |
+| **Constitutional time origin** | **Pending** |
+| **Constitutional enactment** | **Pending** |
+
+Ceremony 后：**executable** 首次 derivative legitimacy · **runtime** 进入 constitutional era · **promotion** 拥有 continuity · **amendments** 拥有合法 ancestry · **citizenship** 可授予。
+
+之后争议须用 epoch / ADR / promotion lineage 回答，不得用「当时实现如此」「经验上合理」「CI 已 enforce」「模型已经能做」。
 
 | Before enactment | After enactment |
 |------------------|-----------------|
