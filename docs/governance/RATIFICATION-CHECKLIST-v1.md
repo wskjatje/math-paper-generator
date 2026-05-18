@@ -2,7 +2,7 @@
 
 **触发**：Formal ontology review 关闭（[ONTOLOGY-REVIEW-AGENDA-v1.md](ONTOLOGY-REVIEW-AGENDA-v1.md) 关闭标准全部勾选）。
 
-**目标**：Constitution **生效时间点**可审计；executable PR 获得 **constitutional authority source**。
+**目标**：Constitution **生效时间点**可审计（**semantic legality begins here**）；executable PR 获得 **constitutional authority source**。追溯纪律见 [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)。
 
 ---
 

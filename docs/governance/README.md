@@ -30,7 +30,7 @@
 | Executable | 强制执行；faithful implementation |
 | Runtime | 遵守 Accepted ADR 约束 |
 
-**Ontology ratified at**：见 [RFC-0001](rfcs/RFC-0001-governance-ontology.md) 元数据（会后落态 → [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)）。
+**Ontology ratified at**：见 [RFC-0001](rfcs/RFC-0001-governance-ontology.md) 元数据（会后落态 → [RATIFICATION-CHECKLIST-v1.md](RATIFICATION-CHECKLIST-v1.md)）。Authority 扩张四问 → [CONSTITUTIONAL-TRACEABILITY-v1.md](CONSTITUTIONAL-TRACEABILITY-v1.md)。
 
 ## PR 分类（长期）
 
