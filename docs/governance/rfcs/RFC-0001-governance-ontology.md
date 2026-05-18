@@ -3,6 +3,8 @@
 > **Constitutional freeze (v1 draft):** This RFC freezes governance ontology **before**
 > semantic-fallback archetypes are admitted into canonical corpus governance.
 > Ontology stability takes precedence over semantic capability expansion.
+>
+> **Core methodology:** Governance semantics evolve more slowly than runtime capability.
 
 | 字段 | 值 |
 |------|-----|

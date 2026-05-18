@@ -6,6 +6,18 @@
 
 **范围外（暂缓）**：`redraw_only` signal 草案、`redraw_only` L3 corpus、semantic fallback 实现变更。
 
+## Review 期间冻结（允许 vs 禁止）
+
+| 允许 | 禁止 |
+|------|------|
+| RFC / README / review 文档措辞澄清 | 新增 foundation archetype 或 corpus case |
+| `case.meta` / `notes.md` 说明性编辑 | 修改 `severity` 语义或扩展 `canonical_signal` 词汇表 |
+| 记录团队结论于本文件 | 向 `failure-taxonomy.v1.json` **新增** class（含扩展现有 redraw 类信号） |
+| | redraw L3、semantic confidence、topology score 等新名词 |
+| | 在同一 PR 混合 Constitution + Executable + Runtime |
+
+**Foundation set 冻结**（5 条，见 README）：`materialized-bind-01`、`placeholder-token-01`、`degraded-global-01`、`q24-double-figure`、`ocr-no-crop`。
+
 ---
 
 ## 背景
@@ -29,6 +41,20 @@
 | 7 | **expected vs detected** | 档案身份与 classifier 分离是否可长期维护？ | |
 | 8 | **redraw promotion** | 是否需要单独 RFC（强于 RFC-0003 frontend promotion）？ | |
 | 9 | **Phase-2 gate** | §8.6 顺序是否同意：先 vocabulary 冻结，再 signal，再 L3？ | |
+| 10 | **Reserved lexicon** | `redraw_only_fallback` 仅词汇预留、尚无 governance legitimacy — 是否接受？ | |
+
+### 议题 #10 说明：`redraw_only_fallback`
+
+`failure-taxonomy.v1.json` 中 **已存在** 类定义，但 **尚无**：
+
+- corpus specimen
+- L3 / foundation gate 叙事
+- Phase-2 canonical_signal 扩展
+- promotion path
+
+即：**vocabulary exists, governance legitimacy does not yet exist**（见 [taxonomy-semantics.md](taxonomy/taxonomy-semantics.md)）。
+
+Review 目标：mixed-topology **可组合、可审阅、长期不塌缩** — 非「redraw 启发式是否聪明」。
 
 ---
 
