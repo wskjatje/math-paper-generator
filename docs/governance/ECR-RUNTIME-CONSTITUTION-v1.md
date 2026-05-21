@@ -98,6 +98,17 @@ Primitives = **realization substrate**，无 authority。
 
 `UNOBSERVABLE` 是合法状态 — 禁止 fake fidelity score。见 `unobservable_reason` on fidelity metrics。
 
+## Constitutional lifecycle（正式阶段 · 当前在 Stabilization）
+
+| 阶段 | 目标 | 输出（工件） |
+|------|------|----------------|
+| **Authority confinement** | 防 interpretation creep | ADR · purity · transform legality |
+| **Runtime realization** | constrained projection | packing runtime 等 |
+| **Stabilization**（**当前**） | interaction observation；**deliberately non-authoritative** | logs · `?packing_debug=1` · walkthrough · [checklist](./PACKING-STABILIZATION-CHECKLIST.md) |
+| **Governance freeze**（Train 4+） | frozen observational truth | telemetry · snapshot |
+
+**纪律**：observational substrate ≠ governance substrate（见 [stabilization-logs/README.md](../stabilization-logs/README.md)）。Runtime evolution is **governance-constrained by design**, not reviewer taste。
+
 ## Runtime maturation（正交 plane · 顺序）
 
 | Phase | 核心 |
