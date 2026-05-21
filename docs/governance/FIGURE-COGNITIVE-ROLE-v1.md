@@ -4,6 +4,8 @@
 
 **性质**：derived visual semantics；**非** canonical truth。
 
+**观测层**：`observational ≠ canonical` · `observational ≠ authority`。完整边界见 [ECR-RUNTIME-CONSTITUTION-v1.md](./ECR-RUNTIME-CONSTITUTION-v1.md#observational-semantics-non-authoritative)（Train 3 packing 前冻结，防 semantic backflow）。
+
 ## Role 最小集
 
 | Role | 含义 |
@@ -21,6 +23,9 @@
 | salience weight（observational） | reinterpret linkage |
 | main-flow vs appendix channel | hidden defer |
 | caption emphasis | 修改 `adaptivePresentation` |
+| | grouping · pagination order · negotiation sequencing · continuity authority |
+
+Train 2 仅 **visual authority modulation**；不得借 role 获得 topology authority（见 ECR 宪法 Observational confinement）。
 
 ## Lineage
 
