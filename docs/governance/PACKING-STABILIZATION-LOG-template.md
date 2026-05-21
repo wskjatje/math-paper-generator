@@ -14,7 +14,7 @@
 
 **性质**：Train 3 **heterogeneous stabilization** 的可审计观察记录；**不**进入 telemetry snapshot、parity compare、runtime 分支或 constitutional truth。允许 reviewer disagreement 与「奇怪但未定性」笔记（无 Goodhart 式 metric 绑架）。
 
-**用法**：复制本模板到 Issue、PR 评论、`docs/stabilization-logs/YYYY-MM/`（若团队维护），或本地笔记。每条记录对应一次目视会话（可含多题/多卷）。
+**用法**：复制本模板到 Issue、PR 评论，或按 [docs/stabilization-logs/README.md](../stabilization-logs/README.md) 存放。每条记录对应一次目视会话（可含多题/多卷）。
 
 **评审锚点**：[PACKING-STABILIZATION-CHECKLIST.md](./PACKING-STABILIZATION-CHECKLIST.md) · [ECR-RUNTIME-CONSTITUTION-v1.md](./ECR-RUNTIME-CONSTITUTION-v1.md)（四句 invariant）
 
