@@ -59,6 +59,14 @@ Train 3 **does NOT**:
 
 **顺序（须守）**：runtime stabilization → telemetry freeze（Train 4）→ ontology / benchmark formalization — 不反向。
 
+### Stabilization observability（debug-only · 非 Train 4）
+
+在 telemetry freeze 前，用 **transform footprint** 做人工验证（不进 snapshot / parity）：
+
+- URL：`?packing_debug=1`（或 DEV）→ `data-packing-debug="1"` + 图例 overlay
+- DOM：`data-packing-transforms` · `data-packing-role` · `data-packing-density`
+- 人工清单：[Q24-PACKING-STABILIZATION-CHECKLIST.md](./Q24-PACKING-STABILIZATION-CHECKLIST.md)
+
 ## 问题定性
 
 | 已解决（结构性） | 尚未解决（P3.4） |

@@ -291,6 +291,22 @@
     break-inside: avoid;
   }
 
+  /*
+   * 学科矢量示意图（diagram_schema）：默认缩小占比，接近教辅卷面插图而非整栏大图。
+   * 完全对齐「用户自备样卷 PDF」的坐标需另行做模板引擎；此处仅统一视觉尺度。
+   */
+  .exam-print-root .exam-geometry-diagram {
+    max-width: fit-content;
+  }
+
+  .exam-print-root .exam-geometry-diagram svg {
+    max-width: min(9.75rem, 36vw) !important;
+  }
+
+  .exam-print-root.exam-print-root--paper-cn .exam-geometry-diagram svg {
+    max-width: min(8.75rem, 32vw) !important;
+  }
+
   /* 打印 / 另存 PDF：去掉题卡灰框，接近纸质试卷 */
   .exam-print-root .paper-card {
     box-shadow: none !important;
@@ -452,6 +468,14 @@
   row-gap: 0.2rem !important;
 }
 
+.exam-print-root.exam-print-root--snapshot-compact .exam-geometry-diagram svg {
+  max-width: min(9.75rem, 36vw) !important;
+}
+
+.exam-print-root.exam-print-root--snapshot-compact.exam-print-root--paper-cn .exam-geometry-diagram svg {
+  max-width: min(8.75rem, 32vw) !important;
+}
+
 .exam-print-root.exam-print-root--snapshot-compact details {
   display: block !important;
 }
@@ -481,4 +505,138 @@
 /* KaTeX small tweak so display math has comfortable spacing */
 .katex-display {
   margin: 0.6em 0 !important;
+}
+
+/* EPL — Educational Typography Runtime (P2.3.1) */
+.math-paper-segment-flow {
+  word-spacing: 0.02em;
+}
+
+.math-paper-unit {
+  display: inline-block;
+  vertical-align: baseline;
+  white-space: nowrap;
+}
+
+.math-paper-keep-together {
+  white-space: nowrap;
+}
+
+.math-paper-tight-tracking .math-paper-token-ident {
+  letter-spacing: -0.04em;
+}
+
+.math-paper-elevate-symbol .math-paper-token-symbol {
+  position: relative;
+  top: -0.06em;
+  font-weight: 600;
+}
+
+.math-paper-token-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.02em;
+}
+
+.math-paper-token-symbol {
+  font-family: var(--font-serif, ui-serif, Georgia, serif);
+  line-height: 1;
+}
+
+.math-paper-token-ident {
+  font-family: var(--font-serif, ui-serif, Georgia, serif);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.math-paper-coordinate-expr.math-paper-coordinate-tight .math-paper-token-row {
+  gap: 0;
+  letter-spacing: -0.02em;
+}
+
+.math-paper-coordinate-expr .math-paper-token-row {
+  font-variant-numeric: tabular-nums;
+}
+
+.math-paper-radical-expr.math-paper-compact-radical {
+  line-height: 1.2;
+}
+
+.math-paper-algebra-inline .katex {
+  font-size: 1.02em;
+}
+
+.math-paper-avoid-math-break {
+  break-inside: avoid;
+}
+
+.math-paper-cognitive-group {
+  break-inside: avoid-page;
+}
+
+.math-paper-prose {
+  font-family: var(--font-serif, ui-serif, Georgia, serif);
+}
+
+/* P2.4 ECGR — Question cognitive unit */
+.math-paper-question-cluster {
+  break-inside: avoid;
+}
+
+.math-paper-section-composite .math-paper-section-body {
+  padding-top: 0.25rem;
+}
+
+.math-paper-subquestion-cluster {
+  break-inside: avoid;
+}
+
+/* Train 3 — packing debug overlays（仅 data-packing-debug=1；非 telemetry） */
+.packing-debug-swatch {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.25rem;
+  vertical-align: -0.1em;
+  border-radius: 2px;
+}
+.packing-debug-swatch--adjacency {
+  border: 2px solid rgb(245 158 11 / 0.85);
+  background: rgb(245 158 11 / 0.12);
+}
+.packing-debug-swatch--supportive {
+  border: 2px solid rgb(59 130 246 / 0.85);
+  background: rgb(59 130 246 / 0.1);
+}
+.packing-debug-swatch--inline {
+  border: 2px solid rgb(139 92 246 / 0.85);
+  background: rgb(139 92 246 / 0.1);
+}
+.packing-debug-swatch--collapse {
+  border: 2px dashed rgb(100 116 139 / 0.9);
+  background: rgb(148 163 184 / 0.15);
+}
+
+[data-packing-debug="1"] .packing-debug--adjacency-tightening {
+  box-shadow: inset 3px 0 0 rgb(245 158 11 / 0.55);
+}
+[data-packing-debug="1"] .packing-debug--inline-persistence-tuning {
+  outline: 1px dashed rgb(139 92 246 / 0.55);
+  outline-offset: 2px;
+}
+[data-packing-debug="1"] .packing-debug--supportive-compaction {
+  outline: 2px solid rgb(59 130 246 / 0.5);
+  outline-offset: 2px;
+}
+[data-packing-debug="1"] .packing-debug--transient-collapse,
+[data-packing-debug="1"] .packing-debug-suppressed-placeholder {
+  outline: 2px dashed rgb(100 116 139 / 0.65);
+  outline-offset: 2px;
+  background: rgb(148 163 184 / 0.08);
+}
+[data-packing-debug="1"] [data-packing-density="collapsed"].hidden {
+  display: block !important;
+  min-height: 0.5rem;
+  opacity: 0.35;
+  overflow: hidden;
 }

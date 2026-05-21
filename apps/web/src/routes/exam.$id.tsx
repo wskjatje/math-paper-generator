@@ -82,6 +82,7 @@ import {
   shouldWithholdMcqAnswerForMissingRasterFigures,
 } from "@/lib/questionRendererPolicy.shared";
 import { rasterAppendixUrlsNotEmbedded } from "@/lib/importRasterFigures.shared";
+import { isPackingDebugEnabled } from "@/lib/cognitivePackingDebug.shared";
 import { filterRasterAppendixUrlsForEplPresentation } from "@/lib/projectionLeakGuard.shared";
 import { resolveFigureResources } from "@/lib/resolveFigureResources.shared";
 import { parseImportParseQualityRollup } from "@/lib/importParseQuality.shared";
@@ -244,6 +245,8 @@ export const Route = createFileRoute("/exam/$id")({
     tab: search.tab === "examples" ? ("examples" as const) : ("paper" as const),
     figures_debug:
       search.figures_debug === "1" || search.figures_debug === true || search.figures_debug === 1,
+    packing_debug:
+      search.packing_debug === "1" || search.packing_debug === true || search.packing_debug === 1,
   }),
   loader: async ({ params }) => {
     try {
@@ -597,6 +600,11 @@ function ExamPaperBody({
 
   const showFigureOwnershipDebug =
     exam.source === "imported" && (import.meta.env.DEV || search.figures_debug === true);
+
+  const showPackingDebug = isPackingDebugEnabled({
+    dev: import.meta.env.DEV,
+    searchFlag: search.packing_debug === true,
+  });
 
   const [rasterLoadFailedQuestionIds, setRasterLoadFailedQuestionIds] = useState(
     () => new Set<string>(),
@@ -1168,6 +1176,7 @@ function ExamPaperBody({
                     <EducationalDocumentRenderer
                       document={eplRenderableDocument}
                       className="mt-1 border-0 bg-transparent px-0 py-0 shadow-none"
+                      showPackingDebug={showPackingDebug}
                       onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}
                     />
                     {showStemVector && stemVectorFirst ? (

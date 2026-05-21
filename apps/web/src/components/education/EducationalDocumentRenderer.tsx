@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 
 import { EducationalAstNodeRenderer } from "@/components/education/EducationalAstNodeRenderer";
+import { EducationalPackingDebugLegend } from "@/components/education/EducationalPackingDebugLegend";
 import { EducationalSectionCompositor } from "@/components/education/EducationalSectionCompositor";
 import {
   composeEducationalDocument,
@@ -19,6 +20,8 @@ type Props = {
   showForensic?: boolean;
   /** Composition runtime viewport（Web 默认 desktop_paper） */
   viewportProfile?: CompositionViewportProfileV1;
+  /** Train 3 stabilization：`?packing_debug=1` / DEV；非 telemetry */
+  showPackingDebug?: boolean;
   onFigureDecodeFailed?: () => void;
 };
 
@@ -30,6 +33,7 @@ export function EducationalDocumentRenderer({
   className,
   showForensic = false,
   viewportProfile = "desktop_paper",
+  showPackingDebug = false,
   onFigureDecodeFailed,
 }: Props) {
   const composed = useMemo(
@@ -64,7 +68,9 @@ export function EducationalDocumentRenderer({
       data-composition-profile={composed.viewport_profile}
       data-figure-semantics-runtime={document.figure_cognitive_semantics.version}
       data-cognitive-packing-runtime={document.cognitive_packing.version}
+      data-packing-debug={showPackingDebug ? "1" : undefined}
     >
+      {showPackingDebug ? <EducationalPackingDebugLegend /> : null}
       {visibleNodes.map((node) => {
         if (node.type === "section") {
           return (
@@ -74,6 +80,7 @@ export function EducationalDocumentRenderer({
               composedGroups={composedGroupsForSection(composed, node.label)}
               figureSemantics={document.figure_cognitive_semantics}
               cognitivePacking={document.cognitive_packing}
+              showPackingDebug={showPackingDebug}
               onFigureDecodeFailed={onFigureDecodeFailed}
             />
           );
@@ -84,6 +91,7 @@ export function EducationalDocumentRenderer({
             node={node}
             figureSemantics={document.figure_cognitive_semantics}
             cognitivePacking={document.cognitive_packing}
+            showPackingDebug={showPackingDebug}
             onFigureDecodeFailed={onFigureDecodeFailed}
           />
         );

@@ -13,6 +13,7 @@ type Props = {
   composedGroups: ComposedGroupPositionV1[];
   figureSemantics?: FigureCognitiveSemanticsRuntimeV1;
   cognitivePacking?: CognitivePackingRuntimeV1;
+  showPackingDebug?: boolean;
   onFigureDecodeFailed?: () => void;
 };
 
@@ -22,6 +23,7 @@ export function EducationalSectionCompositor({
   composedGroups,
   figureSemantics,
   cognitivePacking,
+  showPackingDebug,
   onFigureDecodeFailed,
 }: Props) {
   const preamble = composedGroups.find((g) => g.role === "section_preamble");
@@ -40,6 +42,7 @@ export function EducationalSectionCompositor({
           section={section}
           figureSemantics={figureSemantics}
           cognitivePacking={cognitivePacking}
+          showPackingDebug={showPackingDebug}
           onFigureDecodeFailed={onFigureDecodeFailed}
         />
       ) : (
@@ -71,6 +74,7 @@ export function EducationalSectionCompositor({
             extraCompositionClassNames={p.compositionClassNames}
             figureSemantics={figureSemantics}
             cognitivePacking={cognitivePacking}
+            showPackingDebug={showPackingDebug}
             onFigureDecodeFailed={onFigureDecodeFailed}
           />
         ))}

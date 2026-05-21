@@ -1,6 +1,11 @@
 import { ExamFigureImage } from "@/components/ExamFigureImage";
 import type { FigureLayoutKindV1 } from "@/lib/educationalAst.shared";
 import type { FigurePackingSpatialHintV1 } from "@/lib/cognitivePackingRuntime.shared";
+import {
+  formatPackingTransformsAttr,
+  packingDebugDensityFromTransforms,
+  packingDebugMarkerClass,
+} from "@/lib/cognitivePackingDebug.shared";
 import type {
   FigureCognitiveRoleV1,
   FigureProjectionModulationV1,
@@ -17,6 +22,7 @@ type Props = {
   projectionModulation?: FigureProjectionModulationV1;
   /** P3.4-2 topology-preserving spatial hints */
   packingHint?: FigurePackingSpatialHintV1;
+  showPackingDebug?: boolean;
   className?: string;
   onFigureDecodeFailed?: () => void;
 };
@@ -30,10 +36,37 @@ export function EducationalFigureBlock({
   cognitiveRole,
   projectionModulation,
   packingHint,
+  showPackingDebug = false,
   className,
   onFigureDecodeFailed,
 }: Props) {
-  if (packingHint?.suppressRender) return null;
+  const transforms = packingHint?.transforms ?? [];
+  const density = packingDebugDensityFromTransforms(transforms, {
+    suppressRender: packingHint?.suppressRender,
+  });
+  const debugAttrs = showPackingDebug
+    ? {
+        "data-packing-transforms": formatPackingTransformsAttr(transforms),
+        "data-packing-role": cognitiveRole,
+        "data-packing-density": density,
+        "data-packing-suppressed": packingHint?.suppressRender ? "true" : undefined,
+      }
+    : {};
+
+  if (packingHint?.suppressRender) {
+    if (!showPackingDebug) return null;
+    return (
+      <div
+        className={cn(
+          "packing-debug-suppressed-placeholder rounded border border-dashed px-2 py-1 text-[10px] text-muted-foreground font-mono",
+          packingDebugMarkerClass(transforms, cognitiveRole),
+        )}
+        {...debugAttrs}
+      >
+        [packing] {label} — transient_collapse（主 cadence 外）
+      </div>
+    );
+  }
   if (projectionModulation && !projectionModulation.renderInMainFlow) {
     return null;
   }
@@ -52,11 +85,12 @@ export function EducationalFigureBlock({
           : "my-3 rounded-lg border border-border/80 bg-muted/20 px-3 py-3",
         mod?.captionEmphasis === "muted" && "opacity-95",
         packingHint?.classNames,
+        showPackingDebug && packingDebugMarkerClass(transforms, cognitiveRole),
         className,
       )}
       data-figure-cognitive-role={cognitiveRole}
       data-figure-salience-weight={mod?.salienceWeight}
-      data-packing-transforms={packingHint?.transforms.join(",")}
+      {...debugAttrs}
     >
       <figcaption
         className={cn(

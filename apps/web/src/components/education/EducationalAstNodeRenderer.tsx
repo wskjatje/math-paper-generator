@@ -25,6 +25,7 @@ type NodeRowProps = {
   node: EducationalAstNodeV1;
   figureSemantics?: FigureCognitiveSemanticsRuntimeV1;
   cognitivePacking?: CognitivePackingRuntimeV1;
+  showPackingDebug?: boolean;
   onFigureDecodeFailed?: () => void;
   nested?: boolean;
 };
@@ -36,6 +37,7 @@ export function EducationalAstNodeRenderer({
   node,
   figureSemantics,
   cognitivePacking,
+  showPackingDebug,
   onFigureDecodeFailed,
   nested = false,
 }: NodeRowProps) {
@@ -52,6 +54,7 @@ export function EducationalAstNodeRenderer({
           cognitiveRole={sem?.role}
           projectionModulation={sem?.modulation}
           packingHint={packing}
+          showPackingDebug={showPackingDebug}
           className={cn(
             compositionClassNames(node.layoutHints),
             node.layoutKind === "compact" && "my-2",
