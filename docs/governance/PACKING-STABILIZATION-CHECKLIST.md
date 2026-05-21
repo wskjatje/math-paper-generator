@@ -8,6 +8,22 @@
 
 > 该目视结果是否由 **topology-preserving** packing transform 导致，且 **未** 改变 cognition choreography？
 
+**宪法立场（通用）**：原卷/扫描件/PDF 样张仅为 **observational reference**，不是 semantic authority。验收 **topology preservation**，不以某份扫描件视觉相似度为准。
+
+**长期 invariant（结构型）**：
+
+1. canonical — **structure-conditioned**  
+2. cognition — **topology-conditioned**  
+3. packing — **transform-conditioned**（合法对象：QWF · role · transform 名；非法 authority：题号 · 单卷 ·「像原卷」）
+
+**Train 4 前须防**：Transform semantic inflation（spatial transform → 语义优先级 → cognition authority creep）。观测元数据可解释 projection，**不得**重定义 cognition semantics（Train 4 freeze 时再正式命名）。
+
+## Stabilization-before-governance-freeze（纪律 · 至 Train 4）
+
+1. **不新增 transform taxonomy** — 现有四类足够；优先 **interaction stability**，不扩 coverage。  
+2. **不让 debug 属性进入 scoring** — `data-packing-*` 不得写入 telemetry freeze / parity compare（防 observability → authority）。  
+3. **benchmark 不驱动 runtime** — `case_id` 仅 observational / regression / parity；禁止 `if (case_id)` 分支触发 transform（防 benchmark backflow）。
+
 ## Checklist（结构驱动 · 通用）
 
 | # | 项 | 通过信号 |
