@@ -1,6 +1,18 @@
 # Packing Stabilization Log（人工纪要模板 · 非 governance freeze）
 
-**性质**：Train 3 **heterogeneous stabilization** 的可审计观察记录；**不**进入 telemetry snapshot、parity compare、runtime 分支或 constitutional truth。
+**阶段定位**：*Constitutional stabilization phase, before observational governance freeze* — 目标不是「变强」，而是 interaction 收敛、authority 不漂移、heterogeneous behavior 可解释。
+
+## 两类工件（勿混用）
+
+| 类型 | 目的 | Frozen? | 本模板 |
+|------|------|---------|--------|
+| **Telemetry / snapshot** | governance truth · CI compare | 是（Train 4+） | **否** |
+| **Stabilization log** | 演化观察 · 边界压力记录 | **否** | **是** |
+
+失败路径常是：演化中的视觉观察 → 过早冻进 telemetry → runtime 未稳而 governance 僵化。  
+健康顺序：authority confinement → transform legality → runtime → **stabilization observation** → telemetry freeze。
+
+**性质**：Train 3 **heterogeneous stabilization** 的可审计观察记录；**不**进入 telemetry snapshot、parity compare、runtime 分支或 constitutional truth。允许 reviewer disagreement 与「奇怪但未定性」笔记（无 Goodhart 式 metric 绑架）。
 
 **用法**：复制本模板到 Issue、PR 评论、`docs/stabilization-logs/YYYY-MM/`（若团队维护），或本地笔记。每条记录对应一次目视会话（可含多题/多卷）。
 
@@ -49,7 +61,15 @@
 
 ---
 
-## Transform interaction（footprint 笔记）
+## Transform interaction（footprint 笔记 · 核心价值）
+
+记录 **realization interaction**（≠ topology mutation，但会逼近 authority boundary）：
+
+| 典型叠加 | 边界压力 |
+|----------|----------|
+| adjacency_tightening + supportive_compaction | pseudo-inline / pseudo-regroup 感知 |
+| transient_collapse + narrow viewport | salience inversion |
+| inline_persistence_tuning + dense packing | hidden continuity reinterpretation 风险 |
 
 列出在 DevTools 中看到的 **叠加** transform（非单题专规）：
 
@@ -84,6 +104,8 @@
 ---
 
 ## Outcome（本会话结论 · 非 constitutional verdict）
+
+Train 4 升格条件（观察性，非本表打分）：pseudo-regroup ↓ · salience inversion 可预测 · supportive 跨 viewport 稳定 · appendix 不误伤 continuity。
 
 | 结论 | 勾选 |
 |------|------|
