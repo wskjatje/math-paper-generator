@@ -62,6 +62,7 @@ export function EducationalDocumentRenderer({
       data-epl-layout-strategy={prov.layout_strategy}
       data-composition-runtime={composed.version}
       data-composition-profile={composed.viewport_profile}
+      data-figure-semantics-runtime={document.figure_cognitive_semantics.version}
     >
       {visibleNodes.map((node) => {
         if (node.type === "section") {
@@ -70,6 +71,7 @@ export function EducationalDocumentRenderer({
               key={node.id}
               section={node}
               composedGroups={composedGroupsForSection(composed, node.label)}
+              figureSemantics={document.figure_cognitive_semantics}
               onFigureDecodeFailed={onFigureDecodeFailed}
             />
           );
@@ -78,6 +80,7 @@ export function EducationalDocumentRenderer({
           <EducationalAstNodeRenderer
             key={node.id}
             node={node}
+            figureSemantics={document.figure_cognitive_semantics}
             onFigureDecodeFailed={onFigureDecodeFailed}
           />
         );

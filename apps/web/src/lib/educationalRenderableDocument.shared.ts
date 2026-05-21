@@ -14,6 +14,11 @@ import {
   analyzeReadingFlow,
   type ReadingFlowDocumentDiagnosticsV1,
 } from "@/lib/readingFlowAnalyzer.shared";
+import {
+  buildFigureCognitiveSemanticsRuntime,
+  type FigureCognitiveSemanticsRuntimeV1,
+} from "@/lib/figureCognitiveSemantics.shared";
+
 export type EducationalRenderableDocumentV1 = {
   version: typeof EPL_AST_SCHEMA_VERSION;
   runtime: typeof EPL_RUNTIME_ID;
@@ -23,6 +28,8 @@ export type EducationalRenderableDocumentV1 = {
   presentation_provenance: PresentationProvenanceV1;
   /** P2.4.4 阅读流诊断（cognitive telemetry；derived only） */
   reading_flow_diagnostics: ReadingFlowDocumentDiagnosticsV1;
+  /** P3.4-1 图认知角色（visual semantics；derived only；不写回 canonical） */
+  figure_cognitive_semantics: FigureCognitiveSemanticsRuntimeV1;
 };
 
 export type CreateEducationalRenderableDocumentOptsV1 = {
@@ -39,15 +46,18 @@ export function createEducationalRenderableDocument(
   const registryInputProvided = opts?.registryInputProvided ?? false;
   const cognitive_layout = buildEducationalCognitiveGroups(ast);
   const reading_flow_diagnostics = analyzeReadingFlow(cognitive_layout);
+  const figure_cognitive_semantics = buildFigureCognitiveSemanticsRuntime(ast, cognitive_layout);
   return {
     version: EPL_AST_SCHEMA_VERSION,
     runtime: EPL_RUNTIME_ID,
     ast,
     cognitive_layout,
     reading_flow_diagnostics,
+    figure_cognitive_semantics,
     presentation_provenance: buildPresentationProvenance(ast, {
       registryInputProvided,
       cognitive_layout,
+      figure_cognitive_semantics,
     }),
   };
 }

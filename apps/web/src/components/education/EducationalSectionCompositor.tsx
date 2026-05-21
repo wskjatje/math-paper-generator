@@ -3,12 +3,14 @@
 import { EducationalCognitiveGroupRenderer } from "@/components/education/EducationalCognitiveGroupRenderer";
 import type { SectionNodeV1 } from "@/lib/educationalAst.shared";
 import type { ComposedGroupPositionV1 } from "@/lib/educationalCompositionRuntime.shared";
+import type { FigureCognitiveSemanticsRuntimeV1 } from "@/lib/figureCognitiveSemantics.shared";
 import { cn } from "@/lib/utils";
 
 type Props = {
   section: SectionNodeV1;
   /** Phase 1 composition ABI（非裸 CognitiveGroup 猜测布局） */
   composedGroups: ComposedGroupPositionV1[];
+  figureSemantics?: FigureCognitiveSemanticsRuntimeV1;
   onFigureDecodeFailed?: () => void;
 };
 
@@ -16,6 +18,7 @@ type Props = {
 export function EducationalSectionCompositor({
   section,
   composedGroups,
+  figureSemantics,
   onFigureDecodeFailed,
 }: Props) {
   const preamble = composedGroups.find((g) => g.role === "section_preamble");
@@ -32,6 +35,7 @@ export function EducationalSectionCompositor({
           effectiveAdaptivePresentation={preamble.effectiveAdaptivePresentation}
           extraCompositionClassNames={preamble.compositionClassNames}
           section={section}
+          figureSemantics={figureSemantics}
           onFigureDecodeFailed={onFigureDecodeFailed}
         />
       ) : (
@@ -61,6 +65,7 @@ export function EducationalSectionCompositor({
             group={p.cognitiveGroup}
             effectiveAdaptivePresentation={p.effectiveAdaptivePresentation}
             extraCompositionClassNames={p.compositionClassNames}
+            figureSemantics={figureSemantics}
             onFigureDecodeFailed={onFigureDecodeFailed}
           />
         ))}

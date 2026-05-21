@@ -7,6 +7,7 @@ import type {
   EducationalDocumentAstV1,
 } from "@/lib/educationalAst.shared";
 import type { EducationalCognitiveLayoutV1 } from "@/lib/educationalCognitiveGroup.shared";
+import type { FigureCognitiveSemanticsRuntimeV1 } from "@/lib/figureCognitiveSemantics.shared";
 import { EPL_RUNTIME_ID, isFigureNode } from "@/lib/educationalAst.shared";
 import { createSemanticFact, SemanticFactKey } from "@/lib/semanticLineageFactOntology.shared";
 import type { SemanticLineageFactV1 } from "@/lib/semanticLineageReplayModel.shared";
@@ -31,6 +32,9 @@ export type PresentationProvenanceV1 = {
   cognitive_runtime?: EducationalCognitiveLayoutV1["version"];
   cognitive_group_count?: number;
   question_with_figure_count?: number;
+  /** P3.4-1 derived figure role lineage */
+  figure_semantics_runtime?: FigureCognitiveSemanticsRuntimeV1["version"];
+  figure_role_counts?: FigureCognitiveSemanticsRuntimeV1["role_counts"];
 };
 
 function collectFigureNodes(nodes: EducationalAstNodeV1[]): import("@/lib/educationalAst.shared").FigureNodeV1[] {
@@ -62,9 +66,11 @@ export function buildPresentationProvenance(
   opts: {
     registryInputProvided: boolean;
     cognitive_layout?: EducationalCognitiveLayoutV1;
+    figure_cognitive_semantics?: FigureCognitiveSemanticsRuntimeV1;
   },
 ): PresentationProvenanceV1 {
   const layout = opts.cognitive_layout;
+  const figSem = opts.figure_cognitive_semantics;
   return {
     presentation_runtime: EPL_RUNTIME_ID,
     composition_runtime: ECM_RUNTIME_ID,
@@ -77,6 +83,8 @@ export function buildPresentationProvenance(
     cognitive_group_count: layout?.groups.length,
     question_with_figure_count: layout?.groups.filter((g) => g.role === "question_with_figure")
       .length,
+    figure_semantics_runtime: figSem?.version,
+    figure_role_counts: figSem?.role_counts,
   };
 }
 

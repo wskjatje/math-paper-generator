@@ -269,7 +269,15 @@ export function buildEducationalAstFromCanonical(
 
   const labeledFigures = figures.map((fig, i) => ({
     ...fig,
-    label: /^图[①②③④]/.test(fig.label) ? fig.label : i === 0 ? "图①" : i === 1 ? "图②" : fig.label,
+    label: /^图[①②③④]/.test(fig.label)
+      ? fig.label
+      : /^附图/.test(fig.label) || /^附录图/.test(fig.label)
+        ? fig.label
+        : i === 0
+          ? "图①"
+          : i === 1
+            ? "图②"
+            : fig.label,
   }));
 
   let ordered = insertLayoutFigureNodes(nodes, labeledFigures);

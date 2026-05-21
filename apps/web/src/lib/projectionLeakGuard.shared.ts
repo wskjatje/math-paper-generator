@@ -11,6 +11,7 @@ import type {
   SectionNodeV1,
 } from "@/lib/educationalAst.shared";
 import type { EducationalRenderableDocumentV1 } from "@/lib/educationalRenderableDocument.shared";
+import { figureSemanticsById } from "@/lib/figureCognitiveSemantics.shared";
 
 export const PROJECTION_LEAK_GUARD_VERSION = "p0_v1" as const;
 
@@ -51,8 +52,25 @@ export function collectFigureSrcUrlsFromAst(ast: EducationalDocumentAstV1): Set<
 
 export function collectFigureSrcUrlsFromRenderableDocument(
   document: EducationalRenderableDocumentV1,
+  opts?: { mainFlowOnly?: boolean },
 ): Set<string> {
-  return collectFigureSrcUrlsFromAst(document.ast);
+  const all = collectFigureSrcUrlsFromAst(document.ast);
+  if (!opts?.mainFlowOnly || !document.figure_cognitive_semantics) return all;
+  const byId = figureSemanticsById(document.figure_cognitive_semantics);
+  const urls = new Set<string>();
+  const walk = (nodes: import("@/lib/educationalAst.shared").EducationalAstNodeV1[]) => {
+    for (const node of nodes) {
+      if (node.type === "figure") {
+        const entry = byId.get(node.id);
+        if (entry && !entry.modulation.renderInMainFlow) continue;
+        const key = normalizeProjectedFigureUrl(node.src);
+        if (key) urls.add(key);
+      }
+      if (node.type === "section") walk(node.children);
+    }
+  };
+  walk(document.ast.nodes);
+  return urls;
 }
 
 /**
@@ -62,7 +80,9 @@ export function filterRasterAppendixUrlsForEplPresentation(
   appendixUrls: readonly string[],
   document: EducationalRenderableDocumentV1,
 ): string[] {
-  const projected = collectFigureSrcUrlsFromRenderableDocument(document);
+  const projected = collectFigureSrcUrlsFromRenderableDocument(document, {
+    mainFlowOnly: true,
+  });
   return appendixUrls.filter((raw) => {
     const key = normalizeProjectedFigureUrl(raw);
     return key.length > 0 && !projected.has(key);
