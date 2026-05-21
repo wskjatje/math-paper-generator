@@ -4,7 +4,8 @@
  * 只产出 projection spatial hints（classNames / maxHeight / suppressRender）。
  * 禁止：regroup · reorder · adaptivePresentation · readingSemantics · continuity mutation。
  *
- * @see docs/governance/COGNITIVE-PACKING-FIDELITY-v1.md § Train 3
+ * 通用规则：结构/role/label 驱动，禁止题号或单卷专规（见 generic-exam-content-policy）。
+ * @see docs/governance/COGNITIVE-PACKING-FIDELITY-v1.md · PACKING-STABILIZATION-CHECKLIST.md
  */
 import type { CognitiveGroupV1, EducationalCognitiveLayoutV1 } from "@/lib/educationalCognitiveGroup.shared";
 import {

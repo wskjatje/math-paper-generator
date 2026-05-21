@@ -48,7 +48,7 @@
 | `materialized-bind-01` | `healthy_materialized_bind` | happy-path authority |
 | `placeholder-token-01` | `markdown_reconcile_gap` | placeholder ≠ materialized |
 | `degraded-global-01` | `degraded_global_pool` | global ≠ authoritative bind |
-| `q24-double-figure` | `ownership_scope_missing` | ownership scope / pool 纪律 |
+| `parent-question-double-figure` | `healthy_materialized_bind` | 共图 align + 子题 bind（post-sanitize） |
 | `ocr-no-crop` | `no_materialization` | producer intent ≠ persisted artifact |
 
 ---

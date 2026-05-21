@@ -19,7 +19,7 @@
 | `materialized-bind-01` | `healthy_materialized_bind` | happy-path authority |
 | `placeholder-token-01` | `markdown_reconcile_gap` | placeholder ≠ materialized |
 | `degraded-global-01` | `degraded_global_pool` | global ≠ authoritative bind |
-| `q24-double-figure` | `ownership_scope_missing` | ownership scope integrity |
+| `parent-question-double-figure` | `healthy_materialized_bind` | post-align 子题图①/② bind |
 | `ocr-no-crop` | `no_materialization` | producer intent ≠ persisted |
 
 Executable PR **可** 携带此 5 条实现，但 **不得** 在 review 前 merge 以免默认 runtime = legitimacy（ADR-O13）。

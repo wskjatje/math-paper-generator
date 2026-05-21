@@ -92,6 +92,8 @@ pre-ratification  ≠  post-ratification
 
 **Retroactivity 纪律**：禁止「这个 signal 当年其实不是这个意思」「taxonomy 以前这样定义但 runtime 后来变了」式 **semantic retroactive reinterpretation**。历史实现、历史 CI 行为若无 ratified 谱系，不构成 grandfathering 或 tacit approval。
 
+**Persisted import provenance**（`import_parse_quality` 内 canonicalization / topology / bind / lineage）适用同纪律：**replay 只读冻结快照**；runtime 升级不得 retroactive 改写已入库 JSON。见 [SEMANTIC-REPLAY-LINEAGE-v1.md](SEMANTIC-REPLAY-LINEAGE-v1.md)。
+
 **Tooling cannot silently legislate**：bench / corpus / projection / gate 仅 **faithful enforce**；不得反向定义或重写 ontology（与 PR 分类、executable scope、non-creativity Doctrine 同构）。
 
 **Meaning stability > implementation convenience** — 禁止 retrospectively reinterpret ontology（「当时 signal 是 A，现在决定它代表 B」）。

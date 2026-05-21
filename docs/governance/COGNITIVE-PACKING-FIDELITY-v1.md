@@ -54,7 +54,7 @@ Train 3 **does NOT**:
 - reorder reasoning flow
 - freeze telemetry ontology
 - formalize observational semantics plane（`figure_observational_semantics_v1` 等）
-- formalize cognition benchmark fixtures（如 Q24 stress fixture）
+- formalize cognition benchmark fixtures（须 **case_id 表结构类型**，禁止题号专规；见 generic-exam-content-policy）
 - introduce cadence graph / visual entropy / attention inertia 等新术语层
 
 **顺序（须守）**：runtime stabilization → telemetry freeze（Train 4）→ ontology / benchmark formalization — 不反向。
@@ -65,7 +65,11 @@ Train 3 **does NOT**:
 
 - URL：`?packing_debug=1`（或 DEV）→ `data-packing-debug="1"` + 图例 overlay
 - DOM：`data-packing-transforms` · `data-packing-role` · `data-packing-density`
-- 人工清单：[Q24-PACKING-STABILIZATION-CHECKLIST.md](./Q24-PACKING-STABILIZATION-CHECKLIST.md)
+- 人工清单（**通用**）：[PACKING-STABILIZATION-CHECKLIST.md](./PACKING-STABILIZATION-CHECKLIST.md)
+
+### Transform interaction（通用 stabilization 规则）
+
+叠加 transform 的 interaction 审查表与假阳性类别见 [PACKING-STABILIZATION-CHECKLIST.md](./PACKING-STABILIZATION-CHECKLIST.md) § Transform interaction watchlist；**不得**写死单卷/单题。
 
 ## 问题定性
 
@@ -76,9 +80,9 @@ Train 3 **does NOT**:
 | Semantic / AST / registry 正确 | **Attention topology**（salience · 紧凑度 · 参数贴近） |
 
 **关键判断**：`semantic correctness ≠ cognitive fidelity`。  
-图1/图2 差异主因不是 OCR，而是 **composition density drift** + **legacy projection leak**。
+卷面「语义已对齐但仍觉阅读密度失真」时，主因通常是 **composition density drift** + **projection leak**（非 OCR 专规）。
 
-## 图1 症状与代码锚点（可审计）
+## 典型症状模式与代码锚点（通用 · 可审计）
 
 1. **双通道出图（projection leak）**  
    `exam.$id.tsx` 在 `EducationalDocumentRenderer` 之后仍渲染 `RasterFigureAppendix`（`stemAppendixUrls`）→ 卷面附图与 EPL 内图重复。
@@ -90,7 +94,7 @@ Train 3 **does NOT**:
    `EducationalFigureBlock`：`layoutKind !== compact` 时 `max-h-[min(50vh,420px)]`；QWF 内虽用 `compact`，fallback/standalone 仍为 block 级视觉权重。
 
 4. **Compositor 偏 content flow**  
-   `EducationalSectionCompositor`：`bodyGroups` 逐组 `space-y` 竖排 → **cognitive over-expansion**（原卷高耦合 (II)+①+图② 被拉成纵向流）。
+   `EducationalSectionCompositor`：`bodyGroups` 逐组竖排 → **cognitive over-expansion**（高耦合「大问 + 子问 + 锚定图」被拉成松散纵向流）。
 
 ## 治理边界（须守 ADR-O18）
 

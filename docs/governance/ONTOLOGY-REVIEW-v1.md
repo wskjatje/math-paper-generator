@@ -18,7 +18,7 @@
 | | redraw L3、semantic confidence、topology score 等新名词 |
 | | 在同一 PR 混合 Constitution + Executable + Runtime |
 
-**Foundation set 冻结**（5 条，见 README）：`materialized-bind-01`、`placeholder-token-01`、`degraded-global-01`、`q24-double-figure`、`ocr-no-crop`。
+**Foundation set 冻结**（5 条，见 README）：`materialized-bind-01`、`placeholder-token-01`、`degraded-global-01`、`parent-question-double-figure`、`ocr-no-crop`。
 
 ---
 

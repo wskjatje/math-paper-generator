@@ -16,7 +16,7 @@ Corpus 是 **ontology 的长期资产**，不是临时测试数据。本 RFC 规
 | 层级 | 目录约定 | 用途 |
 |------|----------|------|
 | **Synthetic archetype** | `materialized-bind-01` 等 | 最小拓扑、安全边界、确定性高 |
-| **L3 real-world slice** | `q24-double-figure`、`ocr-no-crop` 等 | 经验接地、`case.meta.l3_real_world: true` |
+| **L3 real-world slice** | `parent-question-double-figure`、`ocr-no-crop` 等 | 经验接地、`case.meta.l3_real_world: true` |
 
 **纪律**：
 
@@ -124,7 +124,7 @@ npm run import-pipeline:taxonomy-coverage -w @zhixue/web
 | materialized-bind-01 | healthy_materialized_bind | synthetic |
 | placeholder-token-01 | markdown_reconcile_gap | synthetic |
 | degraded-global-01 | degraded_global_pool | synthetic |
-| q24-double-figure | ownership_scope_missing | L3 |
+| parent-question-double-figure | healthy_materialized_bind | L3（input 误池化，sanitize 后 bind） |
 | ocr-no-crop | no_materialization | L3 |
 
 Phase-2：`redraw_only` L3 须在 [RFC-0001 §8](RFC-0001-governance-ontology.md#8-phase-2-semantic-boundary冻结前不得扩-l3) 评审通过后，按 §8.6 顺序添加（禁止 category collapse）。

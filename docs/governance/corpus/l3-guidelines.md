@@ -50,7 +50,7 @@ corpus/<case-id>/
 
 | case_id | taxonomy | 要点 |
 |---------|----------|------|
-| `q24-double-figure` | `ownership_scope_missing` | 双图误池化、子题继承、linker `skipped_degraded_pool` |
+| `parent-question-double-figure` | `healthy_materialized_bind` | input 双图误挂大题；sanitize align 后子题按图①/② bind |
 | `ocr-no-crop` | `no_materialization` | crop_jobs>0、crops_persisted=0 |
 
 ## Phase-2 候选（冻结前禁止开工）

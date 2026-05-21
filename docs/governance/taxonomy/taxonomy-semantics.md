@@ -12,7 +12,7 @@ RFC：[RFC-0001 Governance Ontology](../rfcs/RFC-0001-governance-ontology.md)
 | **用途** | 标本身份、CI 验证（经 `verifyCaseTaxonomySignals`） | 漂移分析、并列类 |
 | **变更** | 仅 specimen / RFC 迁移 | 可随 priority 调整 |
 
-当二者不一致时，在 `case.meta.detected_taxonomy_also` 记录并列类（如 `q24-double-figure` → expected `ownership_scope_missing`，detected 常为 `degraded_global_pool`）。
+当二者不一致时，在 `case.meta.detected_taxonomy_also` 记录并列类。`parent-question-double-figure` 以 post-sanitize `healthy_materialized_bind` 为 expected；`degraded-global-01` 专测 global pool 纪律。
 
 ## Canonical signal 语法（摘录）
 

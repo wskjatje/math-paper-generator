@@ -1,5 +1,15 @@
 # 导入图链 Governance（宪法索引）
 
+## 项目级通用规范（试卷 / 图片）
+
+**[generic-exam-content-policy.md](generic-exam-content-policy.md)** — 试卷结构、图片地址、图片标签/数量：**禁止写死单卷单题**；按题型与题干/图池推导。导入路径细则见 [import-generic-rules-policy.md](import-generic-rules-policy.md)。PR 与 Agent 新增逻辑须先对照该文自检。
+
+---
+
+## ECR 六平面运行时宪法
+
+→ [ECR-RUNTIME-CONSTITUTION-v1.md](ECR-RUNTIME-CONSTITUTION-v1.md)（Authority / Fidelity / Temporal 三轴 · Frozen Interpretation Chain）
+
 ## 系统状态
 
 → 完整声明：[CONSTITUTIONAL-STATE-v1.md](CONSTITUTIONAL-STATE-v1.md)（**constitutional state declaration**）
@@ -37,8 +47,11 @@ draft constitutional order  →  [ ADR flip · ratified_at · Constitution-only 
 | Materialization | raster / registry / refs | ✓ |
 | Ownership | linker / degraded pool 策略 | ✓ |
 | Governance | taxonomy / projection / corpus / CI | ✓ |
+| **EPL / ECM**（Layer B） | Educational AST · derived presentation | ✓ [ADR-O16](decisions/ADR-O16-truth-preserving-presentation.md) |
 
 **Constitutional principle**：`semantic ≠ authoritative`（RFC-0001 §5–§8）— 防止 artifact / semantic / runtime 三种 truth 塌缩。
+
+**Presentation invariant**（Layer A ↔ Layer B）：*Presentation can evolve infinitely. Semantic provenance must remain frozen.* — truth-preserving lowering；详见 [ADR-O16](decisions/ADR-O16-truth-preserving-presentation.md)、[ECM](../architecture/educational-composition-model.md)。
 
 ## 四层权威模型（ratification 后）
 
@@ -150,7 +163,8 @@ Substrate（OCR、linker、bench、dual-run、CI）之上的 **semantic collapse
 | `healthy_materialized_bind` | `materialized-bind-01` | materialization ↔ ownership |
 | `markdown_reconcile_gap` | `placeholder-token-01` | placeholder ↔ real artifact |
 | `degraded_global_pool` | `degraded-global-01` | degraded ↔ authoritative |
-| `ownership_scope_missing` | `q24-double-figure` | availability ↔ binding legitimacy |
+| `healthy_materialized_bind` | `parent-question-double-figure`（post-align） | 共图大题 align 后子题 bind |
+| `ownership_scope_missing` | （synthetic 待补） | availability ↔ binding legitimacy |
 | `no_materialization` | `ocr-no-crop` | OCR plan ↔ persisted topology |
 
 | 层级 | synthetic / L3 |

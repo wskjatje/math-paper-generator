@@ -19,7 +19,7 @@ Classifier 输出与 corpus 标本身份混用会导致「runtime reality = gove
 
 ## Consequences
 
-- `q24-double-figure` 等 L3 可长期维护 expected `ownership_scope_missing` 与 detected `degraded_global_pool` 并列。
+- `parent-question-double-figure` L3：input 为误池化缺陷态；sanitize 后 expected `healthy_materialized_bind`。`degraded-global-01` 仍覆盖 `degraded_global_pool`。
 - Executable PR 不得用 detected 覆盖 expected golden。
 
 ## References

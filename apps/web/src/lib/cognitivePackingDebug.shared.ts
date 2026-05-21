@@ -1,5 +1,6 @@
 /**
  * Train 3 stabilization — packing transform observability（debug-only；非 telemetry / governance）。
+ * 适用于任意 EPL 题面；禁止题号/单卷专规触发。
  */
 import type { PackingTransformAppliedV1 } from "@/lib/cognitivePackingRuntime.shared";
 import type { FigureCognitiveRoleV1 } from "@/lib/figureCognitiveSemantics.shared";

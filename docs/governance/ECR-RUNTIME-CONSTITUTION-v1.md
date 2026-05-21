@@ -70,7 +70,7 @@ They may **never** mutate:
 
 ## P3.4 — Cognitive packing fidelity（draft）
 
-图1 vs 原卷：semantic 已对齐，**packing / salience / transient hierarchy** 待治理。见 [COGNITIVE-PACKING-FIDELITY-v1.md](./COGNITIVE-PACKING-FIDELITY-v1.md)、`cognitivePackingObservability.shared.ts`。
+任意卷 EPL：**packing / salience / transient hierarchy** 为 observational 治理域（非单卷专规）。见 [COGNITIVE-PACKING-FIDELITY-v1.md](./COGNITIVE-PACKING-FIDELITY-v1.md)、[PACKING-STABILIZATION-CHECKLIST.md](./PACKING-STABILIZATION-CHECKLIST.md)、`cognitivePackingObservability.shared.ts`。
 
 ## P3.3 — Projection primitives（非 layout intelligence）
 

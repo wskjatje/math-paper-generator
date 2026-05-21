@@ -30,5 +30,6 @@
 | [ADR-O13](ADR-O13-executable-merge-gate.md) | Executable merge gate | Accept | |
 | [ADR-O14](ADR-O14-taxonomy-additions-freeze.md) | Taxonomy additions freeze | Frozen | |
 | [ADR-O15](ADR-O15-redraw-legitimacy.md) | redraw_only governance legitimacy | Defer | |
+| [ADR-O16](ADR-O16-truth-preserving-presentation.md) | Truth-preserving presentation（Layer A/B · EPL） | Accept | |
 
 议程：[ONTOLOGY-REVIEW-AGENDA-v1.md](../ONTOLOGY-REVIEW-AGENDA-v1.md)
