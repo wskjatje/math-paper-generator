@@ -8,7 +8,7 @@
 |-------|------|------|
 | **1** | P0 projection leak（appendix + registry end_fallback） | ✅ 见 `projectionLeakGuard.shared.ts` |
 | **2** | P3.4-1 figure cognitive role | ✅ 见 `FIGURE-COGNITIVE-ROLE-v1.md` |
-| **3** | P3.4-2 packing runtime | kickoff constitution ✅（本节）；runtime 待做 |
+| **3** | P3.4-2 packing runtime | ✅ `cognitivePackingRuntime.shared.ts`（kickoff constitution + v1 transforms） |
 | 4 | P3.4-3 packing fidelity telemetry | 待做（runtime 稳定后） |
 | 5 | P3.4-4 transient lifecycle | 待做 |
 

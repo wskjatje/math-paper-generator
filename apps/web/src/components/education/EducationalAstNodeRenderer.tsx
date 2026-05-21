@@ -4,6 +4,10 @@ import { MathContent } from "@/components/MathContent";
 import { EducationalFigureBlock } from "@/components/education/EducationalFigureBlock";
 import { EducationalSegmentList } from "@/components/education/EducationalSegmentList";
 import type { EducationalAstNodeV1 } from "@/lib/educationalAst.shared";
+import {
+  packingHintForFigure,
+  type CognitivePackingRuntimeV1,
+} from "@/lib/cognitivePackingRuntime.shared";
 import type { FigureCognitiveSemanticsRuntimeV1 } from "@/lib/figureCognitiveSemantics.shared";
 import { figureSemanticsById } from "@/lib/figureCognitiveSemantics.shared";
 import { compositionClassNames } from "@/lib/educationalCompositionConstraint.shared";
@@ -20,6 +24,7 @@ function depthIndentClass(depth: 0 | 1 | 2, type: EducationalAstNodeV1["type"]):
 type NodeRowProps = {
   node: EducationalAstNodeV1;
   figureSemantics?: FigureCognitiveSemanticsRuntimeV1;
+  cognitivePacking?: CognitivePackingRuntimeV1;
   onFigureDecodeFailed?: () => void;
   nested?: boolean;
 };
@@ -30,12 +35,14 @@ type NodeRowProps = {
 export function EducationalAstNodeRenderer({
   node,
   figureSemantics,
+  cognitivePacking,
   onFigureDecodeFailed,
   nested = false,
 }: NodeRowProps) {
   switch (node.type) {
     case "figure": {
       const sem = figureSemantics ? figureSemanticsById(figureSemantics).get(node.id) : undefined;
+      const packing = packingHintForFigure(cognitivePacking, node.id);
       return (
         <EducationalFigureBlock
           label={node.label}
@@ -44,6 +51,7 @@ export function EducationalAstNodeRenderer({
           layoutKind={node.layoutKind}
           cognitiveRole={sem?.role}
           projectionModulation={sem?.modulation}
+          packingHint={packing}
           className={cn(
             compositionClassNames(node.layoutHints),
             node.layoutKind === "compact" && "my-2",

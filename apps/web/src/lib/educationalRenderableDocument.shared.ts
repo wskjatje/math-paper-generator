@@ -15,6 +15,10 @@ import {
   type ReadingFlowDocumentDiagnosticsV1,
 } from "@/lib/readingFlowAnalyzer.shared";
 import {
+  buildCognitivePackingRuntime,
+  type CognitivePackingRuntimeV1,
+} from "@/lib/cognitivePackingRuntime.shared";
+import {
   buildFigureCognitiveSemanticsRuntime,
   type FigureCognitiveSemanticsRuntimeV1,
 } from "@/lib/figureCognitiveSemantics.shared";
@@ -30,6 +34,8 @@ export type EducationalRenderableDocumentV1 = {
   reading_flow_diagnostics: ReadingFlowDocumentDiagnosticsV1;
   /** P3.4-1 图认知角色（visual semantics；derived only；不写回 canonical） */
   figure_cognitive_semantics: FigureCognitiveSemanticsRuntimeV1;
+  /** P3.4-2 packing spatial hints（topology-preserving；derived only） */
+  cognitive_packing: CognitivePackingRuntimeV1;
 };
 
 export type CreateEducationalRenderableDocumentOptsV1 = {
@@ -47,6 +53,7 @@ export function createEducationalRenderableDocument(
   const cognitive_layout = buildEducationalCognitiveGroups(ast);
   const reading_flow_diagnostics = analyzeReadingFlow(cognitive_layout);
   const figure_cognitive_semantics = buildFigureCognitiveSemanticsRuntime(ast, cognitive_layout);
+  const cognitive_packing = buildCognitivePackingRuntime(cognitive_layout, figure_cognitive_semantics);
   return {
     version: EPL_AST_SCHEMA_VERSION,
     runtime: EPL_RUNTIME_ID,
@@ -54,6 +61,7 @@ export function createEducationalRenderableDocument(
     cognitive_layout,
     reading_flow_diagnostics,
     figure_cognitive_semantics,
+    cognitive_packing,
     presentation_provenance: buildPresentationProvenance(ast, {
       registryInputProvided,
       cognitive_layout,

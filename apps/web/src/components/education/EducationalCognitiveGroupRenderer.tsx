@@ -6,6 +6,10 @@ import type { SectionNodeV1 } from "@/lib/educationalAst.shared";
 import type { CognitiveGroupV1 } from "@/lib/educationalCognitiveGroup.shared";
 import { compositionClassNames } from "@/lib/educationalCompositionConstraint.shared";
 import type { AdaptivePresentationV1 } from "@/lib/readingFlowSemantics.shared";
+import {
+  packingHintForGroup,
+  type CognitivePackingRuntimeV1,
+} from "@/lib/cognitivePackingRuntime.shared";
 import type { FigureCognitiveSemanticsRuntimeV1 } from "@/lib/figureCognitiveSemantics.shared";
 import { cn } from "@/lib/utils";
 
@@ -16,12 +20,14 @@ type Props = {
   extraCompositionClassNames?: string;
   section?: SectionNodeV1;
   figureSemantics?: FigureCognitiveSemanticsRuntimeV1;
+  cognitivePacking?: CognitivePackingRuntimeV1;
   onFigureDecodeFailed?: () => void;
 };
 
 function renderMember(
   member: SubquestionNodeV1 | FigureNodeV1,
   figureSemantics: FigureCognitiveSemanticsRuntimeV1 | undefined,
+  cognitivePacking: CognitivePackingRuntimeV1 | undefined,
   onFigureDecodeFailed?: () => void,
 ) {
   if (member.type === "figure") {
@@ -29,6 +35,7 @@ function renderMember(
       <EducationalAstNodeRenderer
         node={{ ...member, placement: "inline_with_subquestion", layoutKind: "compact" }}
         figureSemantics={figureSemantics}
+        cognitivePacking={cognitivePacking}
         onFigureDecodeFailed={onFigureDecodeFailed}
       />
     );
@@ -37,6 +44,7 @@ function renderMember(
     <EducationalAstNodeRenderer
       node={member}
       figureSemantics={figureSemantics}
+      cognitivePacking={cognitivePacking}
       nested
       onFigureDecodeFailed={onFigureDecodeFailed}
     />
@@ -52,16 +60,20 @@ export function EducationalCognitiveGroupRenderer({
   extraCompositionClassNames,
   section,
   figureSemantics,
+  cognitivePacking,
   onFigureDecodeFailed,
 }: Props) {
   const sem = group.readingSemantics;
+  const packing = packingHintForGroup(cognitivePacking, group.id);
   const hintClass = cn(
     compositionClassNames(group.layoutHints),
     extraCompositionClassNames,
+    packing?.classNames,
   );
   const presentation =
     effectiveAdaptivePresentation ?? sem.adaptivePresentation;
   const inlineFigure = presentation === "inline_figure_right";
+  const inlineTight = packing?.transforms.includes("inline_persistence_tuning") === true;
 
   if (group.role === "section_preamble" && section) {
     return (
@@ -85,7 +97,8 @@ export function EducationalCognitiveGroupRenderer({
       <div
         className={cn(
           "math-paper-question-cluster",
-          "my-3 rounded-md border border-border/40 bg-card/50 px-3 py-3 sm:px-4",
+          "rounded-md border border-border/40 bg-card/50 px-3 sm:px-4",
+          !packing?.classNames.includes("my-") && "my-3 py-3",
           hintClass,
         )}
         data-cognitive-group={group.id}
@@ -102,8 +115,11 @@ export function EducationalCognitiveGroupRenderer({
           className={cn(
             "math-paper-reading-flow",
             inlineFigure
-              ? "flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4"
-              : "flex flex-col gap-3",
+              ? cn(
+                  "flex flex-col sm:flex-row sm:items-start",
+                  inlineTight ? "gap-2 sm:gap-2" : "gap-3 sm:gap-4",
+                )
+              : cn("flex flex-col", inlineTight ? "gap-2" : "gap-3"),
           )}
         >
           {sem.steps.map((step) => {
@@ -114,12 +130,19 @@ export function EducationalCognitiveGroupRenderer({
               <div
                 key={step.nodeId}
                 className={cn(
-                  isQuestion ? "min-w-0 flex-1" : "w-full shrink-0 sm:max-w-[min(42%,300px)]",
+                  isQuestion
+                    ? "min-w-0 flex-1"
+                    : cn(
+                        "w-full shrink-0",
+                        inlineTight
+                          ? "sm:max-w-[min(38%,260px)]"
+                          : "sm:max-w-[min(42%,300px)]",
+                      ),
                 )}
                 data-reading-step={step.kind}
                 data-attention-priority={step.attentionPriority}
               >
-                {renderMember(member, figureSemantics, onFigureDecodeFailed)}
+                {renderMember(member, figureSemantics, cognitivePacking, onFigureDecodeFailed)}
               </div>
             );
           })}
@@ -143,7 +166,7 @@ export function EducationalCognitiveGroupRenderer({
         data-cognitive-role={group.role}
         data-attention-priority={sem.attentionPriority}
       >
-        {renderMember(member, figureSemantics, onFigureDecodeFailed)}
+        {renderMember(member, figureSemantics, cognitivePacking, onFigureDecodeFailed)}
       </div>
     );
   }
