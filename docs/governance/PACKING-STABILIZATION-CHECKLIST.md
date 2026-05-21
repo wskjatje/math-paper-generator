@@ -66,4 +66,4 @@
 - 不冻结 packing telemetry ontology  
 - 不用题号（`q24` 等）作为规则触发条件（见 [generic-exam-content-policy.md](./generic-exam-content-policy.md)）
 
-**相关**：[COGNITIVE-PACKING-FIDELITY-v1.md](./COGNITIVE-PACKING-FIDELITY-v1.md) · [ECR-RUNTIME-CONSTITUTION-v1.md](./ECR-RUNTIME-CONSTITUTION-v1.md)
+**相关**：[COGNITIVE-PACKING-FIDELITY-v1.md](./COGNITIVE-PACKING-FIDELITY-v1.md) · [ECR-RUNTIME-CONSTITUTION-v1.md](./ECR-RUNTIME-CONSTITUTION-v1.md) · 人工纪要模板（非 freeze）：[PACKING-STABILIZATION-LOG-template.md](./PACKING-STABILIZATION-LOG-template.md)
