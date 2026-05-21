@@ -12,7 +12,14 @@ import {
   listeningExampleTrackIndexForExampleId,
   listeningTrackIndexForQuestion,
 } from "@/lib/listeningAudio.shared";
+import { ExamFigureImage } from "@/components/ExamFigureImage";
+import { EducationalDocumentRenderer } from "@/components/education/EducationalDocumentRenderer";
 import { MathContent } from "@/components/MathContent";
+import {
+  buildEducationalRenderableDocument,
+  shouldUseEducationalPresentation,
+} from "@/lib/educationalPresentation.shared";
+import { GeometryDiagramRenderer } from "@/components/GeometryDiagramRenderer";
 import {
   DIFFICULTY_LABELS,
   questionDisplayTypeLabel,
@@ -22,6 +29,7 @@ import {
   type SolutionStep,
   type Exam,
 } from "@/lib/types";
+import type { OfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
 import { titleForExamExportFile } from "@/lib/examExportMarkdown";
 import { choiceLetterFromIndex, stripLeadingChoiceMarker } from "@/lib/examChoiceOptions.shared";
 import { useState, useEffect, useRef, useCallback, type ChangeEvent } from "react";
@@ -40,10 +48,12 @@ import {
   Play,
 } from "lucide-react";
 import { toast } from "sonner";
+import { OfflineImportFigureCrops } from "@/components/OfflineImportFigureCrops";
 import { PageShell } from "@/components/layout/PageShell";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EXAM_PRINT_LAYOUT_CN_CLASS } from "@/lib/paperPrintLayout.shared";
 import { cn } from "@/lib/utils";
+import { safeParseGeometryDiagramSchema } from "@/lib/geometryDiagramSchema.shared";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   EXAMPLES_BACKUP_SUFFIX,
@@ -54,9 +64,175 @@ import {
   readExamSnapshot,
   SNAPSHOT_BACKUP_SUFFIX,
   writeExamSnapshot,
+  type SessionExamSnapshot,
 } from "@/lib/examSession";
 import { startExamPdfViaBrowserPrint } from "@/lib/downloadExamPdf";
 import { shouldOmitListeningQuestionFromPaper } from "@/lib/listeningExamPolicy.shared";
+import {
+  optionLetterHasConcreteFigureSupply,
+  type QuestionRasterFigureRuntimeOpts,
+} from "@/lib/examRasterFigureHints.shared";
+import {
+  MCQ_ANSWER_WITHHELD_FOR_MISSING_RASTER_MESSAGE,
+  placeholderSolutionStepsWhenMcqAnswerWithheld,
+  shouldEmphasizeMissingOptionFigures,
+  shouldPreferVectorBeforeStemRasterAppendix,
+  shouldShowMissingRasterCallout,
+  shouldSuppressVectorDiagramForDisplay,
+  shouldWithholdMcqAnswerForMissingRasterFigures,
+} from "@/lib/questionRendererPolicy.shared";
+import { rasterAppendixUrlsNotEmbedded } from "@/lib/importRasterFigures.shared";
+import { filterRasterAppendixUrlsForEplPresentation } from "@/lib/projectionLeakGuard.shared";
+import { resolveFigureResources } from "@/lib/resolveFigureResources.shared";
+import { parseImportParseQualityRollup } from "@/lib/importParseQuality.shared";
+import {
+  extractMarkdownImageUrlsFromContent,
+  scanQuestionContentForFigureTextAnchors,
+} from "@/lib/figureTextAnchors.shared";
+import { computeFigureResourcePublishState } from "@/lib/figureResourcePublishState.shared";
+import { computeOwnershipResolutionStateDebug } from "@/lib/ownershipResolutionStateDebug.shared";
+import { ExamForensicsPanel } from "@/components/ExamForensicsPanel";
+import { formatFigureLifecycleTimelineCompact } from "@/lib/figureLifecycleTimeline.shared";
+
+/** 导入卷 P7-1A：仅 DEV 或 `?figures_debug=1` 时展示，便于核对「本题为何拿到这些图」。 */
+function FigureOwnershipDebugOverlay({
+  exam,
+  question,
+  enabled,
+  rasterRuntime,
+}: {
+  exam: Exam;
+  question: Question;
+  enabled: boolean;
+  rasterRuntime?: QuestionRasterFigureRuntimeOpts;
+}) {
+  if (!enabled) return null;
+  const resolved = resolveFigureResources(question, exam);
+  const stemTextFigureAnchors = scanQuestionContentForFigureTextAnchors(
+    String(question.content ?? ""),
+  );
+  const markdownImageUrlsInStem = extractMarkdownImageUrlsFromContent(
+    String(question.content ?? ""),
+  );
+  const resourcePublishState = computeFigureResourcePublishState(question, exam);
+  const ownershipResolutionState = computeOwnershipResolutionStateDebug(
+    question,
+    exam,
+    rasterRuntime,
+  );
+  return (
+    <details className="no-print mb-3 rounded-md border border-dashed border-amber-600/40 bg-amber-500/[0.07] p-3 text-left">
+      <summary className="cursor-pointer text-xs font-medium text-amber-950/90 dark:text-amber-100/90">
+        Figure ownership（调试）
+      </summary>
+      <div className="mt-2 space-y-2 text-[11px] leading-relaxed text-muted-foreground font-mono whitespace-pre-wrap break-all">
+        <p className="text-[10px] text-amber-950/70 dark:text-amber-100/70">
+          本地开发默认可见；生产环境请在 URL 加{" "}
+          <code className="rounded bg-muted px-1">?figures_debug=1</code>。
+        </p>
+        <div>
+          <span className="text-foreground/85">figure_refs</span>{" "}
+          {(question.figure_refs?.length ?? 0) === 0
+            ? "（无）"
+            : JSON.stringify(question.figure_refs, null, 2)}
+        </div>
+        <div>
+          <span className="text-foreground/85">resolveFigureResources</span>
+          {"\n"}
+          {JSON.stringify(
+            {
+              inheritedRefCount: resolved.inheritedRefCount,
+              rasterStemUrlsResolved: resolved.rasterStemUrlsResolved,
+              figureIds: resolved.figureRefs.map((r) => r.figure_id),
+            },
+            null,
+            2,
+          )}
+        </div>
+        <div>
+          <span className="text-foreground/85">raster_figures.stem（原始）</span>{" "}
+          {JSON.stringify(question.raster_figures?.stem ?? [])}
+        </div>
+        <div>
+          <span className="text-foreground/85">exam.figure_registry 项数</span>{" "}
+          {exam.figure_registry?.length ?? 0}
+        </div>
+        <div>
+          <span className="text-foreground/85">题干文本图锚点（启发式扫描，非持久化）</span>
+          {"\n"}
+          {stemTextFigureAnchors.length === 0
+            ? "（无）"
+            : JSON.stringify(stemTextFigureAnchors, null, 2)}
+        </div>
+        <div>
+          <span className="text-foreground/85">题干 Markdown 插图 URL</span>{" "}
+          {markdownImageUrlsInStem.length === 0
+            ? "（无）"
+            : JSON.stringify(markdownImageUrlsInStem, null, 2)}
+        </div>
+        <div>
+          <span className="text-foreground/85">resource_publish_state（分桶，非持久化）</span>
+          {"\n"}
+          {JSON.stringify({ resource_publish_state: resourcePublishState }, null, 2)}
+        </div>
+        <div>
+          <span className="text-foreground/85">supply_state（materialization gate）</span>{" "}
+          <code className="rounded bg-muted px-1 text-foreground">
+            {ownershipResolutionState.supply_state}
+          </code>
+        </div>
+        <div>
+          <span className="text-foreground/85">figure_lifecycle_timeline（P2 replay）</span>
+          {"\n"}
+          <span className="text-foreground/90">
+            {formatFigureLifecycleTimelineCompact(
+              ownershipResolutionState.figure_lifecycle_timeline,
+            )}
+          </span>
+        </div>
+        <div>
+          <span className="text-foreground/85">figure_artifact_provenance（P3）</span>{" "}
+          {ownershipResolutionState.figure_artifact_provenance.length === 0
+            ? "（无）"
+            : JSON.stringify(ownershipResolutionState.figure_artifact_provenance, null, 2)}
+        </div>
+        <div>
+          <span className="text-foreground/85">ownership_resolution_state（启发式，非持久化）</span>
+          {"\n"}
+          {JSON.stringify({ ownership_resolution_state: ownershipResolutionState }, null, 2)}
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function RasterFigureAppendix({
+  urls,
+  captionPrefix,
+  onFigureDecodeFailed,
+}: {
+  urls: string[];
+  captionPrefix: string;
+  /** 任一附录位图加载失败（与题干 Markdown 坏链同等：broken≈missing） */
+  onFigureDecodeFailed?: () => void;
+}) {
+  if (!urls.length) return null;
+  return (
+    <div className="mt-3 flex flex-wrap gap-3 justify-start print:break-inside-avoid">
+      {urls.map((u, i) => (
+        <figure key={`${captionPrefix}-${u}-${i}`} className="m-0 shrink-0">
+          <ExamFigureImage
+            src={u}
+            alt={`${captionPrefix} ${i + 1}`}
+            className="max-h-52 max-w-full rounded-md border border-border object-contain bg-muted/30"
+            loadErrorLabel="（附录图无法加载，请检查裁图路径或重新上传。）"
+            onDecodeFailed={onFigureDecodeFailed}
+          />
+        </figure>
+      ))}
+    </div>
+  );
+}
 
 function exampleStepOrdinal(step: SolutionStep, index: number): number {
   const n = step.step;
@@ -66,6 +242,8 @@ function exampleStepOrdinal(step: SolutionStep, index: number): number {
 export const Route = createFileRoute("/exam/$id")({
   validateSearch: (search: Record<string, unknown>) => ({
     tab: search.tab === "examples" ? ("examples" as const) : ("paper" as const),
+    figures_debug:
+      search.figures_debug === "1" || search.figures_debug === true || search.figures_debug === 1,
   }),
   loader: async ({ params }) => {
     try {
@@ -128,6 +306,7 @@ function ExamDetail() {
         examples: unknown[];
         listeningAudioReady?: boolean;
         listeningExampleAudioReady?: boolean;
+        offlineImportMedia?: OfflineImportPersistedMedia | null;
       };
 
   if ("pendingSession" in loaderData && loaderData.pendingSession) {
@@ -140,6 +319,7 @@ function ExamDetail() {
     examples: unknown[];
     listeningAudioReady?: boolean;
     listeningExampleAudioReady?: boolean;
+    offlineImportMedia?: OfflineImportPersistedMedia | null;
   };
   return (
     <ExamPaperBody
@@ -148,6 +328,7 @@ function ExamDetail() {
       examples={data.examples as Example[]}
       listeningAudioReadyInitial={data.listeningAudioReady === true}
       listeningExampleAudioReadyInitial={data.listeningExampleAudioReady === true}
+      offlineImportMedia={data.offlineImportMedia ?? null}
     />
   );
 }
@@ -155,18 +336,10 @@ function ExamDetail() {
 function SessionExamPage({ examId }: { examId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const repairSnapshot = useServerFn(repairSessionExamSnapshot);
-  const [snap, setSnap] = useState<
-    | {
-        exam: Exam;
-        questions: Question[];
-        examples: Example[];
-      }
-    | null
-    | undefined
-  >(undefined);
+  const [snap, setSnap] = useState<SessionExamSnapshot | null | undefined>(undefined);
 
   const finalizeSnapshot = useCallback(
-    async (parsed: { exam: Exam; questions: Question[]; examples: Example[] } | null) => {
+    async (parsed: SessionExamSnapshot | null) => {
       if (!parsed) {
         setSnap(null);
         return;
@@ -241,7 +414,7 @@ function SessionExamPage({ examId }: { examId: string }) {
           toast.error("例题文件中的试卷 id 与当前页不一致。");
           return;
         }
-        const merged: typeof current = {
+        const merged: SessionExamSnapshot = {
           ...current,
           examples: exOnly.examples,
         };
@@ -312,6 +485,7 @@ function SessionExamPage({ examId }: { examId: string }) {
       questions={snap.questions}
       examples={snap.examples}
       sessionBanner
+      offlineImportMedia={snap.offline_import_media ?? null}
     />
   );
 }
@@ -377,6 +551,7 @@ function ExamPaperBody({
   sessionBanner,
   listeningAudioReadyInitial = false,
   listeningExampleAudioReadyInitial = false,
+  offlineImportMedia = null,
 }: {
   exam: Exam;
   questions: Question[];
@@ -384,6 +559,7 @@ function ExamPaperBody({
   sessionBanner?: boolean;
   listeningAudioReadyInitial?: boolean;
   listeningExampleAudioReadyInitial?: boolean;
+  offlineImportMedia?: OfflineImportPersistedMedia | null;
 }) {
   const router = useRouter();
   const navigate = useNavigate({ from: Route.fullPath });
@@ -411,6 +587,44 @@ function ExamPaperBody({
       questions.some((q) => q.id === ex.question_id),
   );
   const activeTab = hasLinkedExamples ? search.tab : "paper";
+
+  const importParseRollup =
+    exam.source === "imported"
+      ? parseImportParseQualityRollup(exam.import_parse_quality ?? null)
+      : null;
+  const showImportParseBanner =
+    importParseRollup != null && importParseRollup.rollup_tier !== "green";
+
+  const showFigureOwnershipDebug =
+    exam.source === "imported" && (import.meta.env.DEV || search.figures_debug === true);
+
+  const [rasterLoadFailedQuestionIds, setRasterLoadFailedQuestionIds] = useState(
+    () => new Set<string>(),
+  );
+  const markQuestionRasterDecodeFailed = useCallback((questionId: string) => {
+    setRasterLoadFailedQuestionIds((prev) => {
+      if (prev.has(questionId)) return prev;
+      const next = new Set(prev);
+      next.add(questionId);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    setRasterLoadFailedQuestionIds(new Set());
+  }, [exam.id]);
+
+  const rasterRuntimeForQuestion = useCallback(
+    (q: Question): QuestionRasterFigureRuntimeOpts | undefined =>
+      rasterLoadFailedQuestionIds.has(q.id) ? { runtimeRasterLoadFailed: true } : undefined,
+    [rasterLoadFailedQuestionIds],
+  );
+
+  const paperPdfBlockedByImportRaster =
+    exam.source === "imported" &&
+    questions.some((q) =>
+      shouldWithholdMcqAnswerForMissingRasterFigures(q, rasterRuntimeForQuestion(q)),
+    );
 
   useEffect(() => {
     if (hasLinkedExamples) return;
@@ -542,6 +756,14 @@ function ExamPaperBody({
   };
 
   const printPaperVector = () => {
+    if (paperPdfBlockedByImportRaster) {
+      const ok = window.confirm(
+        "该导入卷存在「题干用语依赖卷面示意图，但当前无可用插图（未入库、链接失效或附录图无法加载）」的选择题。\n\n" +
+          "继续打印或「另存为 PDF」时版面可能不完整；读卷页面对答案的隐藏策略也会体现在导出结果中。\n\n" +
+          "建议先补全题干/选项中的插图或重新导入含整页 ![](…) 的正文，并确认 public/import-figures 等路径可访问。\n\n是否仍要打开系统打印对话框？",
+      );
+      if (!ok) return;
+    }
     const el = printRootRef.current;
     if (!el) return;
     printScopeRef.current = "paper";
@@ -575,6 +797,34 @@ function ExamPaperBody({
           </AlertDescription>
         </Alert>
       )}
+      {showImportParseBanner && importParseRollup ? (
+        <Alert
+          className={cn(
+            "no-print mb-8",
+            importParseRollup.rollup_tier === "red"
+              ? "border-destructive/45 bg-destructive/[0.06]"
+              : "border-amber-500/40 bg-amber-500/[0.06]",
+          )}
+        >
+          <AlertTitle className="text-foreground">
+            导入解析质检（{importParseRollup.rollup_tier === "red" ? "红" : "黄"}档）
+          </AlertTitle>
+          <AlertDescription className="text-muted-foreground space-y-2">
+            <p>
+              红 {importParseRollup.red_count} / 黄 {importParseRollup.yellow_count} / 绿{" "}
+              {importParseRollup.green_count}{" "}
+              题。以下为系统根据题干、选项与卷面图规则给出的提示，请对照原卷核对后再使用或确认入库。
+            </p>
+            {importParseRollup.summary_lines.length > 0 ? (
+              <ul className="list-disc space-y-1 pl-5 text-sm">
+                {importParseRollup.summary_lines.map((line, i) => (
+                  <li key={i}>{line}</li>
+                ))}
+              </ul>
+            ) : null}
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {/* Toolbar */}
       <div className="no-print sticky top-0 z-20 mb-8 border-b border-border/60 bg-background/90 py-4 backdrop-blur-md supports-[backdrop-filter]:bg-background/75">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -641,7 +891,11 @@ function ExamPaperBody({
               <button
                 type="button"
                 onClick={printPaperVector}
-                title="打印对话框中选「另存为 PDF」，仅包含试卷题目区域"
+                title={
+                  paperPdfBlockedByImportRaster
+                    ? "存在卷面依赖图不可用（未入库或插图加载失败）的选择题：点击后将先确认，再打开打印对话框（建议补图后再导出）"
+                    : "打印对话框中选「另存为 PDF」，仅包含试卷题目区域"
+                }
                 className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm hover:bg-accent"
               >
                 <Printer className="h-4 w-4" /> 打印试卷
@@ -714,9 +968,20 @@ function ExamPaperBody({
           )}
         </header>
 
+        {offlineImportMedia ? (
+          <OfflineImportFigureCrops media={offlineImportMedia} className="mb-8" />
+        ) : null}
+
         {/* Questions */}
         <div className="space-y-8">
+          <ExamForensicsPanel
+            exam={exam}
+            questions={questions}
+            importParseRollup={importParseRollup}
+            enabled={showFigureOwnershipDebug}
+          />
           {questions.map((q, i) => {
+            const geometryDiagram = safeParseGeometryDiagramSchema(q.diagram_schema);
             const listeningTrack = listeningAudioReady
               ? listeningTrackIndexForQuestion(questions, i)
               : null;
@@ -725,6 +990,35 @@ function ExamPaperBody({
               questions,
               exam,
             );
+            const rasterRt = rasterRuntimeForQuestion(q);
+            const resolvedFigures = resolveFigureResources(q, exam);
+            const stemAppendixUrls =
+              resolvedFigures.rasterStemUrlsResolved.length > 0
+                ? resolvedFigures.rasterStemUrlsResolved
+                : rasterAppendixUrlsNotEmbedded(
+                    String(q.content ?? ""),
+                    q.raster_figures?.stem ?? [],
+                  );
+            const useEplPresentation = shouldUseEducationalPresentation(String(q.content ?? ""), {
+              imported: exam.source === "imported",
+            });
+            const eplRenderableDocument = useEplPresentation
+              ? buildEducationalRenderableDocument({
+                  canonicalText: String(q.content ?? ""),
+                  exam,
+                  question: q,
+                })
+              : null;
+            const stemAppendixUrlsForRender =
+              eplRenderableDocument != null
+                ? filterRasterAppendixUrlsForEplPresentation(
+                    stemAppendixUrls,
+                    eplRenderableDocument,
+                  )
+                : stemAppendixUrls;
+            const showStemVector =
+              geometryDiagram && !shouldSuppressVectorDiagramForDisplay(q, rasterRt);
+            const stemVectorFirst = shouldPreferVectorBeforeStemRasterAppendix(exam, q, rasterRt);
             return (
               <article key={q.id} className="paper-card p-7">
                 <div className="flex items-start justify-between gap-4 mb-4">
@@ -751,6 +1045,34 @@ function ExamPaperBody({
                     />
                   ) : null}
                 </div>
+
+                <FigureOwnershipDebugOverlay
+                  exam={exam}
+                  question={q}
+                  enabled={showFigureOwnershipDebug}
+                  rasterRuntime={rasterRt}
+                />
+
+                {shouldShowMissingRasterCallout(q, rasterRt) ? (
+                  <Alert className="mb-3 border-amber-500/45 bg-amber-500/[0.07] text-foreground no-print">
+                    <AlertTitle>卷面示意图未随题入库</AlertTitle>
+                    <AlertDescription className="text-muted-foreground text-sm space-y-1.5">
+                      <p>
+                        本题在纸卷上含<strong>立体图、三视图或图示选项</strong>
+                        ，而当前仅文字数据，没有
+                        <code className="mx-0.5 rounded bg-muted px-1 text-xs">![](…)</code>
+                        附图。仅从 PDF 抽字无法得到图；请将该页
+                        <strong>导出为高清图片</strong>
+                        并与原卷同批导入，或整页以图片上传；也可在支持「导入裁图」时由网关结构化 OCR
+                        生成小图后，在编辑器中把图链写入题干与各选项。
+                      </p>
+                      <p className="text-foreground/90">
+                        系统<strong>不会</strong>
+                        用「学科示意图」矢量重绘代替缺失的扫描图，以免产生误导性图形。
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
 
                 {omitPrintedListeningStem ? (
                   <>
@@ -783,19 +1105,53 @@ function ExamPaperBody({
                           </p>
                         )}
                         <div className="exam-choice-options flex flex-row flex-wrap items-baseline gap-x-6 gap-y-2 text-sm leading-relaxed">
-                          {q.options.map((opt, idx) => (
-                            <div
-                              key={idx}
-                              className="flex min-w-0 max-w-full items-baseline gap-1.5"
-                            >
-                              <span className="shrink-0 font-semibold tabular-nums text-foreground">
-                                {choiceLetterFromIndex(idx)}.
-                              </span>
-                              <div className="min-w-0 [&_.prose]:max-w-none">
-                                <MathContent>{stripLeadingChoiceMarker(String(opt))}</MathContent>
+                          {q.options.map((opt, idx) => {
+                            const letter = choiceLetterFromIndex(idx);
+                            const optLetter =
+                              letter === "A" || letter === "B" || letter === "C" || letter === "D"
+                                ? letter
+                                : null;
+                            const optFigUrls =
+                              optLetter != null
+                                ? (q.raster_figures?.by_option?.[optLetter] ?? [])
+                                : [];
+                            return (
+                              <div
+                                key={idx}
+                                className="flex min-w-0 max-w-full items-baseline gap-1.5"
+                              >
+                                <span className="shrink-0 font-semibold tabular-nums text-foreground">
+                                  {letter}.
+                                </span>
+                                <div className="min-w-0 [&_.prose]:max-w-none">
+                                  <MathContent
+                                    onFigureDecodeFailed={() =>
+                                      markQuestionRasterDecodeFailed(q.id)
+                                    }
+                                  >
+                                    {stripLeadingChoiceMarker(String(opt))}
+                                  </MathContent>
+                                  <RasterFigureAppendix
+                                    urls={rasterAppendixUrlsNotEmbedded(
+                                      String(opt ?? ""),
+                                      optFigUrls,
+                                    )}
+                                    captionPrefix={`选项 ${letter}`}
+                                    onFigureDecodeFailed={() =>
+                                      markQuestionRasterDecodeFailed(q.id)
+                                    }
+                                  />
+                                  {shouldEmphasizeMissingOptionFigures(q, rasterRt) &&
+                                  optLetter &&
+                                  !optionLetterHasConcreteFigureSupply(q, optLetter) ? (
+                                    <p className="mt-0.5 text-[11px] text-amber-900 dark:text-amber-200">
+                                      选项图缺失；请对照原卷或补充裁图。
+                                    </p>
+                                  ) : null}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       </div>
                     ) : null}
@@ -807,8 +1163,42 @@ function ExamPaperBody({
                       本题在数据中的题干（content）为空，故无法显示题面。通常由模型未按规范返回完整题目导致。请重新生成该卷；老数据可暂时从选项与解析反推题意，或待支持编辑后补全。
                     </AlertDescription>
                   </Alert>
+                ) : useEplPresentation && eplRenderableDocument ? (
+                  <>
+                    <EducationalDocumentRenderer
+                      document={eplRenderableDocument}
+                      className="mt-1 border-0 bg-transparent px-0 py-0 shadow-none"
+                      onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}
+                    />
+                    {showStemVector && stemVectorFirst ? (
+                      <GeometryDiagramRenderer schema={geometryDiagram} className="mt-5" />
+                    ) : null}
+                    <RasterFigureAppendix
+                      urls={stemAppendixUrlsForRender}
+                      captionPrefix="卷面附图"
+                      onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}
+                    />
+                    {showStemVector && !stemVectorFirst ? (
+                      <GeometryDiagramRenderer schema={geometryDiagram} className="mt-5" />
+                    ) : null}
+                  </>
                 ) : (
-                  <MathContent>{q.content}</MathContent>
+                  <>
+                    <MathContent onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}>
+                      {q.content}
+                    </MathContent>
+                    {showStemVector && stemVectorFirst ? (
+                      <GeometryDiagramRenderer schema={geometryDiagram} className="mt-5" />
+                    ) : null}
+                    <RasterFigureAppendix
+                      urls={stemAppendixUrls}
+                      captionPrefix="卷面附图"
+                      onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}
+                    />
+                    {showStemVector && !stemVectorFirst ? (
+                      <GeometryDiagramRenderer schema={geometryDiagram} className="mt-5" />
+                    ) : null}
+                  </>
                 )}
 
                 {!omitPrintedListeningStem && q.options && q.options.length > 0 && (
@@ -820,16 +1210,41 @@ function ExamPaperBody({
                       </p>
                     )}
                     <div className="exam-choice-options flex flex-row flex-wrap items-baseline gap-x-6 gap-y-2 text-sm leading-relaxed">
-                      {q.options.map((opt, idx) => (
-                        <div key={idx} className="flex min-w-0 max-w-full items-baseline gap-1.5">
-                          <span className="shrink-0 font-semibold tabular-nums text-foreground">
-                            {choiceLetterFromIndex(idx)}.
-                          </span>
-                          <div className="min-w-0 [&_.prose]:max-w-none">
-                            <MathContent>{stripLeadingChoiceMarker(String(opt))}</MathContent>
+                      {q.options.map((opt, idx) => {
+                        const letter = choiceLetterFromIndex(idx);
+                        const optLetter =
+                          letter === "A" || letter === "B" || letter === "C" || letter === "D"
+                            ? letter
+                            : null;
+                        const optFigUrls =
+                          optLetter != null ? (q.raster_figures?.by_option?.[optLetter] ?? []) : [];
+                        return (
+                          <div key={idx} className="flex min-w-0 max-w-full items-baseline gap-1.5">
+                            <span className="shrink-0 font-semibold tabular-nums text-foreground">
+                              {letter}.
+                            </span>
+                            <div className="min-w-0 [&_.prose]:max-w-none">
+                              <MathContent
+                                onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}
+                              >
+                                {stripLeadingChoiceMarker(String(opt))}
+                              </MathContent>
+                              <RasterFigureAppendix
+                                urls={rasterAppendixUrlsNotEmbedded(String(opt ?? ""), optFigUrls)}
+                                captionPrefix={`选项 ${letter}`}
+                                onFigureDecodeFailed={() => markQuestionRasterDecodeFailed(q.id)}
+                              />
+                              {shouldEmphasizeMissingOptionFigures(q, rasterRt) &&
+                              optLetter &&
+                              !optionLetterHasConcreteFigureSupply(q, optLetter) ? (
+                                <p className="mt-0.5 text-[11px] text-amber-900 dark:text-amber-200">
+                                  选项图缺失；请对照原卷或补充裁图。
+                                </p>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -844,7 +1259,11 @@ function ExamPaperBody({
                       <div className="text-xs uppercase tracking-wider text-gold mb-1.5">
                         最终答案
                       </div>
-                      {String(q.answer ?? "").trim() ? (
+                      {shouldWithholdMcqAnswerForMissingRasterFigures(q, rasterRt) ? (
+                        <p className="text-sm text-amber-900/90 dark:text-amber-100/90">
+                          {MCQ_ANSWER_WITHHELD_FOR_MISSING_RASTER_MESSAGE}
+                        </p>
+                      ) : String(q.answer ?? "").trim() ? (
                         <MathContent>{q.answer}</MathContent>
                       ) : (
                         <p className="text-sm text-muted-foreground">（答案字段为空）</p>
@@ -855,7 +1274,10 @@ function ExamPaperBody({
                         推导过程
                       </div>
                       <ol className="space-y-3">
-                        {(q.solution_steps as SolutionStep[]).map((s) => (
+                        {(shouldWithholdMcqAnswerForMissingRasterFigures(q, rasterRt)
+                          ? placeholderSolutionStepsWhenMcqAnswerWithheld()
+                          : (q.solution_steps as SolutionStep[])
+                        ).map((s) => (
                           <li key={s.step} className="flex gap-3">
                             <span className="shrink-0 mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-mono">
                               {s.step}
