@@ -7,10 +7,12 @@
  * Phases are observational / forensic — not authoritative ownership or linker binds.
  */
 import {
+  flattenGotOcrTabularMarkup,
   normalizeGotOcrLatexBlankMarkers,
+  normalizeGotOcrMcqOptionMarkers,
   normalizeOcrFillBlankMarkers,
   normalizeCoordinatePlaneOcrText,
-  stripGotOcrDiagramLabelRunaway,
+  stripGotOcrPageHallucinations,
   stripGotOcrTitleNoise,
 } from "@/lib/offlineExamCoordinateOcrNormalize.shared";
 import { stemLooksLikeCoordinatePlaneExam } from "@/lib/ocrExamContext.shared";
@@ -30,6 +32,7 @@ export type CanonicalizationPhaseIdV1 =
   | "geometry_notation_normalize"
   | "geometry_semantic_rejoin"
   | "enumeration_semantic_reconstruction"
+  | "mcq_option_normalize"
   | "math_exam_lowering"
   | "canonical_text";
 
@@ -81,6 +84,12 @@ export const CANONICALIZATION_PHASE_META: Record<
     epistemic_class: "deterministic",
     deterministic: true,
     provenance: "compiler.enumeration_semantic_reconstruction",
+  },
+  mcq_option_normalize: {
+    label: "选择题选项 (A)-(D) 标记",
+    epistemic_class: "deterministic",
+    deterministic: true,
+    provenance: "compiler.mcq_option_normalize",
   },
   math_exam_lowering: {
     label: "试卷数学 lowering",
@@ -263,6 +272,7 @@ export function runEducationalTextCanonicalization(
       let x = normalizeOcrFillBlankMarkers(t);
       x = stripGotOcrTitleNoise(x);
       x = normalizeGotOcrLatexBlankMarkers(x);
+      x = flattenGotOcrTabularMarkup(x);
       return x;
     },
     "transport_glyph_repair",
@@ -270,7 +280,12 @@ export function runEducationalTextCanonicalization(
   s = glyph.text;
   phases.push(glyph.trace);
 
-  const diagram = runPhase("diagram_hallucination_strip", s, stripGotOcrDiagramLabelRunaway, "diagram_hallucination_strip");
+  const diagram = runPhase(
+    "diagram_hallucination_strip",
+    s,
+    stripGotOcrPageHallucinations,
+    "diagram_hallucination_strip",
+  );
   s = diagram.text;
   phases.push(diagram.trace);
 
@@ -304,6 +319,15 @@ export function runEducationalTextCanonicalization(
   );
   s = enumeration.text;
   phases.push(enumeration.trace);
+
+  const mcqMarkers = runPhase(
+    "mcq_option_normalize",
+    s,
+    normalizeGotOcrMcqOptionMarkers,
+    "mcq_option_normalize",
+  );
+  s = mcqMarkers.text;
+  phases.push(mcqMarkers.trace);
 
   if (coordinate) {
     const math = runPhase(

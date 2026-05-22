@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "case_id": "placeholder-token-01",
+  "taxonomy": "markdown_reconcile_gap",
+  "notes": "![](URL) placeholder; crops emitted but not persisted; reconcile fails"
+}

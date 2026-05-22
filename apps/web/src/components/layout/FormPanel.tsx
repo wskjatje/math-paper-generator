@@ -8,14 +8,5 @@ export function FormPanel({
   children: React.ReactNode;
   className?: string;
 }) {
-  return (
-    <div
-      className={cn(
-        "paper-card space-y-7 p-6 md:p-8",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cn("paper-card space-y-7 p-6 md:p-8", className)}>{children}</div>;
 }

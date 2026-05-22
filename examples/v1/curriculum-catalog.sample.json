@@ -1,0 +1,43 @@
+{
+  "$schema_comment": "导入脚本：node scripts/import-curriculum-catalog.mjs examples/v1/curriculum-catalog.sample.json",
+  "catalog_version": "2026.1-demo",
+  "series": [
+    {
+      "id": "demo-rj-math-j7a",
+      "subject_id": "math",
+      "grade_band": "junior",
+      "publisher_code": "rj",
+      "edition_name": "义务教育教科书 · 数学",
+      "volume_name": "七年级上册（示例）",
+      "textbook_edition_hint_match": "人教",
+      "revision": null,
+      "catalog_version": "2026.1-demo",
+      "sort_order": 0,
+      "active": true,
+      "source": "sample",
+      "nodes": [
+        {
+          "id": "demo-rj-math-j7a-root-rational",
+          "parent_id": null,
+          "label": "第一章 有理数",
+          "node_kind": "topic",
+          "sort_order": 0
+        },
+        {
+          "id": "demo-rj-math-j7a-1-1",
+          "parent_id": "demo-rj-math-j7a-root-rational",
+          "label": "1.1 正数和负数",
+          "node_kind": "topic",
+          "sort_order": 0
+        },
+        {
+          "id": "demo-rj-math-j7a-1-2",
+          "parent_id": "demo-rj-math-j7a-root-rational",
+          "label": "1.2 有理数及其大小比较",
+          "node_kind": "topic",
+          "sort_order": 1
+        }
+      ]
+    }
+  ]
+}

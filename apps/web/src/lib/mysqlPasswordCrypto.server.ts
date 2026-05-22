@@ -46,9 +46,7 @@ export function getEncryptionKey(): Buffer {
   if (existsSync(masterKeyPath())) {
     const line = readFileSync(masterKeyPath(), "utf8").trim().split(/\s+/)[0];
     if (!line) {
-      throw new Error(
-        "本机密钥文件为空，请删除 data/mysql-password-master.key 后重新保存连接。",
-      );
+      throw new Error("本机密钥文件为空，请删除 data/mysql-password-master.key 后重新保存连接。");
     }
     const key = Buffer.from(line, "base64");
     if (key.length !== KEY_LENGTH) {

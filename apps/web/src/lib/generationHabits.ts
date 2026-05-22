@@ -196,11 +196,7 @@ function decayErrorCategories(h: StoredGenerationHabit): void {
   }
 }
 
-function contextKey(params: {
-  grade: string;
-  subject: string;
-  paper_kind: string;
-}): string {
+function contextKey(params: { grade: string; subject: string; paper_kind: string }): string {
   return `${params.grade}|${params.subject}|${params.paper_kind}`;
 }
 
@@ -227,8 +223,7 @@ export function loadGenerationHabits(): StoredGenerationHabit {
         ? p.recentFailureSnippets.slice(0, 5)
         : [],
       autonomousLearningEnabled: p.autonomousLearningEnabled !== false,
-      consecutiveSuccesses:
-        ver === 3 ? Math.max(0, p.consecutiveSuccesses ?? 0) : 0,
+      consecutiveSuccesses: ver === 3 ? Math.max(0, p.consecutiveSuccesses ?? 0) : 0,
       lastContextKey: ver === 3 && typeof p.lastContextKey === "string" ? p.lastContextKey : "",
       version: 3,
     };
@@ -370,9 +365,7 @@ export function getQualityHintsForNextRequest(): string {
 
   const parts = [habitBlock, autoBlock].filter(Boolean);
   const recent =
-    h.recentFailureSnippets.length > 0
-      ? `\n【最近一次失败摘要】${h.recentFailureSnippets[0]}`
-      : "";
+    h.recentFailureSnippets.length > 0 ? `\n【最近一次失败摘要】${h.recentFailureSnippets[0]}` : "";
 
   const merged = `${parts.join("\n\n")}${recent}`.trim();
   const chatOptimized = buildChatOptimizationHints();

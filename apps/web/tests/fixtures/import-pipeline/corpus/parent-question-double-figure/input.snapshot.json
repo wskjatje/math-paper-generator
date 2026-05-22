@@ -1,0 +1,67 @@
+{
+  "exam": {
+    "id": "l3-parent-double-figure-slice",
+    "title": "L3 共图大题双图切片",
+    "subtitle": null,
+    "subjects": ["数学"],
+    "difficulty": "intermediate",
+    "duration_min": 90,
+    "total_score": 100,
+    "source": "imported",
+    "is_featured": false,
+    "description": "线下导入误拆/误池化：双图堆在大题、子题继承全池，图①/② 锚点无法 authoritative bind",
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "generation_duration_sec": null
+  },
+  "questions": [
+    {
+      "id": "l3-pq-main",
+      "exam_id": "l3-parent-double-figure-slice",
+      "order_index": 0,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "(22)（本小题满分10分）在平面直角坐标系中，O为原点，直角△AOB的顶点A(0,5)，B(5√3,0)，等边△DEF的顶点E(0,3)，F(-√3,0)，顶点D在第二象限。",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 10,
+      "raster_figures": {
+        "version": 1,
+        "stem": [
+          "/import-figures/06803f4e-d427-4807-9dac-a3aa90915e0a/0.jpg",
+          "/import-figures/06803f4e-d427-4807-9dac-a3aa90915e0a/p0-图①.png",
+          "/import-figures/06803f4e-d427-4807-9dac-a3aa90915e0a/p0-图②.png"
+        ],
+        "by_option": {}
+      }
+    },
+    {
+      "id": "l3-pq-part-1",
+      "exam_id": "l3-parent-double-figure-slice",
+      "order_index": 1,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "(1) 如图①，∠EFO的度数为____°，点D的坐标为(____,____)。",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 3
+    },
+    {
+      "id": "l3-pq-part-2",
+      "exam_id": "l3-parent-double-figure-slice",
+      "order_index": 2,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "(2) 如图②，平移与重叠面积（题干节选）。",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 7
+    }
+  ],
+  "examples": []
+}

@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: question-parser-service
+  namespace: zhixue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: question-parser-service
+  template:
+    metadata:
+      labels:
+        app: question-parser-service
+    spec:
+      containers:
+        - name: question-parser
+          image: zhixue/question-parser-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8105

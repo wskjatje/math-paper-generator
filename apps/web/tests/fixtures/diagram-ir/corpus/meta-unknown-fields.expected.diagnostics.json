@@ -1,0 +1,11 @@
+{
+  "omittedKinds": [],
+  "unknownTopLevelKeys": [
+    "meta.layout_template_id",
+    "meta.constraint_dsl"
+  ],
+  "invalidReferences": 0,
+  "primitiveCounts": {
+    "point": 1
+  }
+}

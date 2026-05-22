@@ -1025,7 +1025,8 @@ function ExamPaperBody({
                   )
                 : stemAppendixUrls;
             const showStemVector =
-              geometryDiagram && !shouldSuppressVectorDiagramForDisplay(q, rasterRt);
+              geometryDiagram &&
+              !shouldSuppressVectorDiagramForDisplay(q, rasterRt, exam);
             const stemVectorFirst = shouldPreferVectorBeforeStemRasterAppendix(exam, q, rasterRt);
             return (
               <article key={q.id} className="paper-card p-7">

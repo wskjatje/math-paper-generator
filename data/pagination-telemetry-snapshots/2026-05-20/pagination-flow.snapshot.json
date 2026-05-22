@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "snapshot_kind": "pagination_slo_frozen",
+  "captured_at": "2026-05-21T00:56:43.548Z",
+  "corpus_path": "apps/web/tests/fixtures/reading-flow/corpus",
+  "corpus_label": "baseline-2026-05-20",
+  "case_ids": [
+    "reading-corpus-cue-unbound-warn-01",
+    "reading-corpus-qwf-pass-01"
+  ],
+  "pagination_runtime": "pagination_runtime_v1",
+  "metric_registry": "v1",
+  "replay_mutation": "none",
+  "aggregate": {
+    "meanContinuityPreservationScore": 96,
+    "meanInterruptionCostAtBreaks": 15,
+    "paginationInterruptionRate": 0.3333333333333333,
+    "orphanSubquestionRate": 0,
+    "figureBreakRate": 0,
+    "meanPageCount": 1.5
+  },
+  "rates": {
+    "orphan_subquestion_rate": {
+      "numerator": 0,
+      "denominator": 3,
+      "rate": 0,
+      "population": "pages_with_body_content",
+      "higher_is_worse": true
+    },
+    "figure_break_rate": {
+      "numerator": 0,
+      "denominator": 1,
+      "rate": 0,
+      "population": "question_with_figure_pairs",
+      "higher_is_worse": true
+    },
+    "pagination_interruption_rate": {
+      "numerator": 1,
+      "denominator": 3,
+      "rate": 0.3333333333333333,
+      "population": "pagination_break_decisions",
+      "higher_is_worse": true
+    },
+    "keep_with_next_violation_rate": {
+      "numerator": 0,
+      "denominator": 1,
+      "rate": 0,
+      "population": "keep_with_next_edges",
+      "higher_is_worse": true
+    }
+  },
+  "scores": {
+    "continuity_preservation_score": {
+      "value": 96,
+      "document_count": 2,
+      "higher_is_better": true
+    }
+  },
+  "distributions": {
+    "pageDensityHistogram": {
+      "1": 1,
+      "2": 1
+    },
+    "continuityScoreHistogram": {
+      "100-100": 1,
+      "90-99": 1
+    }
+  },
+  "corpus_snapshot": {
+    "version": "pagination_flow_corpus_v1",
+    "replay_mutation": "none",
+    "derived_from": "pagination_runtime_v1",
+    "documents_scanned": 2,
+    "documents": [
+      {
+        "caseId": "reading-corpus-cue-unbound-warn-01",
+        "verdict": "PASS",
+        "pageCount": 1,
+        "breakCount": 1,
+        "continuityPreservationScore": 100
+      },
+      {
+        "caseId": "reading-corpus-qwf-pass-01",
+        "verdict": "PASS",
+        "pageCount": 2,
+        "breakCount": 2,
+        "continuityPreservationScore": 92
+      }
+    ],
+    "aggregate": {
+      "meanContinuityPreservationScore": 96,
+      "meanInterruptionCostAtBreaks": 15,
+      "paginationInterruptionRate": 0.3333333333333333,
+      "orphanSubquestionRate": 0,
+      "figureBreakRate": 0,
+      "meanPageCount": 1.5
+    },
+    "distributions": {
+      "pageDensityHistogram": {
+        "1": 1,
+        "2": 1
+      },
+      "continuityScoreHistogram": {
+        "100-100": 1,
+        "90-99": 1
+      }
+    }
+  }
+}

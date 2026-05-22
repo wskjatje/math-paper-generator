@@ -1,0 +1,335 @@
+{
+  "version": 1,
+  "rollup_tier": "green",
+  "figure_materialization": {
+    "summary": {
+      "questions_with_markdown": 0,
+      "questions_materialized": 3,
+      "questions_placeholder_only": 0,
+      "questions_missing_supply": 0,
+      "total_markdown_figures_seen": 0,
+      "total_resolvable_urls": 0,
+      "total_placeholder_urls": 0,
+      "total_raster_stem_slots": 3,
+      "exam_registry_entries": 3,
+      "total_figure_refs_bound": 9,
+      "crop_jobs_emitted": 3,
+      "crops_persisted": 2,
+      "crop_persist_failures": 0,
+      "page_figures_persisted": 1,
+      "markdown_import_refs_final": 0
+    },
+    "per_question": [
+      {
+        "order_index": 0,
+        "markdown_figures_seen": 0,
+        "resolvable_urls": 0,
+        "placeholder_urls": 0,
+        "raster_stem_count": 3,
+        "registry_entries": 3,
+        "figure_refs_bound": 3,
+        "supply_state": "materialized",
+        "phases": {
+          "markdown_detected": false,
+          "resolvable_markdown": false,
+          "raster_materialized": true,
+          "exam_registry_nonempty": true,
+          "ownership_refs_bound": true
+        }
+      },
+      {
+        "order_index": 1,
+        "markdown_figures_seen": 0,
+        "resolvable_urls": 0,
+        "placeholder_urls": 0,
+        "raster_stem_count": 0,
+        "registry_entries": 3,
+        "figure_refs_bound": 3,
+        "supply_state": "materialized",
+        "phases": {
+          "markdown_detected": false,
+          "resolvable_markdown": false,
+          "raster_materialized": false,
+          "exam_registry_nonempty": true,
+          "ownership_refs_bound": true
+        }
+      },
+      {
+        "order_index": 2,
+        "markdown_figures_seen": 0,
+        "resolvable_urls": 0,
+        "placeholder_urls": 0,
+        "raster_stem_count": 0,
+        "registry_entries": 3,
+        "figure_refs_bound": 3,
+        "supply_state": "materialized",
+        "phases": {
+          "markdown_detected": false,
+          "resolvable_markdown": false,
+          "raster_materialized": false,
+          "exam_registry_nonempty": true,
+          "ownership_refs_bound": true
+        }
+      }
+    ],
+    "import_producer": {
+      "crop_jobs_emitted": 3,
+      "crops_persisted": 2,
+      "crop_persist_failures": 0,
+      "page_figures_persisted": 1,
+      "markdown_import_refs_final": 0
+    }
+  },
+  "figure_link_traces_v1": [
+    {
+      "version": 1,
+      "question_id": "l3-pq-part-1",
+      "order_index": 1,
+      "anchor_raw": "如图①",
+      "token": "图①",
+      "pool_tier": "exam_global_registry",
+      "candidate_figure_ids": [
+        "bf1e6e9c-4357-43a5-836f-e8665bedc45d"
+      ],
+      "match": "unique",
+      "outcome": "skipped_degraded_pool"
+    },
+    {
+      "version": 1,
+      "question_id": "l3-pq-part-2",
+      "order_index": 2,
+      "anchor_raw": "如图②",
+      "token": "图②",
+      "pool_tier": "exam_global_registry",
+      "candidate_figure_ids": [
+        "422bc4b3-0570-4d1e-bc0b-cff5b784cd0a"
+      ],
+      "match": "unique",
+      "outcome": "skipped_degraded_pool"
+    }
+  ],
+  "figure_lifecycle_timelines_v1": [
+    {
+      "question_id": "l3-pq-main",
+      "order_index": 0,
+      "supply_state": "materialized",
+      "phases": [
+        {
+          "phase": "ocr_crop",
+          "ok": true,
+          "detail": {
+            "crop_jobs_emitted": 3,
+            "page_figures_persisted": 1
+          }
+        },
+        {
+          "phase": "crop_persist",
+          "ok": true,
+          "detail": {
+            "crops_persisted": 2,
+            "crop_persist_failures": 0
+          }
+        },
+        {
+          "phase": "markdown_reconcile",
+          "ok": true,
+          "detail": {
+            "markdown_figures_seen": 0,
+            "resolvable_urls": 0,
+            "placeholder_urls": 0,
+            "import_refs_final": 0
+          }
+        },
+        {
+          "phase": "raster_materialize",
+          "ok": true,
+          "detail": {
+            "raster_stem_count": 3
+          }
+        },
+        {
+          "phase": "registry_publish",
+          "ok": true,
+          "detail": {
+            "exam_registry_entries": 3
+          }
+        },
+        {
+          "phase": "ownership_refs",
+          "ok": true,
+          "detail": {
+            "figure_refs_bound": 3
+          }
+        },
+        {
+          "phase": "linker",
+          "ok": true,
+          "detail": {
+            "anchors": 0,
+            "traces": 0,
+            "bound": 0,
+            "unresolved": 0,
+            "skipped": 0,
+            "pool_tier": "question_local_registry"
+          }
+        },
+        {
+          "phase": "runtime_supply",
+          "ok": true,
+          "detail": {
+            "supply_state": "materialized",
+            "runtime_load_failed": false
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "l3-pq-part-1",
+      "order_index": 1,
+      "supply_state": "materialized",
+      "phases": [
+        {
+          "phase": "ocr_crop",
+          "ok": true,
+          "detail": {
+            "crop_jobs_emitted": 3,
+            "page_figures_persisted": 1
+          }
+        },
+        {
+          "phase": "crop_persist",
+          "ok": true,
+          "detail": {
+            "crops_persisted": 2,
+            "crop_persist_failures": 0
+          }
+        },
+        {
+          "phase": "markdown_reconcile",
+          "ok": true,
+          "detail": {
+            "markdown_figures_seen": 0,
+            "resolvable_urls": 0,
+            "placeholder_urls": 0,
+            "import_refs_final": 0
+          }
+        },
+        {
+          "phase": "raster_materialize",
+          "ok": false,
+          "detail": {
+            "raster_stem_count": 0
+          }
+        },
+        {
+          "phase": "registry_publish",
+          "ok": true,
+          "detail": {
+            "exam_registry_entries": 3
+          }
+        },
+        {
+          "phase": "ownership_refs",
+          "ok": true,
+          "detail": {
+            "figure_refs_bound": 3
+          }
+        },
+        {
+          "phase": "linker",
+          "ok": false,
+          "detail": {
+            "anchors": 1,
+            "traces": 1,
+            "bound": 0,
+            "unresolved": 1,
+            "skipped": 1,
+            "pool_tier": "exam_global_registry"
+          }
+        },
+        {
+          "phase": "runtime_supply",
+          "ok": true,
+          "detail": {
+            "supply_state": "materialized",
+            "runtime_load_failed": false
+          }
+        }
+      ]
+    },
+    {
+      "question_id": "l3-pq-part-2",
+      "order_index": 2,
+      "supply_state": "materialized",
+      "phases": [
+        {
+          "phase": "ocr_crop",
+          "ok": true,
+          "detail": {
+            "crop_jobs_emitted": 3,
+            "page_figures_persisted": 1
+          }
+        },
+        {
+          "phase": "crop_persist",
+          "ok": true,
+          "detail": {
+            "crops_persisted": 2,
+            "crop_persist_failures": 0
+          }
+        },
+        {
+          "phase": "markdown_reconcile",
+          "ok": true,
+          "detail": {
+            "markdown_figures_seen": 0,
+            "resolvable_urls": 0,
+            "placeholder_urls": 0,
+            "import_refs_final": 0
+          }
+        },
+        {
+          "phase": "raster_materialize",
+          "ok": false,
+          "detail": {
+            "raster_stem_count": 0
+          }
+        },
+        {
+          "phase": "registry_publish",
+          "ok": true,
+          "detail": {
+            "exam_registry_entries": 3
+          }
+        },
+        {
+          "phase": "ownership_refs",
+          "ok": true,
+          "detail": {
+            "figure_refs_bound": 3
+          }
+        },
+        {
+          "phase": "linker",
+          "ok": false,
+          "detail": {
+            "anchors": 1,
+            "traces": 1,
+            "bound": 0,
+            "unresolved": 1,
+            "skipped": 1,
+            "pool_tier": "exam_global_registry"
+          }
+        },
+        {
+          "phase": "runtime_supply",
+          "ok": true,
+          "detail": {
+            "supply_state": "materialized",
+            "runtime_load_failed": false
+          }
+        }
+      ]
+    }
+  ]
+}

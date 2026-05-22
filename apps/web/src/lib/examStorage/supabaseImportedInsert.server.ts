@@ -5,6 +5,7 @@
 import type { Json } from "@/integrations/supabase/types";
 import type { SessionExamSnapshot } from "@/lib/examSession";
 import { getSupabaseAdmin } from "@/lib/supabaseOptional.server";
+import { computeQuestionFigureDependencyV1 } from "@/lib/questionFigureDependency.shared";
 
 function stepsToJson(steps: unknown): Json {
   try {
@@ -27,6 +28,16 @@ export async function insertImportedExamSnapshotToSupabase(
     throw new Error("Supabase 未配置");
   }
 
+  const status = bundle.exam.import_review_status;
+  const offlineMedia =
+    bundle.offline_import_media != null
+      ? (JSON.parse(JSON.stringify(bundle.offline_import_media)) as Json)
+      : null;
+  const importParseQuality =
+    bundle.exam.import_parse_quality != null
+      ? (JSON.parse(JSON.stringify(bundle.exam.import_parse_quality)) as Json)
+      : null;
+
   const { data: examRow, error: examErr } = await db
     .from("exams")
     .insert({
@@ -41,6 +52,13 @@ export async function insertImportedExamSnapshotToSupabase(
       is_featured: false,
       created_at: bundle.exam.created_at,
       generation_duration_sec: null,
+      import_review_status: status === "staging" || status === "confirmed" ? status : null,
+      offline_import_media: offlineMedia,
+      import_parse_quality: importParseQuality,
+      figure_registry:
+        bundle.exam.figure_registry != null && bundle.exam.figure_registry.length > 0
+          ? (JSON.parse(JSON.stringify(bundle.exam.figure_registry)) as Json)
+          : null,
     })
     .select()
     .single();
@@ -53,19 +71,36 @@ export async function insertImportedExamSnapshotToSupabase(
 
   const examId = examRow.id as string;
 
-  const questionRows = bundle.questions.map((q) => ({
-    id: q.id,
-    exam_id: examId,
-    order_index: q.order_index,
-    type: q.type,
-    subject: q.subject,
-    content: q.content,
-    options: q.options,
-    answer: q.answer,
-    solution_steps: stepsToJson(q.solution_steps),
-    knowledge_tags: q.knowledge_tags,
-    points: q.points,
-  }));
+  const questionRows = bundle.questions.map((q) => {
+    const fd = q.figure_dependency ?? computeQuestionFigureDependencyV1(q);
+    const figure_dependency = JSON.parse(JSON.stringify(fd)) as Json;
+    return {
+      id: q.id,
+      exam_id: examId,
+      order_index: q.order_index,
+      type: q.type,
+      subject: q.subject,
+      content: q.content,
+      options: q.options,
+      answer: q.answer,
+      solution_steps: stepsToJson(q.solution_steps),
+      knowledge_tags: q.knowledge_tags,
+      points: q.points,
+      diagram_schema:
+        q.diagram_schema != null ? (JSON.parse(JSON.stringify(q.diagram_schema)) as Json) : null,
+      raster_figures:
+        q.raster_figures != null ? (JSON.parse(JSON.stringify(q.raster_figures)) as Json) : null,
+      figure_dependency,
+      visual_geometry_evidence:
+        q.visual_geometry_evidence != null
+          ? (JSON.parse(JSON.stringify(q.visual_geometry_evidence)) as Json)
+          : null,
+      figure_refs:
+        q.figure_refs != null && q.figure_refs.length > 0
+          ? (JSON.parse(JSON.stringify(q.figure_refs)) as Json)
+          : null,
+    };
+  });
 
   const { error: qErr } = await db.from("questions").insert(questionRows);
   if (qErr) {

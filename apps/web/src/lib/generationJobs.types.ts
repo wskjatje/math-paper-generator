@@ -1,5 +1,5 @@
 import type { CompositionRowPayload, Difficulty, QuestionType } from "@/lib/types";
-import type { PaperKindId } from "@/lib/generateCatalog";
+import type { ExamGenerationModeId, ExamTrackId, PaperKindId } from "@/lib/generateCatalog";
 
 export type GenJobStatus = "queued" | "running" | "success" | "failed" | "cancelled";
 
@@ -13,6 +13,19 @@ export type PaperGenPayloadSnapshot = {
   scopes: string[];
   competition_focus: string[];
   paper_kind: PaperKindId;
+  /** 命题页一级模式（旧队列无则按 exam_track 推断） */
+  exam_mode?: ExamGenerationModeId;
+  /** 缺省或旧队列无此字段时视为校内同步 */
+  exam_track?: ExamTrackId;
+  target_track_id?: string;
+  /** 校内同步：教材版本（可选） */
+  textbook_edition_hint?: string;
+  /** 校内同步：单元 / 章节侧重（可选）；由勾选目录 + 补充说明序列化 */
+  chapter_focus?: string;
+  /** 勾选的内置章节 id（可选，便于队列精确回填） */
+  chapter_catalog_ids?: string[];
+  /** 章节补充说明原文（可选） */
+  chapter_focus_supplement?: string;
   difficulty: Difficulty;
   duration_min: number;
   total_score: number;

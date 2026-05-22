@@ -1,0 +1,48 @@
+{
+  "version": 1,
+  "source": "llm_geometry",
+  "primitives": [
+    {
+      "type": "point",
+      "id": "A",
+      "x": 20,
+      "y": 80
+    },
+    {
+      "type": "point",
+      "id": "B",
+      "x": 80,
+      "y": 80
+    },
+    {
+      "type": "point",
+      "id": "C",
+      "x": 50,
+      "y": 25
+    },
+    {
+      "type": "line",
+      "from": "A",
+      "to": "B"
+    },
+    {
+      "type": "line",
+      "from": "B",
+      "to": "C"
+    },
+    {
+      "type": "line",
+      "from": "C",
+      "to": "A"
+    }
+  ],
+  "viewport": {
+    "width": 100,
+    "height": 100
+  },
+  "metadata": {
+    "diagram_schema_normalize": "v1_subset_points_segments",
+    "diagram_schema_layout_engine": "ai_coordinates",
+    "normalizer_capabilities_version": 1
+  }
+}

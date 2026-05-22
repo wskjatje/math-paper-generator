@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "snapshot_kind": "semantic_slo_frozen",
+  "captured_at": "2026-05-20T12:00:00.000Z",
+  "corpus_path": "apps/web/tests/fixtures/semantic-lineage/corpus",
+  "corpus_label": "ci-corpus-baseline-2026-05-20",
+  "exam_ids": ["semantic-corpus-bind-refusal-01"],
+  "fact_ontology": "v1",
+  "metric_registry": "v1",
+  "replay_mutation": "none",
+  "rates": {
+    "bind_refusal_rate": {
+      "numerator": 0,
+      "denominator": 1,
+      "rate": 0,
+      "population": "exams_with_authority_bind_evaluation",
+      "higher_is_worse": true
+    },
+    "topology_preservation_rate": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "population": "exams_with_shared_figure_topology",
+      "higher_is_worse": false
+    },
+    "materialization_success_rate": {
+      "numerator": 1,
+      "denominator": 1,
+      "rate": 1,
+      "population": "exams_with_materialization_telemetry",
+      "higher_is_worse": false
+    },
+    "canonicalization_corruption_rate": {
+      "numerator": 0,
+      "denominator": 0,
+      "rate": null,
+      "population": "exams_with_canonicalization_trace",
+      "higher_is_worse": true
+    }
+  }
+}

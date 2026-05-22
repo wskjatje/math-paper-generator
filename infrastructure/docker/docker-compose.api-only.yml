@@ -1,0 +1,24 @@
+# 本机 Vite 开发（npm run dev:host）专用：只起 API 微服务 + 网关，不构建/启动 web 容器。
+# 避免 Dockerfile.web 内 npm ci 拉取 electron 二进制（国内网络常失败）。
+#
+# 用法（仓库根）：
+#   docker compose -f infrastructure/docker/docker-compose.yml \
+#     -f infrastructure/docker/docker-compose.api-only.yml up --build -d
+#
+# 浏览器：http://localhost:8080（本机 vite dev）
+# 网关 API：http://localhost:8090（或由 Vite 代理 /api/v1 → 8090）
+
+services:
+  web:
+    profiles: ["docker-web"]
+
+  gateway:
+    # 覆盖主 compose 对 web 的依赖（本机 dev:host 用 Vite，不启动 web 容器）
+    depends_on: !reset
+      - ocr-service
+      - formula-service
+      - vision-service
+      - agent-service
+      - question-parser-service
+    environment:
+      WEB_UPSTREAM_URL: ""

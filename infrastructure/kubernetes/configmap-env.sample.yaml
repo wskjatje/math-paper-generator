@@ -1,0 +1,13 @@
+# 替换镜像名与域名后 apply；敏感信息请改用 Secret
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: zhixue-gateway-env
+  namespace: zhixue
+data:
+  OCR_SERVICE_URL: "http://ocr-service.zhixue.svc.cluster.local:8101"
+  FORMULA_SERVICE_URL: "http://formula-service.zhixue.svc.cluster.local:8102"
+  VISION_SERVICE_URL: "http://vision-service.zhixue.svc.cluster.local:8103"
+  AGENT_SERVICE_URL: "http://agent-service.zhixue.svc.cluster.local:8104"
+  QUESTIONS_SERVICE_URL: "http://question-parser-service.zhixue.svc.cluster.local:8105"
+  WEB_UPSTREAM_URL: "http://web.zhixue.svc.cluster.local:8080"

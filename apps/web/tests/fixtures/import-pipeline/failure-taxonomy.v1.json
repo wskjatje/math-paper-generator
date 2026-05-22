@@ -1,0 +1,137 @@
+{
+  "version": 1,
+  "classes": {
+    "healthy_materialized_bind": {
+      "severity": "cosmetic",
+      "symptoms": [
+        "stem raster URL resolvable",
+        "registry published",
+        "ownership refs bound"
+      ],
+      "canonical_signal": [
+        "supply_state.materialized",
+        "timeline.runtime_supply=true",
+        "registry_entries>0"
+      ],
+      "root_cause_layer": "none",
+      "expected_fix_stage": "—",
+      "priority": 0
+    },
+    "markdown_reconcile_gap": {
+      "severity": "blocking",
+      "symptoms": [
+        "markdown ![](…) present",
+        "placeholder or non-resolvable URL",
+        "reconcile phase not ok"
+      ],
+      "canonical_signal": [
+        "supply_state.placeholder",
+        "timeline.markdown_reconcile=false",
+        "materialized_rate_bps=0"
+      ],
+      "root_cause_layer": "reconcile",
+      "expected_fix_stage": "P0-P1",
+      "priority": 20
+    },
+    "no_materialization": {
+      "severity": "blocking",
+      "symptoms": [
+        "OCR crop jobs emitted",
+        "crops not persisted",
+        "raster not materialized"
+      ],
+      "canonical_signal": [
+        "timeline.crop_persist=false",
+        "producer.crops_persisted=0",
+        "materialized_rate_bps=0"
+      ],
+      "root_cause_layer": "materialize",
+      "expected_fix_stage": "P0",
+      "priority": 30
+    },
+    "ownership_scope_missing": {
+      "severity": "degraded",
+      "symptoms": [
+        "figure anchors detected",
+        "figures available in pool",
+        "ownership refs empty"
+      ],
+      "canonical_signal": [
+        "supply_state.materialized",
+        "registry_entries>0",
+        "refs_bound_total=0",
+        "linker_bound=0"
+      ],
+      "root_cause_layer": "ownership",
+      "expected_fix_stage": "P7-1B",
+      "priority": 25
+    },
+    "degraded_global_pool": {
+      "severity": "degraded",
+      "symptoms": [
+        "linker skipped degraded pool",
+        "no authoritative bind from global registry"
+      ],
+      "canonical_signal": [
+        "linker_skipped_degraded_pool>0"
+      ],
+      "root_cause_layer": "linker_policy",
+      "expected_fix_stage": "P7-2",
+      "priority": 35
+    },
+    "redraw_only_fallback": {
+      "severity": "degraded",
+      "symptoms": [
+        "vector diagram schema without raster supply",
+        "runtime redraw path active"
+      ],
+      "canonical_signal": [
+        "supply_state.missing",
+        "registry_entries=0",
+        "materialized_rate_bps=0"
+      ],
+      "root_cause_layer": "render",
+      "expected_fix_stage": "P0",
+      "priority": 15
+    },
+    "degraded_layout_observability": {
+      "severity": "degraded",
+      "symptoms": [
+        "OCR frontend lacks bbox topology",
+        "layout observability degraded"
+      ],
+      "canonical_signal": [
+        "ocr_frontend.bbox_support=false"
+      ],
+      "root_cause_layer": "ocr_frontend",
+      "expected_fix_stage": "Phase1-adapter",
+      "priority": 12
+    },
+    "ocr_topology_drift": {
+      "severity": "degraded",
+      "symptoms": [
+        "overlapping OCR blocks",
+        "topology drift in adapter evaluation"
+      ],
+      "canonical_signal": [
+        "ocr_frontend.symptom=ocr_topology_drift"
+      ],
+      "root_cause_layer": "ocr_frontend",
+      "expected_fix_stage": "Phase1-adapter",
+      "priority": 14
+    },
+    "experimental_ocr_frontend": {
+      "severity": "cosmetic",
+      "symptoms": [
+        "non-canonical OCR engine",
+        "experimental frontend role"
+      ],
+      "canonical_signal": [
+        "ocr_frontend.role=experimental"
+      ],
+      "root_cause_layer": "ocr_frontend",
+      "expected_fix_stage": "Phase1-PoC",
+      "priority": 5
+    }
+  }
+}

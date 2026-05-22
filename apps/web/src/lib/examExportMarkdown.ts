@@ -7,11 +7,17 @@ import {
   type Question,
   type SolutionStep,
 } from "@/lib/types";
-import {
-  choiceLetterFromIndex,
-  stripLeadingChoiceMarker,
-} from "@/lib/examChoiceOptions.shared";
+import { choiceLetterFromIndex, stripLeadingChoiceMarker } from "@/lib/examChoiceOptions.shared";
 import { prepareExamTextForMarkdownExport } from "@/lib/examTextFilterLibrary";
+import {
+  examHasEnglishListening,
+  shouldOmitListeningQuestionFromPaper,
+} from "@/lib/listeningExamPolicy.shared";
+import {
+  MCQ_ANSWER_WITHHELD_FOR_MISSING_RASTER_MESSAGE,
+  placeholderSolutionStepsWhenMcqAnswerWithheld,
+  shouldWithholdMcqAnswerForMissingRasterFigures,
+} from "@/lib/questionRendererPolicy.shared";
 
 /** 例题步骤常缺省 `step` 字段，与试卷共用序号回退，避免出现「undefined.」 */
 function solutionStepOrdinal(step: SolutionStep, index: number): number {
@@ -43,10 +49,31 @@ export function buildPaperMarkdown(exam: Exam, questions: Question[]): string {
   }
   lines.push("\n---\n");
 
-  questions.forEach((q, i) => {
+  const englishListeningRules = examHasEnglishListening(questions, exam);
+  if (englishListeningRules) {
     lines.push(
-      `\n## 第 ${i + 1} 题 (${questionDisplayTypeLabel(q)}, ${q.points} 分)\n`,
+      `\n> **听力说明（英语听力卷）**：题干与听力录音稿**不在本书面稿中印发**；**选项印发**在下方各题，请听考场录音作答。朗读稿源文件为 \`public/audio/<本卷ID>/listening-script.md\`（试卷详情页「生成听力音频」后生成，可编辑后再生成以更新 WAV）。\n\n---\n`,
     );
+  }
+
+  questions.forEach((q, i) => {
+    if (shouldOmitListeningQuestionFromPaper(q, questions, exam)) {
+      lines.push(`\n## 第 ${i + 1} 题 (${questionDisplayTypeLabel(q)}, ${q.points} 分) · 听力\n`);
+      lines.push(
+        `\n> 题干与听力原文不在本书面稿印发；请依考场录音作答。详见 \`listening-script.md\`。\n`,
+      );
+      if (q.options?.length) {
+        lines.push(`\n**选项（书面印发）：**\n`);
+        const optionLines = q.options.map((o, idx) => {
+          const body = prepareExamTextForMarkdownExport(stripLeadingChoiceMarker(String(o)));
+          return `${choiceLetterFromIndex(idx)}. ${body}`;
+        });
+        lines.push(optionLines.join("\n"));
+      }
+      lines.push(`\n\n---`);
+      return;
+    }
+    lines.push(`\n## 第 ${i + 1} 题 (${questionDisplayTypeLabel(q)}, ${q.points} 分)\n`);
     if (q.knowledge_tags?.length) {
       lines.push(
         `*知识点: ${q.knowledge_tags.map((t) => prepareExamTextForMarkdownExport(String(t))).join(", ")}*\n`,
@@ -62,9 +89,19 @@ export function buildPaperMarkdown(exam: Exam, questions: Question[]): string {
         .join("　");
       lines.push(`\n**选项**：${optionLine}\n`);
     }
-    lines.push(`\n#### 答案\n\n${prepareExamTextForMarkdownExport(q.answer)}\n`);
+    const withholdAns = shouldWithholdMcqAnswerForMissingRasterFigures(q);
+    lines.push(
+      `\n#### 答案\n\n${
+        withholdAns
+          ? prepareExamTextForMarkdownExport(MCQ_ANSWER_WITHHELD_FOR_MISSING_RASTER_MESSAGE)
+          : prepareExamTextForMarkdownExport(q.answer)
+      }\n`,
+    );
     lines.push(`\n#### 分步推导\n`);
-    (q.solution_steps as SolutionStep[]).forEach((s, si) => {
+    const steps = withholdAns
+      ? placeholderSolutionStepsWhenMcqAnswerWithheld()
+      : (q.solution_steps as SolutionStep[]);
+    steps.forEach((s, si) => {
       const ord = solutionStepOrdinal(s, si);
       lines.push(`${ord}. ${prepareExamTextForMarkdownExport(s.description)}`);
       if (s.reasoning) lines.push(`   - ${prepareExamTextForMarkdownExport(s.reasoning)}`);

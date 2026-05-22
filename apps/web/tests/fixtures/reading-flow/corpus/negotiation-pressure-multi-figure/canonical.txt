@@ -1,0 +1,7 @@
+（III）共图大题
+① 根据图③，判断直线 l₁ 与 l₂ 的位置关系
+![图③](/import-figures/fig3.png)
+② 根据图④，求 ∠α 的大小
+![图④](/import-figures/fig4.png)
+③ 如图⑤，补全图形并标出对称点
+![图⑤](/import-figures/fig5.png)

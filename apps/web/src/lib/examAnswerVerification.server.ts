@@ -92,7 +92,10 @@ function isMultiPartApplicableType(t: string): boolean {
 /**
  * 题干若含连续（1）～（n）（n≥2），answer 必须带齐各问标记。
  */
-function verifyMultiPartAnswerCompleteness(q: ParsedAiQuestionLike, questionIndex: number): string | undefined {
+function verifyMultiPartAnswerCompleteness(
+  q: ParsedAiQuestionLike,
+  questionIndex: number,
+): string | undefined {
   if (!isMultiPartApplicableType(String(q.type ?? ""))) return undefined;
   const content = String(q.content ?? "");
   const answer = String(q.answer ?? "");
@@ -198,7 +201,11 @@ export function collectTwoLinearEquations(
   content: string,
 ): [{ a: number; b: number; c: number }, { a: number; b: number; c: number }] | undefined {
   const blob = stripTexNoiseForEqParse(content);
-  const lines = blob.split(/\n/).flatMap((l) => l.split(";")).map((l) => l.trim()).filter(Boolean);
+  const lines = blob
+    .split(/\n/)
+    .flatMap((l) => l.split(";"))
+    .map((l) => l.trim())
+    .filter(Boolean);
   const out: Array<{ a: number; b: number; c: number }> = [];
   for (const line of lines) {
     const p = parseOneLinearEq2Var(line);
@@ -305,7 +312,7 @@ function parseQuadraticLeftSide(left: string): { a: number; b: number; c: number
 
 /** 化为一元二次标准式 ax²+bx+c=0 的系数（a≠0） */
 function parseQuadraticToStandard(line: string): { a: number; b: number; c: number } | undefined {
-  let t = line.replace(/\s/g, "").replace(/\^2/gi, "²");
+  const t = line.replace(/\s/g, "").replace(/\^2/gi, "²");
   if (!/x²|x\^2/i.test(t) || !t.includes("=")) return undefined;
   const eq = t.indexOf("=");
   const left = t.slice(0, eq);
@@ -317,10 +324,16 @@ function parseQuadraticToStandard(line: string): { a: number; b: number; c: numb
   return { a: leftPoly.a, b: leftPoly.b, c: leftPoly.c - rhs };
 }
 
-function collectFirstQuadraticEquation(content: string): { a: number; b: number; c: number } | undefined {
+function collectFirstQuadraticEquation(
+  content: string,
+): { a: number; b: number; c: number } | undefined {
   if (collectTwoLinearEquations(content)) return undefined;
   const blob = stripTexNoiseForEqParse(content);
-  const lines = blob.split(/\n/).flatMap((l) => l.split(";")).map((l) => l.trim()).filter(Boolean);
+  const lines = blob
+    .split(/\n/)
+    .flatMap((l) => l.split(";"))
+    .map((l) => l.trim())
+    .filter(Boolean);
   for (const line of lines) {
     const p = parseQuadraticToStandard(line);
     if (p && Math.abs(p.a) > 1e-12) return p;
@@ -344,9 +357,7 @@ function parseTwoRealRootsFromAnswer(answer: string): [number, number] | [number
     .filter(Number.isFinite);
   if (xs.length >= 2) return [xs[0], xs[1]];
   if (xs.length === 1) return [xs[0]];
-  const pair = flat.match(
-    /([+-]?\d+(?:\.\d+)?)\s*[,，、或]\s*([+-]?\d+(?:\.\d+)?)/,
-  );
+  const pair = flat.match(/([+-]?\d+(?:\.\d+)?)\s*[,，、或]\s*([+-]?\d+(?:\.\d+)?)/);
   if (pair) return [Number(pair[1]), Number(pair[2])];
   return undefined;
 }
@@ -368,19 +379,23 @@ function quadraticRootsMatch(ref: number[], ans: number[]): boolean {
     const r = ref[0];
     if (ans.length === 1) return Math.abs(ans[0] - r) <= SUBST_TOLERANCE;
     if (ans.length === 2) {
-      return (
-        Math.abs(ans[0] - r) <= SUBST_TOLERANCE && Math.abs(ans[1] - r) <= SUBST_TOLERANCE
-      );
+      return Math.abs(ans[0] - r) <= SUBST_TOLERANCE && Math.abs(ans[1] - r) <= SUBST_TOLERANCE;
     }
     return false;
   }
   return ans.length === 2 && sameRealRootsWithinTol(ref, ans);
 }
 
-function collectFirstUnaryLinearEquation(content: string): { a: number; b: number; c: number } | undefined {
+function collectFirstUnaryLinearEquation(
+  content: string,
+): { a: number; b: number; c: number } | undefined {
   if (collectTwoLinearEquations(content)) return undefined;
   const blob = stripTexNoiseForEqParse(content);
-  const lines = blob.split(/\n/).flatMap((l) => l.split(";")).map((l) => l.trim()).filter(Boolean);
+  const lines = blob
+    .split(/\n/)
+    .flatMap((l) => l.split(";"))
+    .map((l) => l.trim())
+    .filter(Boolean);
   for (const line of lines) {
     if (parseQuadraticToStandard(line)) continue;
     const p = parseOneLinearEq1Var(line);
@@ -392,7 +407,10 @@ function collectFirstUnaryLinearEquation(content: string): { a: number; b: numbe
 /**
  * 若题干可解析为标准二元一次方程组且 answer 含 x、y 数值，则数值校验；失败则拒绝入库。
  */
-function verifyBinaryLinearSystemAnswer(q: ParsedAiQuestionLike, questionIndex: number): string | undefined {
+function verifyBinaryLinearSystemAnswer(
+  q: ParsedAiQuestionLike,
+  questionIndex: number,
+): string | undefined {
   if (!isEquationCarryingType(String(q.type ?? ""))) return undefined;
   const content = String(q.content ?? "");
   if (shouldSkipSingleEquationNumericDueToMultiPartStem(content)) return undefined;
@@ -415,7 +433,10 @@ function verifyBinaryLinearSystemAnswer(q: ParsedAiQuestionLike, questionIndex: 
 /**
  * 若题干可解析为一元一次方程且答案为数字，则验算 ax+b=c。
  */
-function verifyUnaryLinearEquationAnswer(q: ParsedAiQuestionLike, questionIndex: number): string | undefined {
+function verifyUnaryLinearEquationAnswer(
+  q: ParsedAiQuestionLike,
+  questionIndex: number,
+): string | undefined {
   if (!isEquationCarryingType(String(q.type ?? ""))) return undefined;
   const content = String(q.content ?? "");
   if (shouldSkipSingleEquationNumericDueToMultiPartStem(content)) return undefined;
@@ -435,7 +456,10 @@ function verifyUnaryLinearEquationAnswer(q: ParsedAiQuestionLike, questionIndex:
 /**
  * 一元二次方程：题干可解析为 ax²+bx+c=0 且答案给出实根时验算（复根或_delta<0 跳过）。
  */
-function verifyQuadraticEquationAnswer(q: ParsedAiQuestionLike, questionIndex: number): string | undefined {
+function verifyQuadraticEquationAnswer(
+  q: ParsedAiQuestionLike,
+  questionIndex: number,
+): string | undefined {
   if (!isEquationCarryingType(String(q.type ?? ""))) return undefined;
   const content = String(q.content ?? "");
   if (shouldSkipSingleEquationNumericDueToMultiPartStem(content)) return undefined;

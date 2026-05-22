@@ -1,0 +1,18 @@
+# 统一入口：浏览器 → 网关（网关反代 Web + 聚合 /api/v1）
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zhixue-gateway
+  namespace: zhixue
+spec:
+  rules:
+    - host: zhixue.example.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8090

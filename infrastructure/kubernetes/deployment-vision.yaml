@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vision-service
+  namespace: zhixue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vision-service
+  template:
+    metadata:
+      labels:
+        app: vision-service
+    spec:
+      containers:
+        - name: vision
+          image: zhixue/vision-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8103

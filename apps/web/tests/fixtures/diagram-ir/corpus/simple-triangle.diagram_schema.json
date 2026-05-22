@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "canvas": { "width": 100, "height": 100 },
+  "meta": { "layout_engine": "ai_coordinates" },
+  "points": [
+    { "id": "A", "x": 20, "y": 80 },
+    { "id": "B", "x": 80, "y": 80 },
+    { "id": "C", "x": 50, "y": 25 }
+  ],
+  "segments": [
+    ["A", "B"],
+    ["B", "C"],
+    ["C", "A"]
+  ]
+}

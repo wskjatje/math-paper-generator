@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "case_id": "materialized-bind-01",
+  "taxonomy": "healthy_materialized_bind",
+  "notes": "canonical success path: crop → materialize → registry → bind"
+}

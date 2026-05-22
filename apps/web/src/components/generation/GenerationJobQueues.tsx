@@ -102,7 +102,9 @@ function PaperJobTable({
                     {j.title}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{j.gradeLabel}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                  {j.gradeLabel}
+                </td>
                 <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
                   {j.subjectLabel}
                 </td>
@@ -192,7 +194,9 @@ function ExampleJobTable({
                     {j.examTitle}
                   </span>
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{j.gradeLabel}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                  {j.gradeLabel}
+                </td>
                 <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
                   {j.subjectLabel}
                 </td>
@@ -302,7 +306,8 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
           <SheetHeader>
             <SheetTitle>命题任务队列</SheetTitle>
             <SheetDescription>
-              本机浏览器记录；换设备或清缓存会丢失。可连续提交多份，同一时间仅执行 1 个任务，其余「排队中」；执行中或排队可取消；失败或已取消可重新生成并带入表单。
+              本机浏览器记录；换设备或清缓存会丢失。可连续提交多份，同一时间仅执行 1
+              个任务，其余「排队中」；执行中或排队可取消；失败或已取消可重新生成并带入表单。
               若异常退出导致任务长期停在「生成中」，系统在继续排队时会自动超时标记失败；也可手动「释放卡住任务」。
             </SheetDescription>
           </SheetHeader>
@@ -413,7 +418,8 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
           <SheetHeader>
             <SheetTitle>例题生成队列</SheetTitle>
             <SheetDescription>
-              本机浏览器记录。可连续加入多条例题任务，同一时间仅执行 1 个，其余「排队中」。重新生成将把试卷与题型选项写回「生成例题」对话框（请在试卷库页面确认后提交）。
+              本机浏览器记录。可连续加入多条例题任务，同一时间仅执行 1
+              个，其余「排队中」。重新生成将把试卷与题型选项写回「生成例题」对话框（请在试卷库页面确认后提交）。
               若异常退出导致长期「生成中」，系统会在继续排队时自动超时标记失败；也可手动「释放卡住任务」（与命题队列共用）。
             </SheetDescription>
           </SheetHeader>

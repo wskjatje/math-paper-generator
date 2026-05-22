@@ -31,7 +31,10 @@ function shapeLooksLikeGenerateExamPayload(d: Record<string, unknown>): boolean 
 const UNWRAP_KEYS = ["data", "result", "payload", "output", "body", "value"] as const;
 
 /** 沿常见网关/序列化嵌套多次剥离，直到拿到含命题字段的对象 */
-function peelPayloadLayers(raw: Record<string, unknown>, maxDepth: number): Record<string, unknown> {
+function peelPayloadLayers(
+  raw: Record<string, unknown>,
+  maxDepth: number,
+): Record<string, unknown> {
   let o = raw;
   for (let depth = 0; depth < maxDepth; depth++) {
     let advanced = false;
@@ -62,7 +65,10 @@ function extractExamIdFromShape(o: Record<string, unknown>): string {
 }
 
 /** 浅层 BFS：部分运行时会把结果放在深层对象里且不带 data/result 键名 */
-function findGenerateExamShapeInTree(raw: unknown, maxNodes: number): Record<string, unknown> | null {
+function findGenerateExamShapeInTree(
+  raw: unknown,
+  maxNodes: number,
+): Record<string, unknown> | null {
   const queue: unknown[] = [raw];
   let seen = 0;
   while (queue.length > 0 && seen < maxNodes) {
@@ -103,7 +109,11 @@ export function unwrapGenerateExamRpc(raw: unknown): GenerateExamClientResult {
   const examId = extractExamIdFromShape(o);
   const snap = o.snapshot;
   const snapshot =
-    snap && typeof snap === "object" && !Array.isArray(snap) && "exam" in snap && "questions" in snap
+    snap &&
+    typeof snap === "object" &&
+    !Array.isArray(snap) &&
+    "exam" in snap &&
+    "questions" in snap
       ? (snap as SessionExamSnapshot)
       : undefined;
   return {
@@ -124,7 +134,8 @@ export async function finalizeGenerateExamClientResult(
   rawRpc: unknown,
   consumeScratch: ConsumeScratchFn,
 ): Promise<GenerateExamClientResult> {
-  let { examId, persisted, snapshot } = unwrapGenerateExamRpc(rawRpc);
+  const { examId, persisted, snapshot: initialSnapshot } = unwrapGenerateExamRpc(rawRpc);
+  let snapshot = initialSnapshot;
   if (!examId) {
     throw new Error(
       "命题已完成但未收到有效的试卷 id（服务端返回异常或请求被中断）。请查看命题队列或稍后重试；若使用桌面端，请确认预览进程正常。",

@@ -1,0 +1,189 @@
+name: Negotiation governance
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "apps/web/src/lib/educationalPhysicalNegotiationRuntime**.ts"
+      - "apps/web/src/lib/negotiationFlow**.ts"
+      - "apps/web/scripts/inspect-negotiation-flow.ts"
+      - "apps/web/scripts/write-negotiation-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-negotiation-telemetry-snapshots.ts"
+      - "apps/web/scripts/compare-negotiation-resilience-snapshots.ts"
+      - "apps/web/src/lib/negotiationFlowResilience**.ts"
+      - "apps/web/src/lib/negotiationCrossMediumParity**.ts"
+      - "apps/web/scripts/*cross-medium-parity*.ts"
+      - "docs/governance/CROSS-MEDIUM-PARITY-GOVERNANCE-v1.md"
+      - "docs/governance/PROJECTION-PURITY-GOVERNANCE-v1.md"
+      - "docs/governance/decisions/ADR-O18*.md"
+      - "apps/web/scripts/epl-forbidden-apis.registry.mjs"
+      - "apps/web/scripts/check-epl-ast-contract.mjs"
+      - "data/cross-medium-parity-snapshots/**"
+      - "docs/governance/NEGOTIATION-RESILIENCE-GOVERNANCE-v1.md"
+      - "data/negotiation-telemetry-snapshots/**"
+      - ".github/workflows/negotiation-governance.yml"
+  pull_request:
+    paths:
+      - "apps/web/src/lib/educationalPhysicalNegotiationRuntime**.ts"
+      - "apps/web/src/lib/negotiationFlow**.ts"
+      - "apps/web/scripts/inspect-negotiation-flow.ts"
+      - "apps/web/scripts/write-negotiation-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-negotiation-telemetry-snapshots.ts"
+      - "apps/web/scripts/compare-negotiation-resilience-snapshots.ts"
+      - "apps/web/src/lib/negotiationFlowResilience**.ts"
+      - "apps/web/src/lib/negotiationCrossMediumParity**.ts"
+      - "apps/web/scripts/*cross-medium-parity*.ts"
+      - "docs/governance/CROSS-MEDIUM-PARITY-GOVERNANCE-v1.md"
+      - "docs/governance/PROJECTION-PURITY-GOVERNANCE-v1.md"
+      - "docs/governance/decisions/ADR-O18*.md"
+      - "apps/web/scripts/epl-forbidden-apis.registry.mjs"
+      - "apps/web/scripts/check-epl-ast-contract.mjs"
+      - "data/cross-medium-parity-snapshots/**"
+      - "docs/governance/NEGOTIATION-RESILIENCE-GOVERNANCE-v1.md"
+      - "data/negotiation-telemetry-snapshots/**"
+      - ".github/workflows/negotiation-governance.yml"
+  workflow_dispatch:
+
+jobs:
+  projection-purity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run governance:projection-purity -w @zhixue/web
+
+  unit:
+    needs: projection-purity
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run test -w @zhixue/web --
+          src/lib/projectionPurityContract.shared.test.ts
+          src/lib/educationalPhysicalNegotiationRuntime.shared.test.ts
+          src/lib/negotiationFlowTelemetrySnapshot.shared.test.ts
+          src/lib/educationalPdfLowering.shared.test.ts
+          src/lib/negotiationFlowStressCorpus.shared.test.ts
+          src/lib/negotiationFlowResilience.shared.test.ts
+          src/lib/negotiationCrossMediumParity.shared.test.ts
+
+  gate-corpus:
+    needs: unit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run inspect:negotiation-flow -w @zhixue/web --
+          --corpus
+          --gate-max-rate split_cluster_rate=0.01
+      - run: >-
+          npm run inspect:negotiation-flow -w @zhixue/web --
+          --corpus
+          --gate-min-score continuity_preservation_after_negotiation=40
+
+  snapshot-regression:
+    needs: gate-corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run negotiation-telemetry:snapshot -w @zhixue/web --
+          --out data/negotiation-telemetry-snapshots/ci-current
+      - run: >-
+          npm run negotiation-telemetry:compare -w @zhixue/web --
+          --baseline data/negotiation-telemetry-snapshots/2026-05-20
+          --current data/negotiation-telemetry-snapshots/ci-current
+          --max-rate-rise 0.15
+          --max-score-drop 10
+
+  stress-snapshot:
+    needs: gate-corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run negotiation-telemetry:snapshot -w @zhixue/web --
+          --out data/negotiation-telemetry-snapshots/stress-ci-current
+          --stress-profile pdf_low_margin
+          --label stress-run
+      - run: >-
+          npm run inspect:negotiation-flow -w @zhixue/web --
+          --corpus
+          --stress-profile pdf_low_margin
+          --gate-max-rate defer_to_next_page_rate=0.85
+
+  resilience-regression:
+    needs: stress-snapshot
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run negotiation-telemetry:compare-resilience -w @zhixue/web --
+          --baseline data/negotiation-telemetry-snapshots/2026-05-20-stress-pdf_low_margin
+          --current data/negotiation-telemetry-snapshots/stress-ci-current
+
+  parity-regression:
+    needs: [gate-corpus, projection-purity]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run cross-medium-parity:snapshot -w @zhixue/web --
+          --out data/cross-medium-parity-snapshots/parity-ci-current
+      - run: >-
+          npm run cross-medium-parity:compare -w @zhixue/web --
+          --baseline data/cross-medium-parity-snapshots/2026-05-20
+          --current data/cross-medium-parity-snapshots/parity-ci-current
+
+  fidelity-telemetry:
+    needs: gate-corpus
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: >-
+          npm run projection-fidelity:snapshot -w @zhixue/web --
+          --out data/projection-fidelity-snapshots/fidelity-ci-current
+      - run: >-
+          npm run projection-fidelity:compare -w @zhixue/web --
+          --baseline data/projection-fidelity-snapshots/2026-05-20
+          --current data/projection-fidelity-snapshots/fidelity-ci-current

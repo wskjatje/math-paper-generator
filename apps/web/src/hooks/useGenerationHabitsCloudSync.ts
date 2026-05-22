@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  fetchGenerationHabitsFromDb,
-  saveGenerationHabitsToDb,
-} from "@/lib/exam.functions.server";
+import { fetchGenerationHabitsFromDb, saveGenerationHabitsToDb } from "@/lib/exam.functions.server";
 import {
   bindGenerationHabitsCloudFns,
   flushPushGenerationHabits,

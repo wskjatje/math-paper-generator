@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-service
+  namespace: zhixue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocr-service
+  template:
+    metadata:
+      labels:
+        app: ocr-service
+    spec:
+      containers:
+        - name: ocr
+          image: zhixue/ocr-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8101

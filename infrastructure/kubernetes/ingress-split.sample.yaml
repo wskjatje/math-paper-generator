@@ -1,0 +1,25 @@
+# 分拆入口：仅 API 走网关，静态与 SSR 直连 Web（网关 ENV 中可不设 WEB_UPSTREAM_URL）
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: zhixue-split
+  namespace: zhixue
+spec:
+  rules:
+    - host: zhixue.example.local
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: gateway
+                port:
+                  number: 8090
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port:
+                  number: 8080

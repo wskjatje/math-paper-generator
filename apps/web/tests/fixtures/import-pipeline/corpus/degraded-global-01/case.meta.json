@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "case_id": "degraded-global-01",
+  "taxonomy": "degraded_global_pool",
+  "notes": "Q1 本地 stem 建 registry；Q2 仅 exam_global_registry 候选 → linker 须 skipped_degraded_pool，不得从 global pool 升格 authoritative bind。审阅重点：pool_tier / linker trace / registry，不比 OCR 正文。"
+}

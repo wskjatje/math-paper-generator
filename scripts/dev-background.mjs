@@ -9,11 +9,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(__dirname, "..");
-const logPath = path.join(root, "dev-server.log");
-const pidPath = path.join(root, ".dev-server.pid");
+const repoRoot = path.join(__dirname, "..");
+const webRoot = path.join(repoRoot, "apps", "web");
+const logPath = path.join(repoRoot, "dev-server.log");
+const pidPath = path.join(repoRoot, ".dev-server.pid");
 
-const viteCli = path.join(root, "node_modules", "vite", "bin", "vite.js");
+const viteCli = path.join(repoRoot, "node_modules", "vite", "bin", "vite.js");
 if (!existsSync(viteCli)) {
   console.error("请先在本目录执行: npm install");
   process.exit(1);
@@ -36,10 +37,10 @@ if (existsSync(pidPath)) {
 
 const logFd = openSync(logPath, "a");
 const child = spawn(process.execPath, [viteCli, "dev", "--host", "0.0.0.0", "--port", "8080", "--strictPort"], {
-  cwd: root,
+  cwd: webRoot,
   detached: true,
   stdio: ["ignore", logFd, logFd],
-  env: process.env,
+  env: { ...process.env, MPG_PROJECT_ROOT: repoRoot },
 });
 child.unref();
 writeFileSync(pidPath, String(child.pid), "utf8");

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: agent-service
+  namespace: zhixue
+spec:
+  selector:
+    app: agent-service
+  ports:
+    - port: 8104
+      targetPort: 8104

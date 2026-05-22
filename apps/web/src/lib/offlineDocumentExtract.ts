@@ -1,9 +1,6 @@
 /**
- * 浏览器端从常见办公文档抽取纯文本，供「文档识别导入」走 AI 结构化。
- * 勿在服务端调用（依赖 pdf.js worker、tesseract 语言包等）。
- *
- * `routeTree.gen.ts` 会静态导入所有路由；调用方（如 ImportOfflineExamDialog）应对本模块使用动态 import，
- * 避免 SSR 阶段加载本文件；PDF 分支内仍对 pdfjs 使用动态 import，并在 extractPdfText 内用 import.meta.env.SSR 拦截。
+ * 浏览器端从常见办公文档抽取纯文本（PDF 文本层 / Word / Excel）。
+ * 图片 OCR 仅经 Docker 网关 GOT-OCR 2.0（见 ImportOfflineExamDialog）。
  */
 const IMG_RE = /\.(png|jpe?g|webp|gif|bmp|tif?f)$/i;
 
@@ -22,7 +19,12 @@ async function extractPdfText(data: ArrayBuffer): Promise<string> {
     const content = await page.getTextContent();
     const chunk = content.items
       .map((it) => {
-        if (it && typeof it === "object" && "str" in it && typeof (it as { str: unknown }).str === "string") {
+        if (
+          it &&
+          typeof it === "object" &&
+          "str" in it &&
+          typeof (it as { str: unknown }).str === "string"
+        ) {
           return (it as { str: string }).str;
         }
         return "";
@@ -31,6 +33,72 @@ async function extractPdfText(data: ArrayBuffer): Promise<string> {
     lines.push(chunk);
   }
   return lines.join("\n");
+}
+
+export type PdfPageJpeg = { page: number; dataUrl: string; mime: "image/jpeg" };
+
+/**
+ * 单次加载 PDF：抽取文本层 + 将每一页渲染为 JPEG（data URL），供导入流程写入 import-figures，
+ * 使合并正文出现 `![](…)`，便于题干/选项引用扫描卷插图。
+ */
+export async function extractPdfTextAndRenderPagesAsJpeg(
+  data: ArrayBuffer,
+  options?: { maxPages?: number; maxSidePx?: number; jpegQuality?: number },
+): Promise<{ text: string; pages: PdfPageJpeg[] }> {
+  if (import.meta.env.SSR || typeof window === "undefined") {
+    throw new Error("PDF 处理仅在浏览器环境可用");
+  }
+  const pdfjs = await import("pdfjs-dist");
+  const { default: pdfWorkerSrc } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+  pdfjs.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+  const pdf = await pdfjs.getDocument({ data }).promise;
+  const total = pdf.numPages;
+  const maxPages = Math.min(options?.maxPages ?? 35, total, 60);
+  const maxSidePx = options?.maxSidePx ?? 1950;
+  const jpegQuality = options?.jpegQuality ?? 0.83;
+
+  const lines: string[] = [];
+  const pages: PdfPageJpeg[] = [];
+
+  for (let p = 1; p <= maxPages; p++) {
+    const page = await pdf.getPage(p);
+    const content = await page.getTextContent();
+    const chunk = content.items
+      .map((it) => {
+        if (
+          it &&
+          typeof it === "object" &&
+          "str" in it &&
+          typeof (it as { str: unknown }).str === "string"
+        ) {
+          return (it as { str: string }).str;
+        }
+        return "";
+      })
+      .join(" ");
+    lines.push(chunk);
+
+    const baseVp = page.getViewport({ scale: 1 });
+    const scale = Math.min(maxSidePx / Math.max(baseVp.width, baseVp.height, 1), 2.35);
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement("canvas");
+    const w = Math.max(1, Math.floor(viewport.width));
+    const h = Math.max(1, Math.floor(viewport.height));
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("无法创建 Canvas");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, w, h);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+    pages.push({
+      page: p,
+      dataUrl: canvas.toDataURL("image/jpeg", jpegQuality),
+      mime: "image/jpeg",
+    });
+  }
+
+  return { text: lines.join("\n"), pages };
 }
 
 export async function extractTextFromFile(file: File): Promise<string> {
@@ -68,29 +136,27 @@ export async function extractTextFromFile(file: File): Promise<string> {
   }
 
   if (IMG_RE.test(lower)) {
-    const { createWorker } = await import("tesseract.js");
-    const worker = await createWorker(["chi_sim", "eng"]);
-    try {
-      const {
-        data: { text },
-      } = await worker.recognize(file);
-      return text ?? "";
-    } finally {
-      await worker.terminate();
-    }
+    throw new Error(
+      `${file.name}：图片请通过线下导入上传，由网关 GOT-OCR 2.0 识别（需 npm run docker:api:detach）`,
+    );
   }
 
-  throw new Error(`暂不支持的扩展名：${file.name}（支持 pdf、docx、xls/xlsx/csv、常见图片）`);
+  throw new Error(`暂不支持的扩展名：${file.name}（支持 pdf、docx、xls/xlsx/csv）`);
 }
 
-export async function extractTextFromFiles(files: File[]): Promise<{ text: string; warnings: string[] }> {
+export async function extractTextFromFiles(
+  files: File[],
+): Promise<{ text: string; warnings: string[] }> {
   const warnings: string[] = [];
   const blocks: string[] = [];
 
   for (const file of files) {
     try {
       const t = (await extractTextFromFile(file)).trim();
-      if (!t) warnings.push(`${file.name}：未提取到文字（若是扫描版 PDF，可尝试导出为图片后单独上传做 OCR）`);
+      if (!t)
+        warnings.push(
+          `${file.name}：未提取到文字（若是扫描版 PDF，可尝试导出为图片后单独上传做 OCR）`,
+        );
       blocks.push(`\n\n<<< 文件: ${file.name} >>>\n\n${t}`);
     } catch (e: unknown) {
       warnings.push(`${file.name}：${e instanceof Error ? e.message : String(e)}`);

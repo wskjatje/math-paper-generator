@@ -1,0 +1,10 @@
+{
+  "version": "1",
+  "points": [{ "id": "A", "x": 0, "y": 0 }],
+  "segments": [],
+  "meta": {
+    "layout_engine": "ai_coordinates",
+    "layout_template_id": "golden-meta-template",
+    "constraint_dsl": { "probe": true }
+  }
+}

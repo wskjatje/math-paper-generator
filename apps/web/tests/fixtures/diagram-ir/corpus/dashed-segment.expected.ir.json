@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "source": "rule_geometry",
+  "primitives": [
+    {
+      "type": "point",
+      "id": "E",
+      "x": 10,
+      "y": 40
+    },
+    {
+      "type": "point",
+      "id": "F",
+      "x": 40,
+      "y": 40
+    },
+    {
+      "type": "line",
+      "from": "E",
+      "to": "F",
+      "dashed": true
+    }
+  ],
+  "viewport": {
+    "width": 100,
+    "height": 100
+  },
+  "metadata": {
+    "diagram_schema_normalize": "v1_subset_points_segments",
+    "diagram_schema_layout_engine": "square_chain_constraints_v1",
+    "normalizer_capabilities_version": 1
+  }
+}

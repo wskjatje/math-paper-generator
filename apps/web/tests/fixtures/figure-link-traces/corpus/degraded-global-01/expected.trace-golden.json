@@ -1,0 +1,11 @@
+[
+  {
+    "order_index": 1,
+    "anchor_raw": "如图①",
+    "token": "图①",
+    "pool_tier": "exam_global_registry",
+    "match": "unique",
+    "outcome": "skipped_degraded_pool",
+    "candidate_count": 1
+  }
+]

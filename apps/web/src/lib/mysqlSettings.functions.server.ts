@@ -22,17 +22,27 @@ const MysqlConnSchema = z.object({
   database: z.string().min(1).max(64),
 });
 
-function formatMysqlTestFailure(e: unknown, database: string): string {
+function formatMysqlTestFailure(
+  e: unknown,
+  database: string,
+  endpoint?: { host?: string; port?: number },
+): string {
   const err = e as { code?: string; errno?: number; message?: string };
   const errno = err.errno;
   const code = err.code;
+  const msg = e instanceof Error ? e.message : String(e);
   if (errno === 1049 || code === "ER_BAD_DB_ERROR") {
     return `数据库「${database}」尚不存在。请先点击「创建数据库（IF NOT EXISTS）」，成功后再点「测试连接」。`;
   }
   if (errno === 1045 || code === "ER_ACCESS_DENIED_ERROR") {
     return `账号或密码被拒绝（Access denied）。请核对 root 密码，或在设置页密码框点「眼睛」显示明文；也可用终端 mysql -u root -p 验证能登录。`;
   }
-  return e instanceof Error ? e.message : String(e);
+  if (code === "ECONNREFUSED" || msg.includes("ECONNREFUSED")) {
+    const host = endpoint?.host ?? "127.0.0.1";
+    const port = endpoint?.port ?? 3306;
+    return `无法连接 ${host}:${port}（连接被拒绝）。若通过 Docker 网关访问（浏览器为 localhost:8090），请将「主机」改为 host.docker.internal，不要用 127.0.0.1——容器内的 127.0.0.1 不是 Mac 上的 MySQL。若直接访问本机开发服务（如 :8080），可用 127.0.0.1。请确认本机 mysqld 已启动。`;
+  }
+  return msg;
 }
 
 /** 设置页：当前是否已写入本机 mysql-connection.json（不回传密码） */
@@ -66,7 +76,9 @@ export const testMysqlConnectionFromForm = createServerFn({ method: "POST" })
       await testMysqlWithDatabase(d);
       return { ok: true as const };
     } catch (e: unknown) {
-      throw new Error(`连接失败：${formatMysqlTestFailure(e, d.database)}`);
+      throw new Error(
+        `连接失败：${formatMysqlTestFailure(e, d.database, { host: d.host, port: d.port })}`,
+      );
     }
   });
 

@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "meta": { "layout_engine": "ai_coordinates" },
+  "points": [
+    { "id": "A", "x": 0, "y": 0 },
+    { "id": "B", "x": 10, "y": 0 }
+  ],
+  "segments": [
+    ["A", "B"],
+    ["A", "Z"]
+  ]
+}

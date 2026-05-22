@@ -12,6 +12,9 @@ export type PageFiltersSnapshot = {
       subject?: string;
       difficulty?: string | null;
       paperKind?: string;
+      examTrack?: string;
+      examMode?: string;
+      targetTrackId?: string;
       scopes?: string[];
       competitionFocus?: string[];
       duration?: number;
@@ -69,4 +72,3 @@ export function writePageFilterSnapshot<K extends keyof PageFiltersSnapshot["pag
     /* ignore quota */
   }
 }
-

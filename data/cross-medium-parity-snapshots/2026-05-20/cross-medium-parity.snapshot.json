@@ -1,0 +1,203 @@
+{
+  "version": 1,
+  "snapshot_kind": "cross_medium_parity_frozen",
+  "captured_at": "2026-05-21T01:11:19.755Z",
+  "corpus_path": "apps/web/tests/fixtures/reading-flow/corpus",
+  "corpus_label": "ci-cross-medium-parity",
+  "case_ids": [
+    "negotiation-pressure-dense-enum",
+    "negotiation-pressure-multi-figure",
+    "negotiation-pressure-qwf-chain",
+    "reading-corpus-cue-unbound-warn-01",
+    "reading-corpus-qwf-pass-01"
+  ],
+  "reference_viewport": "pdf_a4",
+  "viewport_triad": [
+    "pdf_a4",
+    "pdf_exam_booklet_dense",
+    "mobile_ultra_narrow"
+  ],
+  "replay_mutation": "none",
+  "per_viewport_resilience": {
+    "pdf_a4": {
+      "version": "v1",
+      "severity_distribution": {
+        "low": 0,
+        "medium": 0,
+        "high": 0,
+        "catastrophic": 0
+      },
+      "critical_path_break_rate": 0,
+      "cascading_negotiation_rate": null,
+      "compound_compromise_rate": null,
+      "catastrophic_spread_rate": null
+    },
+    "pdf_exam_booklet_dense": {
+      "version": "v1",
+      "severity_distribution": {
+        "low": 0,
+        "medium": 5,
+        "high": 0,
+        "catastrophic": 10
+      },
+      "critical_path_break_rate": 1,
+      "cascading_negotiation_rate": 0.2727272727272727,
+      "compound_compromise_rate": 0.9333333333333333,
+      "catastrophic_spread_rate": 0.6666666666666666
+    },
+    "mobile_ultra_narrow": {
+      "version": "v1",
+      "severity_distribution": {
+        "low": 0,
+        "medium": 5,
+        "high": 0,
+        "catastrophic": 10
+      },
+      "critical_path_break_rate": 1,
+      "cascading_negotiation_rate": 0.2727272727272727,
+      "compound_compromise_rate": 0.9333333333333333,
+      "catastrophic_spread_rate": 0.6666666666666666
+    }
+  },
+  "aggregate": {
+    "case_count": 5,
+    "mean_continuity_drop_from_reference": 24,
+    "max_continuity_drop_from_reference": 43,
+    "max_severity_shift_from_reference": 1,
+    "mean_catastrophic_spread_delta_from_reference": null,
+    "figure_detachment_escalation_rate": 0.8,
+    "cascading_negotiation_rate_range": 0
+  },
+  "cases": [
+    {
+      "caseId": "negotiation-pressure-dense-enum",
+      "continuity_preservation_by_viewport": {
+        "pdf_a4": 100,
+        "pdf_exam_booklet_dense": 78,
+        "mobile_ultra_narrow": 78
+      },
+      "continuity_drop_from_reference": 22,
+      "severity_shift_from_reference": {
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "max_severity_shift_from_reference": 1,
+      "catastrophic_spread_by_viewport": {
+        "pdf_a4": null,
+        "pdf_exam_booklet_dense": 0.3333333333333333,
+        "mobile_ultra_narrow": 0.3333333333333333
+      },
+      "catastrophic_spread_delta_from_reference": null,
+      "figure_detachment_count_by_viewport": {
+        "pdf_a4": 0,
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "figure_detachment_escalated": true
+    },
+    {
+      "caseId": "negotiation-pressure-multi-figure",
+      "continuity_preservation_by_viewport": {
+        "pdf_a4": 92,
+        "pdf_exam_booklet_dense": 61,
+        "mobile_ultra_narrow": 61
+      },
+      "continuity_drop_from_reference": 31,
+      "severity_shift_from_reference": {
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "max_severity_shift_from_reference": 1,
+      "catastrophic_spread_by_viewport": {
+        "pdf_a4": null,
+        "pdf_exam_booklet_dense": 0.5,
+        "mobile_ultra_narrow": 0.5
+      },
+      "catastrophic_spread_delta_from_reference": null,
+      "figure_detachment_count_by_viewport": {
+        "pdf_a4": 0,
+        "pdf_exam_booklet_dense": 2,
+        "mobile_ultra_narrow": 2
+      },
+      "figure_detachment_escalated": true
+    },
+    {
+      "caseId": "negotiation-pressure-qwf-chain",
+      "continuity_preservation_by_viewport": {
+        "pdf_a4": 68,
+        "pdf_exam_booklet_dense": 25,
+        "mobile_ultra_narrow": 25
+      },
+      "continuity_drop_from_reference": 43,
+      "severity_shift_from_reference": {
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "max_severity_shift_from_reference": 1,
+      "catastrophic_spread_by_viewport": {
+        "pdf_a4": null,
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "catastrophic_spread_delta_from_reference": null,
+      "figure_detachment_count_by_viewport": {
+        "pdf_a4": 0,
+        "pdf_exam_booklet_dense": 5,
+        "mobile_ultra_narrow": 5
+      },
+      "figure_detachment_escalated": true
+    },
+    {
+      "caseId": "reading-corpus-cue-unbound-warn-01",
+      "continuity_preservation_by_viewport": {
+        "pdf_a4": 100,
+        "pdf_exam_booklet_dense": 93,
+        "mobile_ultra_narrow": 93
+      },
+      "continuity_drop_from_reference": 7,
+      "severity_shift_from_reference": {
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "max_severity_shift_from_reference": 1,
+      "catastrophic_spread_by_viewport": {
+        "pdf_a4": null,
+        "pdf_exam_booklet_dense": 0,
+        "mobile_ultra_narrow": 0
+      },
+      "catastrophic_spread_delta_from_reference": null,
+      "figure_detachment_count_by_viewport": {
+        "pdf_a4": 0,
+        "pdf_exam_booklet_dense": 0,
+        "mobile_ultra_narrow": 0
+      },
+      "figure_detachment_escalated": false
+    },
+    {
+      "caseId": "reading-corpus-qwf-pass-01",
+      "continuity_preservation_by_viewport": {
+        "pdf_a4": 92,
+        "pdf_exam_booklet_dense": 75,
+        "mobile_ultra_narrow": 75
+      },
+      "continuity_drop_from_reference": 17,
+      "severity_shift_from_reference": {
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "max_severity_shift_from_reference": 1,
+      "catastrophic_spread_by_viewport": {
+        "pdf_a4": null,
+        "pdf_exam_booklet_dense": 1,
+        "mobile_ultra_narrow": 1
+      },
+      "catastrophic_spread_delta_from_reference": null,
+      "figure_detachment_count_by_viewport": {
+        "pdf_a4": 0,
+        "pdf_exam_booklet_dense": 2,
+        "mobile_ultra_narrow": 2
+      },
+      "figure_detachment_escalated": true
+    }
+  ]
+}

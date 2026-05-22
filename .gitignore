@@ -6,7 +6,7 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 
-# Node / TanStack Start（应用位于仓库根目录）
+# Node / TanStack Start（应用在 apps/web；node_modules 多在仓库根悬停）
 node_modules/
 dist/
 release/
@@ -24,8 +24,21 @@ dist-ssr/
 
 .env
 
+# 首次运行 npm run dev 时环境自检标记（删除后可再次触发检查）
+.zhixue-env-ok
+
+# CI 临时写出（基线见 data/telemetry-snapshots/<date>/，须提交）
+data/telemetry-snapshots/ci-current/
+data/cognitive-telemetry-snapshots/ci-current/
+data/pagination-telemetry-snapshots/ci-current/
+data/negotiation-telemetry-snapshots/ci-current/
+data/negotiation-telemetry-snapshots/stress-ci-current/
+data/cross-medium-parity-snapshots/parity-ci-current/
+data/projection-fidelity-snapshots/fidelity-ci-current/
+
 # 无 Supabase 时服务端写入的本地简易题库
 data/local-exams/*.json
+data/import-layout-stubs/*.json
 !data/local-exams/.gitkeep
 
 # 命题「仅会话」临时快照（由 RPC 二次拉取后删除）
@@ -36,11 +49,24 @@ data/generation-scratch/*.json
 data/mysql-connection.json
 data/mysql-password-master.key
 
+# 网上导入队列（无 Supabase/MySQL 时的服务端回退文件）
+data/remote-import-jobs.json
+
 # 一类｜试卷数学残串自学规则（服务端合并进修复链）
 data/exam-math-repair-overrides.json
 
+# GOT-OCR HF 权重（npm run got-ocr:download-model，勿提交大文件）
+data/hf-models/GOT-OCR-2.0-hf/**
+!data/hf-models/.gitkeep
+
+# 线下导入附图的运行时落盘（保留目录占位）
+apps/web/public/import-figures/**
+!apps/web/public/import-figures/.gitkeep
+
 # 后台 dev（npm run dev:bg）
 .dev-server.pid
+.got-ocr-native.pid
+.got-ocr-native.log
 
 # Logs
 logs/
@@ -50,6 +76,19 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+
+# 已废弃：Q24 专规垫片（请删本地文件，勿提交）
+apps/web/src/lib/importedExamQ24PaperAlignment.shared.ts
+
+# Cursor 本地配置（勿提交）
+.cursor/
+
+# apps/web 运行时 data（与根 data/mysql-* 同策略）
+apps/web/data/mysql-connection.json
+apps/web/data/mysql-password-master.key
+
+# Tesseract / OCR 语言包（体积大，本机按需放置）
+apps/web/*.traineddata
 
 # Editor
 .vscode/*

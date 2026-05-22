@@ -51,4 +51,3 @@ export function buildChatOptimizationHints(): string {
   if (!parts.length) return "";
   return `【聊天模型·老师优化】\n${parts.join("\n")}`.slice(0, 1200);
 }
-

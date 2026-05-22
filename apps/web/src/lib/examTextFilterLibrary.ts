@@ -16,10 +16,7 @@
  * 选择题选项字母与排版：`examChoiceOptions.shared.ts`（`choiceLetterFromIndex` / `stripLeadingChoiceMarker`），与数学替换链独立。
  */
 
-export {
-  choiceLetterFromIndex,
-  stripLeadingChoiceMarker,
-} from "@/lib/examChoiceOptions.shared";
+export { choiceLetterFromIndex, stripLeadingChoiceMarker } from "@/lib/examChoiceOptions.shared";
 
 export {
   applyExamTextCanonicalFilters,
@@ -32,6 +29,7 @@ export {
   extractMarkdownFiguresOutOfDollarMath,
   sanitizeExamMathDisplay,
   stripExamUiNoiseForPlainExport,
+  repairScientificNotationAndChemistryOcr,
 } from "@/lib/sanitizeExamMathDisplay";
 
 export { EXAM_MATH_BUILTIN_LIBRARY_RULES } from "@/lib/examMathRepairLibrary.shared";
@@ -46,4 +44,6 @@ export const EXAM_TEXT_CANONICAL_PIPELINE_STAGE_IDS = [
   "collapseAdjacentDuplicateRuns",
 ] as const;
 
-export const EXAM_TEXT_MARKDOWN_EXPORT_TAIL_STAGE_IDS = ["normalizeMarkdownExportArtifacts"] as const;
+export const EXAM_TEXT_MARKDOWN_EXPORT_TAIL_STAGE_IDS = [
+  "normalizeMarkdownExportArtifacts",
+] as const;

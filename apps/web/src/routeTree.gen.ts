@@ -10,9 +10,11 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as RemediationRulesRouteImport } from './routes/remediation-rules'
 import { Route as OfflineImportsRouteImport } from './routes/offline-imports'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as GenerateRouteImport } from './routes/generate'
+import { Route as EducationOsRouteImport } from './routes/education-os'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
@@ -21,6 +23,11 @@ import { Route as ExamIdRouteImport } from './routes/exam.$id'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RemediationRulesRoute = RemediationRulesRouteImport.update({
+  id: '/remediation-rules',
+  path: '/remediation-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineImportsRoute = OfflineImportsRouteImport.update({
@@ -36,6 +43,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const GenerateRoute = GenerateRouteImport.update({
   id: '/generate',
   path: '/generate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EducationOsRoute = EducationOsRouteImport.update({
+  id: '/education-os',
+  path: '/education-os',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -63,9 +75,11 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
+  '/education-os': typeof EducationOsRoute
   '/generate': typeof GenerateRoute
   '/library': typeof LibraryRoute
   '/offline-imports': typeof OfflineImportsRoute
+  '/remediation-rules': typeof RemediationRulesRoute
   '/settings': typeof SettingsRoute
   '/exam/$id': typeof ExamIdRoute
 }
@@ -73,9 +87,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
+  '/education-os': typeof EducationOsRoute
   '/generate': typeof GenerateRoute
   '/library': typeof LibraryRoute
   '/offline-imports': typeof OfflineImportsRoute
+  '/remediation-rules': typeof RemediationRulesRoute
   '/settings': typeof SettingsRoute
   '/exam/$id': typeof ExamIdRoute
 }
@@ -84,9 +100,11 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/dashboard': typeof DashboardRoute
+  '/education-os': typeof EducationOsRoute
   '/generate': typeof GenerateRoute
   '/library': typeof LibraryRoute
   '/offline-imports': typeof OfflineImportsRoute
+  '/remediation-rules': typeof RemediationRulesRoute
   '/settings': typeof SettingsRoute
   '/exam/$id': typeof ExamIdRoute
 }
@@ -96,9 +114,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/education-os'
     | '/generate'
     | '/library'
     | '/offline-imports'
+    | '/remediation-rules'
     | '/settings'
     | '/exam/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -106,9 +126,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/education-os'
     | '/generate'
     | '/library'
     | '/offline-imports'
+    | '/remediation-rules'
     | '/settings'
     | '/exam/$id'
   id:
@@ -116,9 +138,11 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/dashboard'
+    | '/education-os'
     | '/generate'
     | '/library'
     | '/offline-imports'
+    | '/remediation-rules'
     | '/settings'
     | '/exam/$id'
   fileRoutesById: FileRoutesById
@@ -127,9 +151,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
   DashboardRoute: typeof DashboardRoute
+  EducationOsRoute: typeof EducationOsRoute
   GenerateRoute: typeof GenerateRoute
   LibraryRoute: typeof LibraryRoute
   OfflineImportsRoute: typeof OfflineImportsRoute
+  RemediationRulesRoute: typeof RemediationRulesRoute
   SettingsRoute: typeof SettingsRoute
   ExamIdRoute: typeof ExamIdRoute
 }
@@ -141,6 +167,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/remediation-rules': {
+      id: '/remediation-rules'
+      path: '/remediation-rules'
+      fullPath: '/remediation-rules'
+      preLoaderRoute: typeof RemediationRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline-imports': {
@@ -162,6 +195,13 @@ declare module '@tanstack/react-router' {
       path: '/generate'
       fullPath: '/generate'
       preLoaderRoute: typeof GenerateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/education-os': {
+      id: '/education-os'
+      path: '/education-os'
+      fullPath: '/education-os'
+      preLoaderRoute: typeof EducationOsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -199,9 +239,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
   DashboardRoute: DashboardRoute,
+  EducationOsRoute: EducationOsRoute,
   GenerateRoute: GenerateRoute,
   LibraryRoute: LibraryRoute,
   OfflineImportsRoute: OfflineImportsRoute,
+  RemediationRulesRoute: RemediationRulesRoute,
   SettingsRoute: SettingsRoute,
   ExamIdRoute: ExamIdRoute,
 }

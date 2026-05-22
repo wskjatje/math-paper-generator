@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GeometryVisionResult",
+  "type": "object",
+  "required": ["engine", "shapes"],
+  "properties": {
+    "engine": { "type": "string" },
+    "shapes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "kind": { "type": "string", "enum": ["triangle", "circle", "segment", "angle", "point", "coordinate_system", "unknown"] },
+          "labels": { "type": "array", "items": { "type": "string" } },
+          "bbox": { "type": "array", "items": { "type": "number" } },
+          "confidence": { "type": "number" }
+        }
+      }
+    },
+    "relations": { "type": "array" }
+  }
+}

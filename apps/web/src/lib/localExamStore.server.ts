@@ -6,9 +6,9 @@ import path from "node:path";
 import type { Exam, Example, LocalExamFileInfo } from "@/lib/types";
 import { resolveProjectRoot } from "@/lib/projectRoot.server";
 import type { SessionExamSnapshot } from "@/lib/examSession";
+import { parseOfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
 
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function isSafeLocalExamId(id: string): boolean {
   return UUID_RE.test(id);
@@ -56,10 +56,12 @@ export async function loadLocalExam(id: string): Promise<SessionExamSnapshot | n
     const raw = await readFile(file, "utf8");
     const parsed = JSON.parse(raw) as SessionExamSnapshot & { version?: number };
     if (!parsed?.exam?.id || !Array.isArray(parsed.questions)) return null;
+    const offline_import_media = parseOfflineImportPersistedMedia(parsed.offline_import_media);
     return {
       exam: parsed.exam,
       questions: parsed.questions,
       examples: Array.isArray(parsed.examples) ? parsed.examples : [],
+      ...(offline_import_media ? { offline_import_media } : {}),
     };
   } catch (e: unknown) {
     const code = e && typeof e === "object" && "code" in e ? (e as NodeJS.ErrnoException).code : "";
@@ -109,7 +111,10 @@ export async function listLocalExamRows(): Promise<Exam[]> {
   return exams;
 }
 
-export async function appendExamplesToLocalExam(examId: string, newExamples: Example[]): Promise<void> {
+export async function appendExamplesToLocalExam(
+  examId: string,
+  newExamples: Example[],
+): Promise<void> {
   const snap = await loadLocalExam(examId);
   if (!snap) throw new Error("本地试卷不存在或 id 无效");
   await saveLocalExamSnapshot({
@@ -178,4 +183,3 @@ export async function deleteLocalExamFile(id: string): Promise<{ ok: boolean }> 
     throw e;
   }
 }
-

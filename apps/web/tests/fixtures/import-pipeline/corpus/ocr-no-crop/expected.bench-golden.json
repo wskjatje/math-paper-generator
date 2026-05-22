@@ -1,0 +1,19 @@
+{
+  "projection_version": 1,
+  "questions_total": 2,
+  "supply_state_counts": {
+    "missing": 2
+  },
+  "materialized_rate_bps": 0,
+  "registry_entries": 0,
+  "refs_bound_total": 0,
+  "provenance_artifacts": 0,
+  "linker_bound": 0,
+  "linker_skipped_already_bound": 0,
+  "timeline_phase_ok": {
+    "ocr_crop": 2,
+    "markdown_reconcile": 2
+  },
+  "producer_crop_jobs_emitted": 4,
+  "producer_crops_persisted": 0
+}

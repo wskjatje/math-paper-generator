@@ -1,0 +1,11 @@
+[
+  {
+    "order_index": 0,
+    "anchor_raw": "如图①",
+    "token": "图①",
+    "pool_tier": "question_local_registry",
+    "match": "ambiguous",
+    "outcome": "skipped_ambiguous",
+    "candidate_count": 2
+  }
+]

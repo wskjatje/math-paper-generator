@@ -1,0 +1,99 @@
+# Issue 3 — Cognitive pagination runtime + corpus gates（semantic-first；无像素高度）
+name: Pagination governance
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "apps/web/src/lib/educationalPaginationRuntime**.ts"
+      - "apps/web/src/lib/paginationFlow**.ts"
+      - "apps/web/src/lib/educationalCompositionRuntime**.ts"
+      - "apps/web/scripts/inspect-pagination-flow.ts"
+      - "apps/web/scripts/write-pagination-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-pagination-telemetry-snapshots.ts"
+      - "data/pagination-telemetry-snapshots/**"
+      - "apps/web/tests/fixtures/reading-flow/**"
+      - "docs/architecture/educational-composition-runtime.md"
+      - ".github/workflows/pagination-governance.yml"
+  pull_request:
+    paths:
+      - "apps/web/src/lib/educationalPaginationRuntime**.ts"
+      - "apps/web/src/lib/paginationFlow**.ts"
+      - "apps/web/src/lib/educationalCompositionRuntime**.ts"
+      - "apps/web/scripts/inspect-pagination-flow.ts"
+      - "apps/web/scripts/write-pagination-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-pagination-telemetry-snapshots.ts"
+      - "data/pagination-telemetry-snapshots/**"
+      - "apps/web/tests/fixtures/reading-flow/**"
+      - "docs/architecture/educational-composition-runtime.md"
+      - ".github/workflows/pagination-governance.yml"
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Pagination runtime unit tests
+        run: >-
+          npm run test -w @zhixue/web --
+          src/lib/educationalPaginationRuntime.shared.test.ts
+          src/lib/educationalCompositionRuntime.shared.test.ts
+          src/lib/educationalPdfLowering.shared.test.ts
+          src/lib/paginationFlowTelemetrySnapshot.shared.test.ts
+
+  gate-corpus:
+    name: Pagination cognitive SLO
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Orphan subquestion rate budget
+        run: >-
+          npm run inspect:pagination-flow -w @zhixue/web --
+          --corpus
+          --gate-mode strict
+          --gate-max-rate orphan_subquestion_rate=0.5
+      - name: Continuity preservation floor
+        run: >-
+          npm run inspect:pagination-flow -w @zhixue/web --
+          --corpus
+          --gate-mode strict
+          --gate-min-score continuity_preservation_score=50
+
+  snapshot-regression:
+    name: Frozen pagination snapshot diff
+    needs: gate-corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Write current pagination snapshot
+        run: >-
+          npm run pagination-telemetry:snapshot -w @zhixue/web --
+          --out data/pagination-telemetry-snapshots/ci-current
+          --label ci-run
+      - name: Compare to committed baseline
+        run: >-
+          npm run pagination-telemetry:compare -w @zhixue/web --
+          --baseline data/pagination-telemetry-snapshots/2026-05-20
+          --current data/pagination-telemetry-snapshots/ci-current
+          --max-rate-rise 0.15
+          --max-score-drop 10

@@ -20,8 +20,7 @@ export type ExamCardActionRowProps = {
 };
 
 /** 与卡片底栏所有操作文案统一（字重、字号、字距） */
-export const EXAM_CARD_ACTION_LABEL_CLASS =
-  "text-xs font-semibold leading-none tracking-wide";
+export const EXAM_CARD_ACTION_LABEL_CLASS = "text-xs font-semibold leading-none tracking-wide";
 
 const actionRowTop = "mt-4 border-t border-border/60 pt-4";
 
@@ -81,7 +80,9 @@ export function ExamCardActionRow({
         {deleteButton ?? <span className="block min-h-8 w-full" aria-hidden />}
       </div>
 
-      <div className="flex min-h-8 min-w-0 items-stretch [&>*]:min-w-0 [&>*]:w-full">{middleSlot}</div>
+      <div className="flex min-h-8 min-w-0 items-stretch [&>*]:min-w-0 [&>*]:w-full">
+        {middleSlot}
+      </div>
 
       <div className="flex min-h-8 min-w-0 items-stretch">{viewButton}</div>
     </div>

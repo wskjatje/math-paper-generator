@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agent-service
+  namespace: zhixue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: agent-service
+  template:
+    metadata:
+      labels:
+        app: agent-service
+    spec:
+      containers:
+        - name: agent
+          image: zhixue/agent-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8104

@@ -1,5 +1,6 @@
 /** 未配置数据库时，服务端生成的临时试卷 ID 前缀；详情页配合浏览器存储展示快照 */
 import type { Exam, Question, Example } from "@/lib/types";
+import type { OfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
 
 export const SESSION_EXAM_ID_PREFIX = "session-";
 
@@ -9,6 +10,8 @@ export type SessionExamSnapshot = {
   exam: Exam;
   questions: Question[];
   examples: Example[];
+  /** 线下导入原图 URL + 对照标注；可选 */
+  offline_import_media?: OfflineImportPersistedMedia | null;
 };
 
 /**

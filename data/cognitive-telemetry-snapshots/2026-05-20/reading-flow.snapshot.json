@@ -1,0 +1,139 @@
+{
+  "version": 1,
+  "snapshot_kind": "cognitive_slo_frozen",
+  "captured_at": "2026-05-21T00:44:11.028Z",
+  "corpus_path": "apps/web/tests/fixtures/reading-flow/corpus",
+  "corpus_label": "baseline",
+  "case_ids": [
+    "reading-corpus-cue-unbound-warn-01",
+    "reading-corpus-qwf-pass-01"
+  ],
+  "fact_ontology": "v1",
+  "metric_registry": "v1",
+  "replay_mutation": "none",
+  "rates": {
+    "figure_detachment_rate": {
+      "numerator": 0,
+      "denominator": 2,
+      "rate": 0,
+      "population": "groups_question_with_figure",
+      "higher_is_worse": true
+    },
+    "figure_cue_unbound_rate": {
+      "numerator": 1,
+      "denominator": 1,
+      "rate": 1,
+      "population": "groups_subquestion_with_figure_cue",
+      "higher_is_worse": true
+    },
+    "document_warn_rate": {
+      "numerator": 1,
+      "denominator": 2,
+      "rate": 0.5,
+      "population": "documents_with_cognitive_layout",
+      "higher_is_worse": true
+    },
+    "mobile_drop_high_rate": {
+      "numerator": 0,
+      "denominator": 2,
+      "rate": 0,
+      "population": "groups_inline_figure_right_eligible",
+      "higher_is_worse": true
+    },
+    "attention_jump_rate": {
+      "numerator": 0,
+      "denominator": 4,
+      "rate": 0,
+      "population": "groups_content_reading",
+      "higher_is_worse": true
+    }
+  },
+  "scores": {
+    "mean_continuity_score": {
+      "value": 78,
+      "document_count": 2,
+      "higher_is_better": true
+    }
+  },
+  "corpus_snapshot": {
+    "version": "reading_flow_corpus_v1",
+    "replay_mutation": "none",
+    "derived_from": "reading_flow_corpus",
+    "documents_scanned": 2,
+    "documents": [
+      {
+        "caseId": "reading-corpus-cue-unbound-warn-01",
+        "verdict": "WARN",
+        "rollup": {
+          "groupCount": 3,
+          "questionWithFigureCount": 0,
+          "meanContinuityScore": 72,
+          "maxFigureDetachmentRisk": 82,
+          "maxInterruptionRisk": 45,
+          "totalAttentionJumps": 0,
+          "meanMobileStackedContinuityDrop": 0
+        }
+      },
+      {
+        "caseId": "reading-corpus-qwf-pass-01",
+        "verdict": "PASS",
+        "rollup": {
+          "groupCount": 3,
+          "questionWithFigureCount": 2,
+          "meanContinuityScore": 84,
+          "maxFigureDetachmentRisk": 4,
+          "maxInterruptionRisk": 45,
+          "totalAttentionJumps": 0,
+          "meanMobileStackedContinuityDrop": 7.3
+        }
+      }
+    ],
+    "aggregate": {
+      "meanContinuityScore": 78,
+      "p95AttentionJumps": 0,
+      "figureDetachmentRate": 0,
+      "mobileContinuityDropMean": 3.7,
+      "documentWarnRate": 0.5,
+      "attentionJumpRate": 0,
+      "figureCueUnboundRate": 1
+    },
+    "distributions": {
+      "continuityHistogram": {
+        "60-69": 2,
+        "70-79": 2,
+        "90-99": 2
+      },
+      "detachmentHistogram": {
+        "0-9": 5,
+        "80-89": 1
+      }
+    },
+    "rates": {
+      "figure_detachment_rate": {
+        "rate": 0,
+        "numerator": 0,
+        "denominator": 2
+      },
+      "figure_cue_unbound_rate": {
+        "rate": 1,
+        "numerator": 1,
+        "denominator": 1
+      },
+      "document_warn_rate": {
+        "rate": 0.5,
+        "numerator": 1,
+        "denominator": 2
+      },
+      "mobile_drop_high_rate": {
+        "rate": 0,
+        "numerator": 0,
+        "denominator": 2
+      },
+      "attention_jump_rate": {
+        "rate": 0,
+        "numerator": 0,
+        "denominator": 4
+      }
+    }
+  }
+}

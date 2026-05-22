@@ -7,9 +7,14 @@ export function repairPresentationMathLatex(raw: string): string {
 
   s = s.replace(/\\backslash\s*/g, "\\");
   s = s.replace(/\\slant\s*/g, "\\");
-  s = s.replace(/\\leqslant\s+slant\s*/g, "\\leqslant ");
-  s = s.replace(/\\geqslant\s+slant\s*/g, "\\geqslant ");
-  s = s.replace(/\\leq\s+slant\s*/g, "\\leq ");
+  s = s.replace(/\\leqslant\s+slantt?\b/gi, "\\leqslant ");
+  s = s.replace(/\\geqslant\s+slantt?\b/gi, "\\geqslant ");
+  s = s.replace(/\\leq\s+slantt?\b/gi, "\\leqslant ");
+  s = s.replace(/\ble\s+slantt?\b/gi, "\\leqslant ");
+  s = s.replace(/\bslantt\b/gi, "");
+  s = s.replace(/(^|[^\\a-zA-Z])frac\{\s*sqrt\s*(\d+)\s*\}\s*\{(\d+)\}/gi, "$1\\frac{\\sqrt{$2}}{$3}");
+  s = s.replace(/(^|[^\\a-zA-Z])sqrt(\d+)/gi, "$1\\sqrt{$2}");
+  s = s.replace(/(\d+(?:\.\d+)?)sqrt(\d+)/gi, "$1\\sqrt{$2}");
   s = s.replace(/\(\s*A\s+O\s+B\s*\)/gi, "(\\triangle AOB)");
   s = s.replace(/\s+/g, " ");
 

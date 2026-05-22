@@ -35,6 +35,12 @@ export const EXAM_MATH_BUILTIN_LIBRARY_RULES: ExamMathRepairRuleEntry[] = [
   { id: "text-sqrt-num", re: /\\text\{\s*sqrt\s*\}(\d+)/gi, replace: "\\sqrt{$1}" },
   // —— 乱码分数 ——
   { id: "backslash-frac", re: /\\backslash\s+frac/gi, replace: "\\frac" },
+  { id: "leqslant-slant-debris", re: /\\leqslant\s+slantt?\b/gi, replace: "\\leqslant " },
+  { id: "le-slant-debris", re: /\\le\s+slantt?\b/gi, replace: "\\leqslant " },
+  { id: "bare-slantt", re: /\bslantt\b/gi, replace: "" },
+  { id: "bare-frac-sqrt", re: /(^|[^\\a-zA-Z])frac\{\s*sqrt\s*(\d+)\s*\}\s*\{(\d+)\}/gi, replace: "$1\\frac{\\sqrt{$2}}{$3}" },
+  { id: "bare-sqrt-num", re: /(^|[^\\a-zA-Z])sqrt(\d+)/gi, replace: "$1\\sqrt{$2}" },
+  { id: "glued-sqrt-num", re: /(\d+(?:\.\d+)?)sqrt(\d+)/gi, replace: "$1\\sqrt{$2}" },
 ];
 
 /** 在 repairLatexJsonTabCorruption 之后调用 */

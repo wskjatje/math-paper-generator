@@ -1,0 +1,26 @@
+{
+  "projection_version": 1,
+  "questions_total": 3,
+  "supply_state_counts": {
+    "materialized": 2,
+    "missing": 1
+  },
+  "materialized_rate_bps": 6667,
+  "registry_entries": 2,
+  "refs_bound_total": 2,
+  "provenance_artifacts": 2,
+  "linker_bound": 2,
+  "linker_skipped_already_bound": 0,
+  "timeline_phase_ok": {
+    "ocr_crop": 3,
+    "crop_persist": 3,
+    "markdown_reconcile": 3,
+    "raster_materialize": 2,
+    "registry_publish": 3,
+    "ownership_refs": 2,
+    "linker": 3,
+    "runtime_supply": 2
+  },
+  "producer_crop_jobs_emitted": 3,
+  "producer_crops_persisted": 2
+}

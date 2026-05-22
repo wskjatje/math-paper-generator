@@ -1,0 +1,7 @@
+（II）平移与证明
+① 如图②，在平面直角坐标系中求点 A 坐标
+② 当 t 取最大值时，求线段 BC 长度
+③ 证明 △ABC 与 △DEF 相似
+④ 求面积比并说明理由
+⑤ 若延长 AB 交 y 轴于 G，求 G 坐标
+![图②](/import-figures/pressure-qwf.png)

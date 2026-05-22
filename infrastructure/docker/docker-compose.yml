@@ -1,0 +1,122 @@
+# 全栈本地编排：Web + 网关 + OCR / 公式 / 视觉 / Agent（均为可替换 Stub）
+# 在仓库根执行：
+#   docker compose -f infrastructure/docker/docker-compose.yml up --build
+#
+# 入口：
+#   - 浏览器统一入口（经网关反代 Web）：http://localhost:8090
+#   - 直连 Web：http://localhost:8080
+#   - 聚合就绪检查：http://localhost:8090/v1/ready
+#
+networks:
+  zhixue:
+    driver: bridge
+
+services:
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: zhixue_ocr
+    volumes:
+      - zhixue_pg_data:/var/lib/postgresql/data
+    networks: [zhixue]
+    ports:
+      - "5432:5432"
+
+  ocr-service:
+    build:
+      context: ../../services/got-ocr-service
+      dockerfile: Dockerfile
+      args:
+        PIP_INDEX_URL: https://pypi.tuna.tsinghua.edu.cn/simple
+        PIP_TRUSTED_HOST: pypi.tuna.tsinghua.edu.cn
+        APT_MIRROR: mirrors.tuna.tsinghua.edu.cn
+    networks: [zhixue]
+    ports:
+      - "8101:8101"
+    environment:
+      GOT_MODEL_ID: stepfun-ai/GOT-OCR-2.0-hf
+      # 国内首次拉取 HF 权重；可改为 https://huggingface.co
+      HF_ENDPOINT: https://hf-mirror.com
+      HF_HOME: /root/.cache/huggingface
+      HF_HUB_DOWNLOAD_TIMEOUT: "1800"
+      HF_HUB_ETAG_TIMEOUT: "120"
+      GOT_MODEL_LOCAL_DIR: /models/got-ocr
+      GOT_USE_GPU: "false"
+      GOT_MAX_NEW_TOKENS: "4096"
+      GOT_FORMAT_OUTPUT: "true"
+      EXAM_OCR_MAX_SIDE_PX: "1600"
+      HEURISTIC_DIAGRAM_ENABLED: "true"
+      HEURISTIC_DIAGRAM_RIGHT_RATIO: "0.48"
+    volumes:
+      - zhixue_hf_cache:/root/.cache/huggingface
+      # 宿主机先 npm run got-ocr:download-model，再 up，可避免容器内 HF 超时
+      - ../../data/hf-models/GOT-OCR-2.0-hf:/models/got-ocr:ro
+
+  formula-service:
+    build:
+      context: ../../services/formula-service
+      dockerfile: Dockerfile
+    networks: [zhixue]
+    ports:
+      - "8102:8102"
+
+  vision-service:
+    build:
+      context: ../../services/vision-service
+      dockerfile: Dockerfile
+    networks: [zhixue]
+    ports:
+      - "8103:8103"
+
+  agent-service:
+    build:
+      context: ../../services/agent-service
+      dockerfile: Dockerfile
+    networks: [zhixue]
+    ports:
+      - "8104:8104"
+
+  question-parser-service:
+    build:
+      context: ../../services/question-parser-service
+      dockerfile: Dockerfile
+    networks: [zhixue]
+    ports:
+      - "8105:8105"
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.web
+    networks: [zhixue]
+    environment:
+      MPG_PROJECT_ROOT: /repo
+
+  gateway:
+    build:
+      context: ../../services/gateway-api
+      dockerfile: Dockerfile
+    networks: [zhixue]
+    ports:
+      - "8090:8090"
+    environment:
+      OCR_SERVICE_URL: http://ocr-service:8101
+      FORMULA_SERVICE_URL: http://formula-service:8102
+      VISION_SERVICE_URL: http://vision-service:8103
+      AGENT_SERVICE_URL: http://agent-service:8104
+      QUESTIONS_SERVICE_URL: http://question-parser-service:8105
+      WEB_UPSTREAM_URL: http://web:8080
+      GATEWAY_UPSTREAM_TIMEOUT_SEC: "1200"
+    depends_on:
+      - web
+      - ocr-service
+      - formula-service
+      - vision-service
+      - agent-service
+      - question-parser-service
+
+volumes:
+  zhixue_pg_data:
+  zhixue_hf_cache:

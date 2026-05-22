@@ -1,0 +1,40 @@
+{
+  "exam": {
+    "id": "corpus-exam-ambiguous-01",
+    "title": "corpus",
+    "subtitle": null,
+    "subjects": ["数学"],
+    "difficulty": "intermediate",
+    "duration_min": 60,
+    "total_score": 100,
+    "source": "imported",
+    "is_featured": false,
+    "description": null,
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "generation_duration_sec": null
+  },
+  "questions": [
+    {
+      "id": "corpus-q-ambiguous-01",
+      "exam_id": "corpus-exam-ambiguous-01",
+      "order_index": 0,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "如图①",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 10,
+      "raster_figures": {
+        "version": 1,
+        "stem": [
+          "https://corpus.test/a-图①.png",
+          "https://corpus.test/b-图①.png"
+        ],
+        "by_option": {}
+      }
+    }
+  ],
+  "examples": []
+}

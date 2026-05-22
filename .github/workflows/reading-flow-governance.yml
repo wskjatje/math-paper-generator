@@ -1,0 +1,101 @@
+# P2.4.5 — Cognitive reading telemetry corpus + gates（derived-only；不重写 cognitive truth）
+name: Reading flow governance
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "apps/web/src/lib/readingFlow**.ts"
+      - "apps/web/src/lib/educationalCognitiveGroup**.ts"
+      - "apps/web/src/lib/readingFlowAnalyzer.shared.ts"
+      - "apps/web/src/lib/educationalPresentation.shared.ts"
+      - "apps/web/scripts/inspect-reading-flow.ts"
+      - "apps/web/scripts/write-cognitive-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-cognitive-telemetry-snapshots.ts"
+      - "data/cognitive-telemetry-snapshots/**"
+      - "apps/web/tests/fixtures/reading-flow/**"
+      - "docs/governance/COGNITIVE-READING-TELEMETRY-v1.md"
+      - ".github/workflows/reading-flow-governance.yml"
+  pull_request:
+    paths:
+      - "apps/web/src/lib/readingFlow**.ts"
+      - "apps/web/src/lib/educationalCognitiveGroup**.ts"
+      - "apps/web/src/lib/readingFlowAnalyzer.shared.ts"
+      - "apps/web/src/lib/educationalPresentation.shared.ts"
+      - "apps/web/scripts/inspect-reading-flow.ts"
+      - "apps/web/scripts/write-cognitive-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-cognitive-telemetry-snapshots.ts"
+      - "data/cognitive-telemetry-snapshots/**"
+      - "apps/web/tests/fixtures/reading-flow/**"
+      - "docs/governance/COGNITIVE-READING-TELEMETRY-v1.md"
+      - ".github/workflows/reading-flow-governance.yml"
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Reading flow unit tests
+        run: >-
+          npm run test -w @zhixue/web --
+          src/lib/readingFlowAnalyzer.shared.test.ts
+          src/lib/readingFlowCorpus.shared.test.ts
+          src/lib/readingFlowGate.shared.test.ts
+          src/lib/readingFlowTelemetrySnapshot.shared.test.ts
+
+  gate-corpus:
+    name: Corpus cognitive SLO
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Document WARN rate within budget (strict)
+        run: >-
+          npm run inspect:reading-flow -w @zhixue/web --
+          --corpus
+          --gate-mode strict
+          --gate-max-rate document_warn_rate=0.5
+      - name: Mean continuity floor (strict)
+        run: >-
+          npm run inspect:reading-flow -w @zhixue/web --
+          --corpus
+          --gate-mode strict
+          --gate-min-score mean_continuity_score=40
+
+  snapshot-regression:
+    name: Frozen cognitive snapshot diff
+    needs: gate-corpus
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Write current cognitive snapshot from corpus
+        run: >-
+          npm run cognitive-telemetry:snapshot -w @zhixue/web --
+          --out data/cognitive-telemetry-snapshots/ci-current
+          --label ci-run
+      - name: Compare to committed baseline (2026-05-20)
+        run: >-
+          npm run cognitive-telemetry:compare -w @zhixue/web --
+          --baseline data/cognitive-telemetry-snapshots/2026-05-20
+          --current data/cognitive-telemetry-snapshots/ci-current
+          --max-rate-rise 0.15
+          --max-score-drop 10

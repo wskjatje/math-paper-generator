@@ -11,26 +11,25 @@ export const DEFAULT_AI_SETTINGS: AiSettingsForm = {
   localBaseUrl: "http://127.0.0.1:11434",
   /** 聊天/连通测试推荐默认模型 */
   localModel: "glm-4.7-flash:latest",
-  /** 学科命题推荐映射（未配置学科时回退 localModel）；仅使用本机常见清单中的标签 */
-  localSubjectModels: {
-    chinese: "glm4:latest",
-    math: "gemma4:26b",
-    english: "qwen2.5:7b-32k",
-    science: "qwen2.5:7b",
-    morality: "glm4:latest",
-    physics: "gemma4:26b",
-    chemistry: "gemma4:26b",
-    biology: "glm4:latest",
-    history: "glm4:latest",
-    geography: "glm4:latest",
-    politics: "glm4:latest",
-    it: "qwen3-coder:30b",
-    pe: "glm-4.7-flash:latest",
-    music: "glm-4.7-flash:latest",
-    art: "glm-4.7-flash:latest",
-  },
+  /** 学科命题默认不写死：未单独配置时统一回退 localModel。 */
+  localSubjectModels: {},
   localApiKey: "",
 };
+
+function sanitizeSubjectModelsMap(
+  map: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!map) return map;
+  const next: Record<string, string> = {};
+  for (const [k, v] of Object.entries(map)) {
+    const model = String(v ?? "").trim();
+    if (!k.trim() || !model) continue;
+    // 迁移旧默认：该标签在大量本机环境并不存在，保留会导致「模型未找到」。
+    if (model === "qwen2.5:7b-32k") continue;
+    next[k] = model;
+  }
+  return next;
+}
 
 export function loadAiSettings(): AiSettingsForm {
   if (typeof window === "undefined") return { ...DEFAULT_AI_SETTINGS };
@@ -48,6 +47,7 @@ export function loadAiSettings(): AiSettingsForm {
     if (merged.mode === "local" && merged.localModel === "llama3.2") {
       merged.localModel = "llama3.2:latest";
     }
+    merged.localSubjectModels = sanitizeSubjectModelsMap(merged.localSubjectModels) ?? {};
     delete (merged as Partial<AiSettingsForm>).localChatModel;
     delete (merged as Partial<AiSettingsForm>).localSubjectModelPolicy;
     return merged;
@@ -71,13 +71,18 @@ export function mergePartialAiSettings(raw: unknown): AiSettingsForm {
     localModel = "llama3.2:latest";
   }
   let localSubjectModels: Record<string, string> = { ...DEFAULT_AI_SETTINGS.localSubjectModels };
-  if (o.localSubjectModels && typeof o.localSubjectModels === "object" && !Array.isArray(o.localSubjectModels)) {
+  if (
+    o.localSubjectModels &&
+    typeof o.localSubjectModels === "object" &&
+    !Array.isArray(o.localSubjectModels)
+  ) {
     for (const [k, v] of Object.entries(o.localSubjectModels as Record<string, unknown>)) {
       if (typeof k === "string" && k.length <= 80 && typeof v === "string" && v.trim()) {
         localSubjectModels[k] = v.trim();
       }
     }
   }
+  localSubjectModels = sanitizeSubjectModelsMap(localSubjectModels) ?? {};
 
   return {
     ...DEFAULT_AI_SETTINGS,

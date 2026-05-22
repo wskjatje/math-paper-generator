@@ -1,5 +1,7 @@
 import { Outlet, Link, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { GatewayOcrWarmupRunner } from "@/components/GatewayOcrWarmupRunner";
 import { GenerationJobQueueRunner } from "@/components/generation/GenerationJobQueueRunner";
+import { RemoteImportJobQueueRunner } from "@/components/remoteImport/RemoteImportJobQueueRunner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
 import { Toaster } from "@/components/ui/sonner";
@@ -102,7 +104,9 @@ function RootComponent() {
   useChatContextPeriodicSync();
   return (
     <div className="flex min-h-screen flex-col">
+      <GatewayOcrWarmupRunner />
       <GenerationJobQueueRunner />
+      <RemoteImportJobQueueRunner />
       <SiteHeader />
       <main className="flex-1">
         <Outlet />

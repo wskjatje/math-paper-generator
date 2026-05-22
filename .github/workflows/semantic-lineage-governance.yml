@@ -1,0 +1,118 @@
+# Semantic release contract — frozen corpus + coverage/quality gates（不重算 lineage）
+name: Semantic lineage governance
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "apps/web/src/lib/semanticLineage**.ts"
+      - "apps/web/src/lib/semanticExecutionLineage**.ts"
+      - "apps/web/src/lib/semanticMetricRegistry**.ts"
+      - "apps/web/src/lib/examForensics.shared.ts"
+      - "apps/web/src/lib/importParseQuality.shared.ts"
+      - "apps/web/scripts/inspect-semantic-lineage.ts"
+      - "apps/web/scripts/write-semantic-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-semantic-telemetry-snapshots.ts"
+      - "apps/web/tests/fixtures/semantic-lineage/**"
+      - "data/telemetry-snapshots/**"
+      - "docs/governance/SEMANTIC-REPLAY-LINEAGE-v1.md"
+      - ".github/workflows/semantic-lineage-governance.yml"
+  pull_request:
+    paths:
+      - "apps/web/src/lib/semanticLineage**.ts"
+      - "apps/web/src/lib/semanticExecutionLineage**.ts"
+      - "apps/web/src/lib/semanticMetricRegistry**.ts"
+      - "apps/web/src/lib/examForensics.shared.ts"
+      - "apps/web/src/lib/importParseQuality.shared.ts"
+      - "apps/web/scripts/inspect-semantic-lineage.ts"
+      - "apps/web/scripts/write-semantic-telemetry-snapshot.ts"
+      - "apps/web/scripts/compare-semantic-telemetry-snapshots.ts"
+      - "apps/web/tests/fixtures/semantic-lineage/**"
+      - "data/telemetry-snapshots/**"
+      - "docs/governance/SEMANTIC-REPLAY-LINEAGE-v1.md"
+      - ".github/workflows/semantic-lineage-governance.yml"
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Semantic lineage unit tests
+        run: >-
+          npm run test -w @zhixue/web --
+          src/lib/semanticLineageCorpus.shared.test.ts
+          src/lib/semanticLineageTelemetrySnapshot.shared.test.ts
+          src/lib/semanticLineageGate.shared.test.ts
+          src/lib/semanticLineageRate.shared.test.ts
+          src/lib/semanticLineageFactOntology.shared.test.ts
+          src/lib/semanticMetricRegistry.shared.test.ts
+
+  gate-coverage:
+    name: Phase A — Coverage SLO
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Materialization telemetry exists (strict, min 50%)
+        run: >-
+          npm run inspect:semantic-lineage -w @zhixue/web --
+          --corpus
+          --gate-mode strict
+          --gate-min-rate materialization_success_rate=0.5
+
+  gate-quality:
+    name: Phase B — Quality SLO
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Bind refusal within budget (strict, max 15%)
+        run: >-
+          npm run inspect:semantic-lineage -w @zhixue/web --
+          --corpus
+          --gate-mode strict
+          --gate-max-rate bind_refusal_rate=0.15
+
+  snapshot-regression:
+    name: Frozen snapshot diff (optional baseline)
+    needs: [gate-coverage, gate-quality]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - name: Write current slo-report from corpus
+        run: >-
+          npm run semantic-telemetry:snapshot -w @zhixue/web --
+          --out data/telemetry-snapshots/ci-current
+          --label ci-run
+      - name: Compare to committed baseline (2026-05-20)
+        run: >-
+          npm run semantic-telemetry:compare -w @zhixue/web --
+          --baseline data/telemetry-snapshots/2026-05-20/slo-report.json
+          --current data/telemetry-snapshots/ci-current/slo-report.json
+          --max-rate-rise 0.15
+          --max-rate-drop 0.15

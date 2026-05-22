@@ -37,7 +37,8 @@ function Home() {
         <div className="container mx-auto px-4 pt-24 pb-20 md:pt-32 md:pb-24">
           <div className="max-w-3xl">
             <h1 className="text-display text-5xl md:text-7xl text-foreground">
-              一座开放的<br />
+              一座开放的
+              <br />
               <span className="italic text-primary">竞赛试题</span> 档案
             </h1>
             <div className="gold-divider mt-6" />

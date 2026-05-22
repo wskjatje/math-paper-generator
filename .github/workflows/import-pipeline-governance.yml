@@ -1,0 +1,65 @@
+# OCR frontend / 导入图链 comparative governance（bench + dual-run）
+name: Import pipeline governance
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "apps/web/src/lib/importPipeline**.ts"
+      - "apps/web/src/lib/importFailureTaxonomy**.ts"
+      - "apps/web/src/lib/importParseQuality.shared.ts"
+      - "apps/web/src/lib/figureMaterializationTelemetry.shared.ts"
+      - "apps/web/src/lib/figureLifecycleTimeline.shared.ts"
+      - "apps/web/src/lib/questionImportSanitize.shared.ts"
+      - "apps/web/src/lib/importParentQuestion*.ts"
+      - "apps/web/src/lib/importParentQuestionPaperAlignment.shared.ts"
+      - "apps/web/src/lib/importParentQuestionAlignmentCli.server.ts"
+      - "apps/web/src/lib/ocrGenericExamPatterns.shared.ts"
+      - "apps/web/src/lib/ocr/**"
+      - "apps/web/scripts/check-generic-exam-content-policy.mjs"
+      - "docs/governance/generic-exam-content-policy.md"
+      - "apps/web/scripts/run-import-pipeline-*.ts"
+      - "apps/web/tests/fixtures/import-pipeline/**"
+      - ".github/workflows/import-pipeline-governance.yml"
+  pull_request:
+    paths:
+      - "apps/web/src/lib/importPipeline**.ts"
+      - "apps/web/src/lib/importFailureTaxonomy**.ts"
+      - "apps/web/src/lib/importParseQuality.shared.ts"
+      - "apps/web/src/lib/figureMaterializationTelemetry.shared.ts"
+      - "apps/web/src/lib/figureLifecycleTimeline.shared.ts"
+      - "apps/web/src/lib/questionImportSanitize.shared.ts"
+      - "apps/web/src/lib/importParentQuestion*.ts"
+      - "apps/web/src/lib/importParentQuestionPaperAlignment.shared.ts"
+      - "apps/web/src/lib/importParentQuestionAlignmentCli.server.ts"
+      - "apps/web/src/lib/ocrGenericExamPatterns.shared.ts"
+      - "apps/web/src/lib/ocr/**"
+      - "apps/web/scripts/check-generic-exam-content-policy.mjs"
+      - "docs/governance/generic-exam-content-policy.md"
+      - "apps/web/scripts/run-import-pipeline-*.ts"
+      - "apps/web/tests/fixtures/import-pipeline/**"
+      - ".github/workflows/import-pipeline-governance.yml"
+
+jobs:
+  governance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generic exam content policy (no hardcoded paper/figure rules)
+        run: npm run governance:generic-exam-content -w @zhixue/web
+
+      - name: Import pipeline bench (golden + taxonomy)
+        run: npm run import-pipeline:bench -w @zhixue/web
+
+      - name: Import pipeline dual-run (comparative governance)
+        run: npm run import-pipeline:dual-run -w @zhixue/web

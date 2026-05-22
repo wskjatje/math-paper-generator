@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "canonical_engine": "got",
+  "engines": {
+    "got": {
+      "expected_taxonomy": "markdown_reconcile_gap",
+      "provenance": {
+        "version": 1,
+        "engine": "got",
+        "adapter_version": "v1",
+        "role": "canonical",
+        "topology": {
+          "bbox_support": false,
+          "diagram_links_support": false,
+          "blocks_nonempty": false,
+          "question_split_aligned": true
+        },
+        "markdown": {
+          "plain_text_nonempty": true,
+          "plain_text_len": 20
+        },
+        "topology_confidence": 0.5,
+        "adapter_symptoms": [
+          "degraded_layout_observability"
+        ],
+        "authoritative": false,
+        "observed_at": "2026-01-15T00:00:00.000Z"
+      }
+    }
+  }
+}

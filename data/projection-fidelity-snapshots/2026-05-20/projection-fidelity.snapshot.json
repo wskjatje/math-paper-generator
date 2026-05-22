@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "snapshot_kind": "projection_fidelity_slo_frozen",
+  "captured_at": "2026-05-21T01:23:47.180Z",
+  "corpus_path": "apps/web/tests/fixtures/reading-flow/corpus",
+  "corpus_label": "ci-projection-fidelity",
+  "case_ids": [
+    "negotiation-pressure-dense-enum",
+    "negotiation-pressure-multi-figure",
+    "negotiation-pressure-qwf-chain",
+    "reading-corpus-cue-unbound-warn-01",
+    "reading-corpus-qwf-pass-01"
+  ],
+  "fidelity_registry": "v1",
+  "replay_mutation": "none",
+  "aggregate": {
+    "mean_pagination_realization_fidelity": 100,
+    "unobservable_metric_ids": [
+      "glyph_fidelity",
+      "baseline_fidelity",
+      "vector_fidelity"
+    ]
+  },
+  "cases": [
+    {
+      "caseId": "negotiation-pressure-dense-enum",
+      "pagination_realization_fidelity": 100
+    },
+    {
+      "caseId": "negotiation-pressure-multi-figure",
+      "pagination_realization_fidelity": 100
+    },
+    {
+      "caseId": "negotiation-pressure-qwf-chain",
+      "pagination_realization_fidelity": 100
+    },
+    {
+      "caseId": "reading-corpus-cue-unbound-warn-01",
+      "pagination_realization_fidelity": 100
+    },
+    {
+      "caseId": "reading-corpus-qwf-pass-01",
+      "pagination_realization_fidelity": 100
+    }
+  ]
+}

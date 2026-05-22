@@ -9,6 +9,8 @@ import {
   isLocalExamPersistenceAvailable,
   listLocalExamFileInfos,
 } from "@/lib/localExamStore.server";
+import { isMysqlExamPersistenceAvailable } from "@/lib/examStorage/mysqlExamStore.server";
+import { getMysqlUiState } from "@/lib/mysqlConnection.server";
 import {
   bundleMigrationsForSqlEditor,
   executeMigrationsWithDatabaseUrl,
@@ -27,6 +29,10 @@ function hostnameOnly(urlStr: string | undefined): string | null {
 
 export type DataSettingsOverview = {
   supabaseConfigured: boolean;
+  /** 是否已保存本机 MySQL 连接（data/mysql-connection.json） */
+  mysqlConnectionConfigured: boolean;
+  /** 当前保存的连接能否 SELECT 1（教育 OS / 自动本地一体依赖） */
+  mysqlReachable: boolean;
   /** Supabase REST/API 主机名（来自 SUPABASE_URL），仅供展示 */
   supabaseUrlHost: string | null;
   /** Postgres 直连主机名（来自 DATABASE_URL），仅供展示 */
@@ -42,13 +48,37 @@ export type DataSettingsOverview = {
 export const getDataSettingsOverview = createServerFn({ method: "GET" }).handler(
   async (): Promise<DataSettingsOverview> => {
     const supabase = !!getSupabaseAdmin();
+    let mysqlUi = {
+      configured: false,
+      host: null as string | null,
+      port: null as number | null,
+      user: null as string | null,
+      database: null as string | null,
+      passwordSaved: false,
+      passwordStoredEncrypted: false,
+      encryptionKeySource: "will-create" as const,
+      source: "file" as const,
+    };
+    try {
+      mysqlUi = await getMysqlUiState();
+    } catch (e) {
+      console.warn("[getDataSettingsOverview] getMysqlUiState", e);
+    }
+    const mysqlReachable = await isMysqlExamPersistenceAvailable();
     const localWritable = await isLocalExamPersistenceAvailable();
-    const migrationFiles = (await readSortedMigrations()).map((f) => f.name);
+    let migrationFiles: string[] = [];
+    try {
+      migrationFiles = (await readSortedMigrations()).map((f) => f.name);
+    } catch (e) {
+      console.warn("[getDataSettingsOverview] readSortedMigrations", e);
+    }
     const databaseUrlConfigured = !!process.env.DATABASE_URL?.trim();
     const uiMigrateAllowed = process.env.ALLOW_UI_DB_MIGRATIONS === "true";
 
     return {
       supabaseConfigured: supabase,
+      mysqlConnectionConfigured: mysqlUi.configured,
+      mysqlReachable,
       supabaseUrlHost: hostnameOnly(process.env.SUPABASE_URL),
       databaseUrlHost: hostnameOnly(process.env.DATABASE_URL),
       localWritable,
@@ -118,7 +148,9 @@ async function readCurrentAppVersion(): Promise<string> {
   const pkgPath = path.join(resolveProjectRoot(), "package.json");
   const raw = await readFile(pkgPath, "utf8");
   const parsed = JSON.parse(raw) as { version?: unknown };
-  return typeof parsed.version === "string" && parsed.version.trim() ? parsed.version.trim() : "0.0.0";
+  return typeof parsed.version === "string" && parsed.version.trim()
+    ? parsed.version.trim()
+    : "0.0.0";
 }
 
 /** 设置页「系统更新」：读取本地版本并检查 GitHub 最新 release。 */

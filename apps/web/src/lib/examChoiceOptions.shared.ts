@@ -14,9 +14,16 @@ export function choiceLetterFromIndex(index: number): string {
 }
 
 /**
- * 去掉选项正文首部的重复标号（如已含「A.」「B．」），避免界面出现「A. A. xx」。
+ * 去掉选项正文首部的重复标号（如「A.」「B．」「(A)」「（B）」），避免界面出现「A. (A) xx」。
+ * 仅处理串首；不触碰正文中的合法括号数字（如 (10)）。
  */
 export function stripLeadingChoiceMarker(raw: string): string {
-  const s = String(raw ?? "").trimStart();
-  return s.replace(/^[A-Za-zＡ-Ｚ]\s*[\.．。、]\s*/u, "").trim();
+  let s = String(raw ?? "").trimStart();
+  for (let i = 0; i < 6; i++) {
+    const prev = s;
+    s = s.replace(/^[（(]\s*[A-Za-zＡ-Ｚ]\s*[）)]\s*/u, "").trimStart();
+    s = s.replace(/^[A-Za-zＡ-Ｚ]\s*[.．。、]\s*/u, "").trimStart();
+    if (s === prev) break;
+  }
+  return s.trim();
 }

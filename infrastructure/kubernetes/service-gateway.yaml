@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: zhixue
+spec:
+  selector:
+    app: gateway
+  ports:
+    - port: 8090
+      targetPort: 8090

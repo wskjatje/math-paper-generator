@@ -1,0 +1,31 @@
+# 构建 TanStack Start（@zhixue/web）；运行时 vite preview（Node）
+# 上下文必须为仓库根：docker build -f infrastructure/docker/Dockerfile.web .
+FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS build
+WORKDIR /repo
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+RUN npm ci
+COPY apps/web apps/web
+COPY tsconfig.json tsconfig.json
+COPY schemas schemas
+COPY supabase supabase
+COPY sql sql
+COPY wrangler.jsonc wrangler.jsonc
+RUN npm run build -w @zhixue/web
+
+FROM public.ecr.aws/docker/library/node:22-bookworm-slim AS runner
+WORKDIR /repo
+ENV NODE_ENV=production
+ENV MPG_PROJECT_ROOT=/repo
+COPY --from=build /repo/package.json /repo/package-lock.json ./
+COPY --from=build /repo/node_modules ./node_modules
+COPY --from=build /repo/apps/web ./apps/web
+COPY --from=build /repo/schemas ./schemas
+COPY --from=build /repo/supabase ./supabase
+COPY sql sql
+COPY tsconfig.json tsconfig.json
+COPY wrangler.jsonc wrangler.jsonc
+RUN mkdir -p data/local-exams data/generation-scratch
+WORKDIR /repo/apps/web
+EXPOSE 8080
+CMD ["node", "../../node_modules/vite/bin/vite.js", "preview", "--host", "0.0.0.0", "--port", "8080"]

@@ -1,0 +1,32 @@
+{
+  "exam": {
+    "id": "corpus-exam-placeholder-01",
+    "title": "corpus",
+    "subtitle": null,
+    "subjects": ["数学"],
+    "difficulty": "intermediate",
+    "duration_min": 60,
+    "total_score": 100,
+    "source": "imported",
+    "is_featured": false,
+    "description": null,
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "generation_duration_sec": null
+  },
+  "questions": [
+    {
+      "id": "corpus-q-placeholder-01",
+      "exam_id": "corpus-exam-placeholder-01",
+      "order_index": 0,
+      "type": "multiple_choice",
+      "subject": "数学",
+      "content": "如图所示![](URL)选正确的是",
+      "options": ["甲", "乙", "丙", "丁"],
+      "answer": "A",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 5
+    }
+  ],
+  "examples": []
+}

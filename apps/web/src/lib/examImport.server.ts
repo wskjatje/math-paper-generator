@@ -7,6 +7,13 @@ import { z } from "zod";
 import type { SessionExamSnapshot } from "@/lib/examSession";
 import { normalizeKnowledgeTags, normalizeQuestionType } from "@/lib/exam-generation.server";
 import type { Exam, Example, Question } from "@/lib/types";
+import { persistImportedBundle } from "@/lib/examStorage/persistImported.server";
+import {
+  computeQuestionFigureDependencyV1,
+  parseQuestionFigureDependencyV1,
+} from "@/lib/questionFigureDependency.shared";
+import { parseVisualGeometryEvidenceV1 } from "@/lib/visualGeometryEvidence.shared";
+import { sanitizeImportedSnapshotForPersist } from "@/lib/questionImportSanitize.shared";
 
 const DifficultySchema = z.enum(["beginner", "intermediate", "competition", "advanced"]);
 
@@ -72,19 +79,25 @@ function assertImportedQuestionsUsable(questions: Question[]): void {
     if (!String(q.answer ?? "").trim()) problems.push(`第 ${n} 题：答案为空`);
   });
   if (problems.length > 0) {
-    throw new Error(`导入失败：${problems.slice(0, 8).join("；")}${problems.length > 8 ? " …" : ""}`);
+    throw new Error(
+      `导入失败：${problems.slice(0, 8).join("；")}${problems.length > 8 ? " …" : ""}`,
+    );
   }
 }
 
 /** 解析并校验线下快照外壳（questions/exam 必填；examples 可选） */
-export function parseOfflineExamSnapshotJson(raw: unknown): z.infer<typeof OfflineSnapshotWrapperSchema> {
+export function parseOfflineExamSnapshotJson(
+  raw: unknown,
+): z.infer<typeof OfflineSnapshotWrapperSchema> {
   return OfflineSnapshotWrapperSchema.parse(raw);
 }
 
 /**
  * 重新分配 id、标记 imported；题目顺序保留 order_index。
  */
-export function remapSnapshotToImported(snap: z.infer<typeof OfflineSnapshotWrapperSchema>): SessionExamSnapshot {
+export function remapSnapshotToImported(
+  snap: z.infer<typeof OfflineSnapshotWrapperSchema>,
+): SessionExamSnapshot {
   const sortedQs = [...snap.questions].sort((a, b) => {
     const da = Number.isFinite(a.order_index) ? a.order_index : 0;
     const db = Number.isFinite(b.order_index) ? b.order_index : 0;
@@ -99,7 +112,10 @@ export function remapSnapshotToImported(snap: z.infer<typeof OfflineSnapshotWrap
 
   const questions: Question[] = sortedQs.map((q) => {
     const pts = Number.isFinite(Number(q.points)) ? Math.round(Number(q.points)) : 10;
-    return {
+    const rawRec = q as Record<string, unknown>;
+    const parsedFd = parseQuestionFigureDependencyV1(rawRec.figure_dependency);
+    const vge = parseVisualGeometryEvidenceV1(rawRec.visual_geometry_evidence);
+    const base: Question = {
       id: qIdMap.get(q.id)!,
       exam_id: newExamId,
       order_index: Number.isFinite(q.order_index) ? Math.round(q.order_index) : 0,
@@ -108,9 +124,16 @@ export function remapSnapshotToImported(snap: z.infer<typeof OfflineSnapshotWrap
       content: String(q.content ?? ""),
       options: Array.isArray(q.options) ? q.options.map((o) => String(o)) : null,
       answer: String(q.answer ?? ""),
-      solution_steps: Array.isArray(q.solution_steps) ? (q.solution_steps as Question["solution_steps"]) : [],
+      solution_steps: Array.isArray(q.solution_steps)
+        ? (q.solution_steps as Question["solution_steps"])
+        : [],
       knowledge_tags: normalizeKnowledgeTags(q.knowledge_tags),
       points: Math.min(1000, Math.max(1, pts)),
+    };
+    return {
+      ...base,
+      figure_dependency: parsedFd ?? computeQuestionFigureDependencyV1(base),
+      ...(vge ? { visual_geometry_evidence: vge } : {}),
     };
   });
 
@@ -139,7 +162,8 @@ export function remapSnapshotToImported(snap: z.infer<typeof OfflineSnapshotWrap
     id: newExamId,
     title: String(snap.exam.title).slice(0, 500),
     subtitle: snap.exam.subtitle != null ? String(snap.exam.subtitle).slice(0, 500) : null,
-    description: snap.exam.description != null ? String(snap.exam.description).slice(0, 2000) : null,
+    description:
+      snap.exam.description != null ? String(snap.exam.description).slice(0, 2000) : null,
     subjects: Array.isArray(snap.exam.subjects) ? snap.exam.subjects.map((s) => String(s)) : [],
     difficulty: snap.exam.difficulty,
     duration_min: Math.min(360, Math.max(1, Math.round(Number(snap.exam.duration_min)))),
@@ -153,11 +177,11 @@ export function remapSnapshotToImported(snap: z.infer<typeof OfflineSnapshotWrap
   return { exam, questions, examples };
 }
 
-export { persistImportedBundle } from "@/lib/examStorage/persistImported.server";
+export { persistImportedBundle };
 
 export async function importExamSnapshotFromJsonString(jsonStr: string): Promise<{
   examId: string;
-  persisted: "supabase" | "local";
+  persisted: "supabase" | "local" | "mysql";
 }> {
   let parsed: unknown;
   try {
@@ -177,6 +201,6 @@ export async function importExamSnapshotFromJsonString(jsonStr: string): Promise
     }
     throw e;
   }
-  const bundle = remapSnapshotToImported(snap);
+  const bundle = sanitizeImportedSnapshotForPersist(remapSnapshotToImported(snap));
   return persistImportedBundle(bundle);
 }

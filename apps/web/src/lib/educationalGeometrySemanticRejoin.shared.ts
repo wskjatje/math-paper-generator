@@ -110,7 +110,13 @@ function lowerCoordinatePlaneMathToUnicode(text: string): string {
   s = s.replace(/\\?\(\s*\\angle\s+([A-Z]{3,4})\s*\\?\)/gi, "∠$1");
   s = s.replace(/\\angle\s+([A-Z]{3,4})(?=[\s，。；：的]|$)/gi, "∠$1");
   s = s.replace(/\\?\(\s*\\frac\s*\{\s*\\sqrt\s*\{\s*(\d+)\s*\}\s*\}\s*\{\s*(\d+)\s*\}\s*\\?\)/g, "√$1/$2");
-  s = s.replace(/\\?\(\s*([A-Z])\s*\\?\)/g, "$1");
+  s = s.replace(/\\?\(\s*([A-Z])\s*\\?\)/g, (full, letter: string, off: number, str: string) => {
+    if (/^[A-D]$/.test(letter)) {
+      const tail = str.slice(off + full.length);
+      if (/^\s*(?:\\?\(|[-\d])/.test(tail)) return full;
+    }
+    return letter;
+  });
   s = s.replace(
     /\\?\(\s*([A-Z])\s*\(\s*(-?\d+(?:\.\d+)?)\\sqrt\{(\d+)\}\s*,\s*(-?\d+(?:\.\d+)?)\s*\)\s*\\?\)/g,
     "$1($2√$3, $4)",

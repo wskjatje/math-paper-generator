@@ -17,12 +17,48 @@ import {
   probeAiRuntime,
   probeSubmitExamToolCall,
   runImportDocumentAiGeneration,
+  runImportDocumentAiGenerationPerQuestion,
   syncChatContextToModel,
+  type GenerationConfig,
 } from "@/lib/exam-generation.server";
+import { fillGeometryDiagramsForSnapshot } from "@/lib/geometryDiagramInference.server";
+import { applyExamRemediationPipelineToSnapshot } from "@/lib/examRemediationPipeline.server";
+import {
+  deleteExamRemediationRule as removeExamRemediationRuleRow,
+  listExamRemediationRuleRows,
+  upsertExamRemediationRule as persistExamRemediationRule,
+} from "@/lib/examRemediationRulesStore.server";
+import {
+  loadExamSnapshotForRemediation,
+  persistRemediationDiagramUpdates,
+} from "@/lib/examRemediationPersist.server";
+import { generateExamRemediationRuleDraft } from "@/lib/examRemediationAiDraft.server";
+import {
+  buildImportContextKey,
+  loadStoredImportLearning,
+  recordImportLearningFailure,
+  recordImportLearningSuccess,
+  setImportLearningEnabled,
+} from "@/lib/importLearning.server";
 import {
   extractImportFigureMarkdownTokens,
+  reconcileOptionFigureMarkdownIntoMcqOptions,
   reconcileSubmitExamPayloadWithImportFigures,
 } from "@/lib/importFigureReconcile.server";
+import { resolveImportDocumentChunkSplit } from "@/lib/importDocumentPerQuestionSplit.shared";
+import { persistImportLayoutAstStubIfEnabled } from "@/lib/importLayoutAstPersist.server";
+import {
+  buildImportLayoutAstStubV1,
+  countPersistedImportFigureUrlsInText,
+  isImportDualTrackGateEnabledFromEnv,
+} from "@/lib/importPipelineGates.shared";
+import { sanitizeImportedSnapshotForPersist } from "@/lib/questionImportSanitize.shared";
+import {
+  normalizeImportChainV1,
+  type FigureAttachQualitySummaryV1,
+  type ImportChainV1,
+} from "@/lib/importParseQuality.shared";
+import type { StructuredExamOcrDocument } from "@/lib/ocr/types";
 import {
   appendExamplesToLocalExam,
   isLocalExamPersistenceAvailable,
@@ -61,6 +97,7 @@ import {
   deepRepairExampleForDisplay,
   deepRepairQuestionForDisplay,
   repairSessionExamSnapshotForExport,
+  type QuestionDisplayRepairInput,
 } from "@/lib/examMathRepairPersist.server";
 import type { AiRuntimePayload } from "@/lib/aiRuntime.shared";
 import {
@@ -76,13 +113,30 @@ import {
 } from "@/lib/types";
 import {
   competitionFocusOptions,
+  EXAM_TRACK_ID_SET,
+  EXAM_TRACK_ZOD_ENUM,
   isCompetitionUnrestricted,
+  isSchoolSyncExamTrack,
   isValidCompetitionFocus,
+  isValidTargetForExamTrack,
   scopesForGradeAndSubject,
+  type ExamTrackId,
 } from "@/lib/generateCatalog";
 import { mergePartialAiSettings, type AiSettingsForm } from "@/lib/aiSettingsStorage";
 import type { Json } from "@/integrations/supabase/types";
 import { SESSION_EXAM_ID_PREFIX, type SessionExamSnapshot } from "@/lib/examSession";
+import { parseOfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
+import {
+  resolveOfflineImportInferGeometryDiagrams,
+  resolveOfflineImportPerQuestionAi,
+} from "@/lib/offlineImportDefaults.shared";
+import { canonicalizeOfflineImportOcrText } from "@/lib/offlineImportFaithfulOcr.shared";
+import { expandImportedParentQuestionSnapshot } from "@/lib/importParentQuestionExpand.shared";
+import {
+  detectImportParentQuestionTopology,
+  enrichImportParentQuestionTopologyForImport,
+} from "@/lib/importParentQuestionTopology.shared";
+import { parseOcrFrontendProvenanceV1 } from "@/lib/ocr/ocrFrontendAdapter.shared";
 import { getGatewayBaseUrlFromEnv } from "@/lib/gatewayOcr.server";
 import { isOpenNotebookIntegrationConfigured } from "@/lib/openNotebookIntegration.server";
 import { isPlaintextExtractHttpConfigured } from "@/lib/plaintextExtractAdapter.server";
@@ -97,10 +151,44 @@ import {
   writeListeningScriptMarkdownForEnglishListeningExam,
 } from "@/lib/listeningAudio.server";
 
+const OfflineImportAnnotationSchema = z.discriminatedUnion("kind", [
+  z.object({
+    id: z.string().max(120),
+    imageIndex: z.number().int().min(0).max(512),
+    kind: z.literal("error_box"),
+    nx: z.number().min(0).max(1),
+    ny: z.number().min(0).max(1),
+    nw: z.number().min(0).max(1),
+    nh: z.number().min(0).max(1),
+  }),
+  z.object({
+    id: z.string().max(120),
+    imageIndex: z.number().int().min(0).max(512),
+    kind: z.literal("omit_oval"),
+    nx: z.number().min(0).max(1),
+    ny: z.number().min(0).max(1),
+    nw: z.number().min(0).max(1),
+    nh: z.number().min(0).max(1),
+  }),
+  z.object({
+    id: z.string().max(120),
+    imageIndex: z.number().int().min(0).max(512),
+    kind: z.literal("reverse_z"),
+    nx: z.number().min(0).max(1),
+    ny: z.number().min(0).max(1),
+  }),
+]);
+
+const OfflineImportPersistedMediaSchema = z.object({
+  figureUrls: z.array(z.string().max(4000)).max(64),
+  annotations: z.array(OfflineImportAnnotationSchema).max(800),
+});
+
 const SessionExamSnapshotSchema = z.object({
   exam: z.any(),
   questions: z.array(z.any()),
   examples: z.array(z.any()),
+  offline_import_media: OfflineImportPersistedMediaSchema.optional().nullable(),
 });
 
 const AiRuntimeSchema = z.object({
@@ -117,6 +205,10 @@ const PAPER_KIND_IDS = [
   "regular_daily",
   "regular_unit",
   "regular_final",
+  "entrance_mock",
+  "entrance_drill",
+  "entrance_sprint",
+  "entrance_past_style",
   "contest_school",
   "contest_city",
   "contest_provincial",
@@ -137,6 +229,14 @@ const GenerateSchema = z
     subject: z.string().min(1),
     scopes: z.array(z.string()),
     difficulty: z.enum(["beginner", "intermediate", "competition", "advanced"]),
+    /** 升学轨道（与年级正交）；缺省视为校内同步 */
+    exam_track: z.enum(EXAM_TRACK_ZOD_ENUM).default("school_sync"),
+    /** 目标体系（可选）；须属于当前 exam_track */
+    target_track_id: z.string().max(80).optional().nullable(),
+    /** 校内同步：教材版本 / 教参说明（可选） */
+    textbook_edition_hint: z.string().max(80).optional(),
+    /** 校内同步：单元 / 章节 / 课时侧重（可选） */
+    chapter_focus: z.string().max(800).optional(),
     /** 日常 / 单元 / 期末 / 校～省竞赛 / 奥赛等；入库标签「试卷场景」 */
     paper_kind: z.enum(PAPER_KIND_IDS).default("regular_daily"),
     duration_min: z.number().int().min(30).max(360),
@@ -151,7 +251,20 @@ const GenerateSchema = z
     ai: AiRuntimeSchema.optional(),
   })
   .superRefine((data, ctx) => {
-    if (!isCompetitionUnrestricted(data.difficulty as Difficulty) && data.scopes.length === 0) {
+    const examTrack = data.exam_track ?? "school_sync";
+    const tt = typeof data.target_track_id === "string" ? data.target_track_id.trim() : "";
+    if (tt && !isValidTargetForExamTrack(examTrack as ExamTrackId, tt)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "目标体系与当前升学阶段不匹配",
+        path: ["target_track_id"],
+      });
+    }
+    if (
+      !isCompetitionUnrestricted(data.difficulty as Difficulty) &&
+      data.scopes.length === 0 &&
+      isSchoolSyncExamTrack(examTrack)
+    ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "请至少选择一个命题范围",
@@ -259,11 +372,48 @@ const SoftDeleteExamSchema = z.object({
   id: z.string().min(1),
 });
 
+function parseStructuredOcrJsonForImport(
+  raw: string | undefined,
+): StructuredExamOcrDocument | null {
+  if (!raw || raw.trim().length < 8) return null;
+  try {
+    const v = JSON.parse(raw) as unknown;
+    if (!v || typeof v !== "object" || Array.isArray(v)) return null;
+    const o = v as Record<string, unknown>;
+    if (o.version !== "1" && o.version !== 1) return null;
+    if (typeof o.plainText !== "string") return null;
+    if (!Array.isArray(o.questions)) return null;
+    return v as StructuredExamOcrDocument;
+  } catch {
+    return null;
+  }
+}
+
+function peelImportChainFromParsedPayload(parsed: Record<string, unknown>): {
+  cleaned: Record<string, unknown>;
+  chain: ImportChainV1 | null;
+} {
+  const chainRaw = parsed.import_chain;
+  const { import_chain: _ic, ...rest } = parsed;
+  if (!chainRaw || typeof chainRaw !== "object" || Array.isArray(chainRaw)) {
+    return { cleaned: rest, chain: null };
+  }
+  const c = chainRaw as Record<string, unknown>;
+  const ver = c.version;
+  if (ver !== 1 && ver !== "1") return { cleaned: rest, chain: null };
+  return { cleaned: rest, chain: normalizeImportChainV1(chainRaw as ImportChainV1) };
+}
+
 const EXAM_NOT_FOUND_MSG =
   "未找到试卷。已按 云端 → 本地 data/local-exams → 仓库内置样例 查找；可访问 /library 或 /exam/demo。";
 
 const ImportOfflineDocumentSchema = z.object({
   text: z.string().min(30).max(500_000),
+  /**
+   * 网关 `StructuredExamOcrDocument` 的 JSON 字符串；用于 layout-first 切段（与 `text` 同源卷面）。
+   * 仅导入页在单段网关 OCR 成功时附带；服务端不信任其替代 `text` 正文。
+   */
+  structured_ocr_json: z.string().max(5_000_000).optional(),
   /**
    * AI 语义修复前的合并正文备份（通常仍含 `![](/import-figures/…)`）。
    * 修复稿 `text` 常删掉 Markdown 图片行，附图 reconcile 需用备份比对 token 数量择优。
@@ -274,6 +424,35 @@ const ImportOfflineDocumentSchema = z.object({
   difficulty: z.enum(["beginner", "intermediate", "competition", "advanced"]).optional(),
   duration_min: z.number().int().min(30).max(360).optional(),
   ai: AiRuntimeSchema.optional(),
+  /** 原图持久化 URL + 对照标注（抄错框等），写入试卷存储 */
+  offline_import_media: OfflineImportPersistedMediaSchema.optional(),
+  /**
+   * 整理入库前按题干调用 AI 推断几何结构化示意图（矢量 schema），不依赖扫描裁剪图。
+   * 仅对疑似几何题干尝试，每卷最多约 24 题；需配置云端或本地模型。
+   */
+  infer_geometry_diagrams: z.boolean().optional(),
+  /**
+   * 双轨诊断：须服务端 `MPG_IMPORT_DUAL_TRACK_GATE=1` 且用户勾选；不替换轨 A 的 AI 整理结果。
+   * 可选将轨 B 占位 AST 写入 `data/import-layout-stubs/`（另见 `MPG_IMPORT_LAYOUT_AST_PERSIST`）。
+   */
+  import_dual_track_ack: z.boolean().optional(),
+  /**
+   * 按卷面括号题号切段，**每段一次** AI 整理再合并（更稳、更慢、调用次数多）。
+   * 题号锚点不足时服务端自动退回整卷单次整理。
+   */
+  per_question_ai: z.boolean().optional(),
+  /** OCR frontend governance provenance（observational；写入 import_parse_quality.ocr_frontend） */
+  ocr_frontend_provenance: z.record(z.string(), z.unknown()).optional(),
+  /** 导入对话框 OCR/裁图 producer 计数 → `import_parse_quality.figure_materialization.import_producer` */
+  figure_materialization_import_ctx: z
+    .object({
+      crop_jobs_emitted: z.number().int().min(0).optional(),
+      crops_persisted: z.number().int().min(0).optional(),
+      crop_persist_failures: z.number().int().min(0).optional(),
+      page_figures_persisted: z.number().int().min(0).optional(),
+      markdown_import_refs_final: z.number().int().min(0).optional(),
+    })
+    .optional(),
 });
 
 /** 选用含持久化附图 Markdown 较多的一份，避免 AI 修复稿删掉 `![](…)` 导致入库无图 */
@@ -286,7 +465,10 @@ function mergedTextForImportFigureReconcile(
   if (backup.length < 30) return edited;
   const nEdited = extractImportFigureMarkdownTokens(edited).length;
   const nBackup = extractImportFigureMarkdownTokens(backup).length;
-  if (nBackup > nEdited) return backup;
+  if (nBackup > nEdited) {
+    /** transport 稿须过 canonical compiler，否则会带回 (1)题(2)… / 图区 LaTeX 连环 */
+    return canonicalizeOfflineImportOcrText(backup).text;
+  }
   return edited;
 }
 
@@ -309,6 +491,19 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
     o.paper_kind = "regular_daily";
   }
 
+  let etRaw = typeof o.exam_track === "string" ? o.exam_track.trim() : "";
+  if (!EXAM_TRACK_ID_SET.has(etRaw)) etRaw = "school_sync";
+  o.exam_track = etRaw;
+  const et = etRaw as ExamTrackId;
+
+  const ttIn = o.target_track_id;
+  if (typeof ttIn === "string" && ttIn.trim()) {
+    const tt = ttIn.trim();
+    o.target_track_id = isValidTargetForExamTrack(et, tt) ? tt : undefined;
+  } else {
+    o.target_track_id = undefined;
+  }
+
   let dm = o.duration_min;
   if (typeof dm !== "number" || !Number.isFinite(dm)) dm = Number(dm);
   if (!Number.isFinite(dm)) dm = 60;
@@ -324,6 +519,23 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
     o.quality_hints = o.quality_hints.slice(0, 2000);
   }
 
+  if (typeof o.textbook_edition_hint === "string") {
+    const s = o.textbook_edition_hint.trim().slice(0, 80);
+    o.textbook_edition_hint = s.length ? s : undefined;
+  } else {
+    o.textbook_edition_hint = undefined;
+  }
+  if (typeof o.chapter_focus === "string") {
+    const s = o.chapter_focus.trim().slice(0, 800);
+    o.chapter_focus = s.length ? s : undefined;
+  } else {
+    o.chapter_focus = undefined;
+  }
+  if (!isSchoolSyncExamTrack(et)) {
+    o.textbook_edition_hint = undefined;
+    o.chapter_focus = undefined;
+  }
+
   const compIn = Array.isArray(o.composition) ? o.composition : [];
   o.composition = compIn.map((row) => {
     if (!row || typeof row !== "object" || Array.isArray(row)) {
@@ -331,10 +543,10 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
     }
     const r = row as Record<string, unknown>;
     const t = typeof r.type === "string" ? r.type : "";
-    let c = r.count;
-    if (typeof c !== "number" || !Number.isFinite(c)) c = Number(c);
-    if (!Number.isFinite(c)) c = 0;
-    c = Math.max(0, Math.min(999, Math.round(c)));
+    const rawCount = r.count;
+    const cNum =
+      typeof rawCount === "number" && Number.isFinite(rawCount) ? rawCount : Number(rawCount);
+    const c = Number.isFinite(cNum) ? Math.max(0, Math.min(999, Math.round(cNum))) : 0;
     let typeLabel: string | null | undefined;
     if (r.type_label === null || r.type_label === undefined) {
       typeLabel = undefined;
@@ -367,7 +579,13 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
       : [];
   }
 
-  if (diff !== "competition" && diff !== "advanced" && grade && subject) {
+  if (
+    diff !== "competition" &&
+    diff !== "advanced" &&
+    grade &&
+    subject &&
+    isSchoolSyncExamTrack(et)
+  ) {
     let scopes = Array.isArray(o.scopes)
       ? o.scopes.filter((x): x is string => typeof x === "string").map((x) => x.trim())
       : [];
@@ -378,6 +596,10 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
       else if (list.length) scopes = [list[0].id];
     }
     o.scopes = scopes;
+  } else if (diff !== "competition" && diff !== "advanced") {
+    o.scopes = Array.isArray(o.scopes)
+      ? o.scopes.filter((x): x is string => typeof x === "string").map((x) => x.trim())
+      : [];
   } else if (!Array.isArray(o.scopes)) {
     o.scopes = [];
   }
@@ -416,7 +638,11 @@ export const generateExam = createServerFn({ method: "POST" })
       assertCompositionAllowedAgainstLibrary(data.composition, libTypes);
     }
 
-    const { allow_overlap_with_library_question_types: _overlap, ...generationPayload } = data;
+    const { allow_overlap_with_library_question_types: _overlap, ...rest } = data;
+    const generationPayload: GenerationConfig = {
+      ...rest,
+      target_track_id: rest.target_track_id ?? undefined,
+    };
 
     const pref = getExamStoragePreferenceFromRequest();
     const dbPersist = getSupabaseAdmin();
@@ -566,9 +792,9 @@ export const listExams = createServerFn({ method: "GET" }).handler(async () =>
   listExamsForLibrary(),
 );
 
-/** 导入页专用：包含 import_review_status=staging，供「待确认（临时库）」显示 */
+/** 导入页专用：仅 `source=imported`，含 staging 待确认卷 */
 export const listExamsForOfflineImports = createServerFn({ method: "GET" }).handler(async () =>
-  listExamsForLibrary({ includeStaging: true }),
+  listExamsForLibrary({ scope: "offline-imports", includeStaging: true }),
 );
 
 /** 为已入库试卷按题型生成配套例题（可选仅生成部分题型） */
@@ -808,7 +1034,9 @@ export const getExamDetail = createServerFn({ method: "GET" })
         const canSoftDelete = exam.source === "generated" || exam.source === "imported";
         const questionsRaw = qRes.data ?? [];
         const examplesRaw = exRes.data ?? [];
-        const questions = questionsRaw.map(deepRepairQuestionForDisplay);
+        const questions = questionsRaw.map((q) =>
+          deepRepairQuestionForDisplay(q as QuestionDisplayRepairInput),
+        );
         const examples = examplesRaw.map(deepRepairExampleForDisplay);
         const [listeningAudioReady, listeningExampleAudioReady] = await Promise.all([
           examListeningAudioFilesReady(data.id, questions as Question[]),
@@ -818,6 +1046,9 @@ export const getExamDetail = createServerFn({ method: "GET" })
             examples as Example[],
           ),
         ]);
+        const offlineImportMedia = parseOfflineImportPersistedMedia(
+          (examRes.data as Record<string, unknown>).offline_import_media,
+        );
         return {
           exam: examRes.data,
           questions,
@@ -825,6 +1056,7 @@ export const getExamDetail = createServerFn({ method: "GET" })
           canSoftDelete,
           listeningAudioReady,
           listeningExampleAudioReady,
+          offlineImportMedia,
         };
       }
     }
@@ -842,6 +1074,7 @@ export const getExamDetail = createServerFn({ method: "GET" })
           examples as Example[],
         ),
       ]);
+      const offlineImportMedia = parseOfflineImportPersistedMedia(ms.offline_import_media);
       return {
         exam: { ...ms.exam, storage_source: "mysql" as const },
         questions,
@@ -849,6 +1082,7 @@ export const getExamDetail = createServerFn({ method: "GET" })
         canSoftDelete,
         listeningAudioReady,
         listeningExampleAudioReady,
+        offlineImportMedia,
       };
     }
 
@@ -868,6 +1102,7 @@ export const getExamDetail = createServerFn({ method: "GET" })
           examples as Example[],
         ),
       ]);
+      const offlineImportMedia = parseOfflineImportPersistedMedia(local.offline_import_media);
       return {
         exam: local.exam,
         questions,
@@ -875,6 +1110,7 @@ export const getExamDetail = createServerFn({ method: "GET" })
         canSoftDelete,
         listeningAudioReady,
         listeningExampleAudioReady,
+        offlineImportMedia,
       };
     }
 
@@ -897,6 +1133,7 @@ export const getExamDetail = createServerFn({ method: "GET" })
         canSoftDelete: false as const,
         listeningAudioReady,
         listeningExampleAudioReady,
+        offlineImportMedia: null,
       };
     }
 
@@ -1023,7 +1260,9 @@ export const getBackendCapabilities = createServerFn({ method: "GET" }).handler(
 
   /** 导入附图：配置了 Storage 桶名且 Supabase 可用时优先上传对象存储 */
   const importFiguresStorage: "supabase" | "local" =
-    !!(supa && process.env.MPG_IMPORT_FIGURES_BUCKET?.trim()) ? "supabase" : "local";
+    supa && process.env.MPG_IMPORT_FIGURES_BUCKET?.trim() ? "supabase" : "local";
+
+  const importDualTrackGateEnabled = isImportDualTrackGateEnabledFromEnv();
 
   return {
     examPersistenceEnabled: !!(supa || (await isLocalExamPersistenceAvailable()) || mysqlOk),
@@ -1038,6 +1277,8 @@ export const getBackendCapabilities = createServerFn({ method: "GET" }).handler(
     ocrRepairLexiconPersistence,
     /** 线下导入附图：Supabase Storage（需桶）或本地 public/import-figures */
     importFiguresStorage,
+    /** 服务端 `MPG_IMPORT_DUAL_TRACK_GATE=1` 时，导入对话框可勾选「双轨诊断」 */
+    importDualTrackGateEnabled,
   };
 });
 
@@ -1056,30 +1297,126 @@ export const importOfflineExamSnapshot = createServerFn({ method: "POST" })
 export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => ImportOfflineDocumentSchema.parse(data))
   .handler(async ({ data }) => {
-    let parsed = await runImportDocumentAiGeneration(
-      data.text,
-      data.ai as AiRuntimePayload | undefined,
-      { subjectId: data.subject?.trim() || undefined },
-    );
-    parsed = canonicalizeImportedExamPayload(parsed);
-    parsed = reconcileSubmitExamPayloadWithImportFigures(
+    const ctxKey = buildImportContextKey(data.grade?.trim(), data.subject?.trim());
+    const structured = parseStructuredOcrJsonForImport(data.structured_ocr_json);
+    const canonicalized = canonicalizeOfflineImportOcrText(
       mergedTextForImportFigureReconcile(data.text, data.figure_reconcile_source),
-      parsed,
     );
-    const bundle = buildImportedExamSnapshotFromAiParsed(parsed, {
-      grade: data.grade?.trim() || undefined,
-      subject: data.subject?.trim() || undefined,
-      difficulty: data.difficulty,
-      duration_min: data.duration_min,
-      /** 与网上导入一致：先写入待确认，用户在列表核对后再「确认入库」 */
-      import_review_status: "staging",
+    const sourceForAnalysis = canonicalized.text;
+    const textCanonicalizationTrace = canonicalized.trace;
+    const chunkSplit = resolveImportDocumentChunkSplit({
+      text: sourceForAnalysis.replace(/\r\n/g, "\n").trim(),
+      structured,
+      mode: "auto",
     });
-    return persistImportedBundle(bundle);
+    try {
+      let figureAttachQuality: FigureAttachQualitySummaryV1 | null = null;
+      const parentTopologyDetected = detectImportParentQuestionTopology(sourceForAnalysis);
+      const perQuestionAi = resolveOfflineImportPerQuestionAi(
+        data.per_question_ai,
+        sourceForAnalysis,
+      );
+      const parentQuestionTopology = parentTopologyDetected
+        ? enrichImportParentQuestionTopologyForImport(parentTopologyDetected, {
+            sourcePlainText: sourceForAnalysis,
+            perQuestionAiEffective: perQuestionAi,
+          })
+        : null;
+      const inferGeometryDiagrams = resolveOfflineImportInferGeometryDiagrams(
+        data.infer_geometry_diagrams,
+      );
+      let parsed = perQuestionAi
+        ? await runImportDocumentAiGenerationPerQuestion(
+            data.text,
+            data.ai as AiRuntimePayload | undefined,
+            {
+              subjectId: data.subject?.trim() || undefined,
+              structured,
+            },
+          )
+        : await runImportDocumentAiGeneration(data.text, data.ai as AiRuntimePayload | undefined, {
+            subjectId: data.subject?.trim() || undefined,
+            structured,
+          });
+      const peeled = peelImportChainFromParsedPayload(parsed as Record<string, unknown>);
+      parsed = canonicalizeImportedExamPayload(peeled.cleaned);
+      if (peeled.chain) {
+        console.info(
+          `[importOfflineExamFromDocument] import_chain path=${peeled.chain.import_path} confidence=${peeled.chain.confidence} chunks=${peeled.chain.chunk_count}`,
+        );
+      }
+      const reconFigures = reconcileSubmitExamPayloadWithImportFigures(sourceForAnalysis, parsed, {
+        questionRegions: chunkSplit.questionRegions,
+        structured,
+      });
+      parsed = reconFigures.payload;
+      figureAttachQuality = reconFigures.figureAttachQuality;
+      parsed = reconcileOptionFigureMarkdownIntoMcqOptions(sourceForAnalysis, parsed);
+      let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
+        grade: data.grade?.trim() || undefined,
+        subject: data.subject?.trim() || undefined,
+        difficulty: data.difficulty,
+        duration_min: data.duration_min,
+        /** 与网上导入一致：先写入待确认，用户在列表核对后再「确认入库」 */
+        import_review_status: "staging",
+        offline_import_media: data.offline_import_media,
+        sourcePlainText: sourceForAnalysis,
+      });
+      if (inferGeometryDiagrams) {
+        /**
+         * 与 `importRemoteCatalogEntryAsStaging` / `importWebUrlAsStaging` 一致：`full` =
+         * 规则命中优先，否则用当前设置中的模型推断坐标。此前此处误用 `rule_only`，绝大多数题干无法生成 diagram_schema。
+         */
+        bundle = await fillGeometryDiagramsForSnapshot(
+          bundle,
+          data.ai as AiRuntimePayload | undefined,
+        );
+      }
+      bundle = expandImportedParentQuestionSnapshot(bundle, {
+        sourceText: sourceForAnalysis,
+      });
+      bundle = await applyExamRemediationPipelineToSnapshot(
+        bundle,
+        data.ai as AiRuntimePayload | undefined,
+      );
+      bundle = sanitizeImportedSnapshotForPersist(bundle, {
+        importChain: peeled.chain,
+        figureAttachQuality,
+        figureMaterializationImportCtx: data.figure_materialization_import_ctx ?? null,
+        ocrFrontendProvenance: parseOcrFrontendProvenanceV1(data.ocr_frontend_provenance),
+        textCanonicalizationTrace,
+        parentQuestionTopology,
+      });
+      const out = await persistImportedBundle(bundle);
+      await recordImportLearningSuccess(ctxKey, sourceForAnalysis, bundle);
+
+      if (isImportDualTrackGateEnabledFromEnv() && data.import_dual_track_ack === true) {
+        const stub = buildImportLayoutAstStubV1({
+          examId: out.examId,
+          sourceCharLen: sourceForAnalysis.length,
+          importFigureUrlCount: countPersistedImportFigureUrlsInText(sourceForAnalysis),
+          questionCount: bundle.questions.length,
+        });
+        let layout_ast_file_written = false;
+        try {
+          layout_ast_file_written = await persistImportLayoutAstStubIfEnabled(out.examId, stub);
+        } catch (e) {
+          console.warn("[importOfflineExamFromDocument] layout AST stub persist:", e);
+        }
+        return { ...out, import_pipeline_diagnostic: { layout_ast_file_written } };
+      }
+
+      return out;
+    } catch (e) {
+      await recordImportLearningFailure(ctxKey, e instanceof Error ? e.message : String(e));
+      throw e;
+    }
   });
 
 const ImportRemoteCatalogEntrySchema = z.object({
   catalogEntryId: z.string().min(1).max(200),
   ai: AiRuntimeSchema.optional(),
+  infer_geometry_diagrams: z.boolean().optional(),
 });
 
 const ImportWebUrlStagingSchema = z.object({
@@ -1088,6 +1425,7 @@ const ImportWebUrlStagingSchema = z.object({
   subjectId: z.string().min(1).max(80),
   paper_kind: z.enum(PAPER_KIND_IDS).optional(),
   ai: AiRuntimeSchema.optional(),
+  infer_geometry_diagrams: z.boolean().optional(),
 });
 
 /**
@@ -1105,25 +1443,47 @@ export const importRemoteCatalogEntryAsStaging = createServerFn({ method: "POST"
     }
     const text = await resolvePlainTextForCatalogEntry(entry);
     if (text.length < 30) throw new Error("正文过短，无法整理为试卷。");
-    let parsed = await runImportDocumentAiGeneration(
-      text,
-      data.ai as AiRuntimePayload | undefined,
-      {
-        subjectId: entry.subjectId,
-      },
-    );
-    parsed = canonicalizeImportedExamPayload(parsed);
-    parsed = reconcileSubmitExamPayloadWithImportFigures(text, parsed);
-    const bundle = buildImportedExamSnapshotFromAiParsed(parsed, {
-      grade: entry.gradeId,
-      subject: entry.subjectId,
-      duration_min: 90,
-      difficulty: "intermediate",
-      paper_kind: entry.paper_kind,
-      import_review_status: "staging",
-    });
-    bundle.exam.title = entry.title.slice(0, 500);
-    return persistImportedBundle(bundle);
+    const ctxKey = buildImportContextKey(entry.gradeId, entry.subjectId);
+    try {
+      let parsed = await runImportDocumentAiGeneration(
+        text,
+        data.ai as AiRuntimePayload | undefined,
+        {
+          subjectId: entry.subjectId,
+        },
+      );
+      const peeled = peelImportChainFromParsedPayload(parsed as Record<string, unknown>);
+      parsed = canonicalizeImportedExamPayload(peeled.cleaned);
+      parsed = reconcileSubmitExamPayloadWithImportFigures(text, parsed).payload;
+      parsed = reconcileOptionFigureMarkdownIntoMcqOptions(text, parsed);
+      let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
+        grade: entry.gradeId,
+        subject: entry.subjectId,
+        duration_min: 90,
+        difficulty: "intermediate",
+        paper_kind: entry.paper_kind,
+        import_review_status: "staging",
+        sourcePlainText: text,
+      });
+      bundle.exam.title = entry.title.slice(0, 500);
+      if (data.infer_geometry_diagrams) {
+        bundle = await fillGeometryDiagramsForSnapshot(
+          bundle,
+          data.ai as AiRuntimePayload | undefined,
+        );
+      }
+      bundle = await applyExamRemediationPipelineToSnapshot(
+        bundle,
+        data.ai as AiRuntimePayload | undefined,
+      );
+      bundle = sanitizeImportedSnapshotForPersist(bundle, { importChain: peeled.chain });
+      const out = await persistImportedBundle(bundle);
+      await recordImportLearningSuccess(ctxKey, text, bundle);
+      return out;
+    } catch (e) {
+      await recordImportLearningFailure(ctxKey, e instanceof Error ? e.message : String(e));
+      throw e;
+    }
   });
 
 /** 网上导入（检索 URL）：抓取纯文本后 AI 整理，写入待确认 staging */
@@ -1132,24 +1492,46 @@ export const importWebUrlAsStaging = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const text = await fetchUtf8PlainTextFromHttpUrl(data.url);
     if (text.length < 30) throw new Error("正文过短，无法整理为试卷。");
-    let parsed = await runImportDocumentAiGeneration(
-      text,
-      data.ai as AiRuntimePayload | undefined,
-      {
-        subjectId: data.subjectId.trim(),
-      },
-    );
-    parsed = canonicalizeImportedExamPayload(parsed);
-    parsed = reconcileSubmitExamPayloadWithImportFigures(text, parsed);
-    const bundle = buildImportedExamSnapshotFromAiParsed(parsed, {
-      grade: data.gradeId.trim(),
-      subject: data.subjectId.trim(),
-      duration_min: 90,
-      difficulty: "intermediate",
-      paper_kind: data.paper_kind,
-      import_review_status: "staging",
-    });
-    return persistImportedBundle(bundle);
+    const ctxKey = buildImportContextKey(data.gradeId.trim(), data.subjectId.trim());
+    try {
+      let parsed = await runImportDocumentAiGeneration(
+        text,
+        data.ai as AiRuntimePayload | undefined,
+        {
+          subjectId: data.subjectId.trim(),
+        },
+      );
+      const peeled = peelImportChainFromParsedPayload(parsed as Record<string, unknown>);
+      parsed = canonicalizeImportedExamPayload(peeled.cleaned);
+      parsed = reconcileSubmitExamPayloadWithImportFigures(text, parsed).payload;
+      parsed = reconcileOptionFigureMarkdownIntoMcqOptions(text, parsed);
+      let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
+        grade: data.gradeId.trim(),
+        subject: data.subjectId.trim(),
+        duration_min: 90,
+        difficulty: "intermediate",
+        paper_kind: data.paper_kind,
+        import_review_status: "staging",
+        sourcePlainText: text,
+      });
+      if (data.infer_geometry_diagrams) {
+        bundle = await fillGeometryDiagramsForSnapshot(
+          bundle,
+          data.ai as AiRuntimePayload | undefined,
+        );
+      }
+      bundle = await applyExamRemediationPipelineToSnapshot(
+        bundle,
+        data.ai as AiRuntimePayload | undefined,
+      );
+      bundle = sanitizeImportedSnapshotForPersist(bundle, { importChain: peeled.chain });
+      const out = await persistImportedBundle(bundle);
+      await recordImportLearningSuccess(ctxKey, text, bundle);
+      return out;
+    } catch (e) {
+      await recordImportLearningFailure(ctxKey, e instanceof Error ? e.message : String(e));
+      throw e;
+    }
   });
 
 const ListRemotePaperCatalogSchema = z.object({
@@ -1312,5 +1694,115 @@ export const saveGenerationHabitsToDb = createServerFn({ method: "POST" })
     );
 
     if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+const UpsertExamRemediationRuleSchema = z.object({
+  id: z.string().min(1).max(128),
+  workspace_key: z.string().max(64).optional(),
+  priority: z.number().int().optional(),
+  enabled: z.boolean().optional(),
+  name: z.string().max(255).nullable().optional(),
+  match_json: z.unknown(),
+  action_json: z.unknown(),
+  note: z.string().max(500).nullable().optional(),
+});
+
+/** 列出 exam_remediation_rules（方案 C：多套卷共用）；需本地 MySQL */
+export const listExamRemediationRules = createServerFn({ method: "GET" }).handler(async () => {
+  const rules = await listExamRemediationRuleRows("default");
+  return { ok: true as const, rules };
+});
+
+/** 写入或更新一条管线规则；字段形状见 `examRemediationRules.shared.ts` */
+export const saveExamRemediationRule = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => UpsertExamRemediationRuleSchema.parse(data))
+  .handler(async ({ data }) => {
+    await persistExamRemediationRule({
+      id: data.id,
+      workspace_key: data.workspace_key,
+      priority: data.priority,
+      enabled: data.enabled,
+      name: data.name ?? null,
+      match_json: data.match_json,
+      action_json: data.action_json,
+      note: data.note ?? null,
+    });
+    return { ok: true as const };
+  });
+
+const DeleteExamRemediationRuleSchema = z.object({
+  id: z.string().min(1).max(128),
+  workspace_key: z.string().max(64).optional(),
+});
+
+/** 删除一条管线规则 */
+export const deleteExamRemediationRuleEntry = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => DeleteExamRemediationRuleSchema.parse(data))
+  .handler(async ({ data }) => {
+    const deleted = await removeExamRemediationRuleRow(data.id, data.workspace_key ?? "default");
+    return { ok: true as const, deleted };
+  });
+
+const ReapplyRemediationPipelineSchema = z.object({
+  examId: z.string().min(1).max(120),
+  workspace_key: z.string().max(64).optional(),
+  ai: AiRuntimeSchema.optional(),
+});
+
+/** 对已入库试卷重新执行数据库修复管线（写回 diagram_schema） */
+export const reapplyExamRemediationPipelineToExam = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => ReapplyRemediationPipelineSchema.parse(data))
+  .handler(async ({ data }) => {
+    const examId = data.examId.trim();
+    if (examId.startsWith(SESSION_EXAM_ID_PREFIX)) {
+      throw new Error("会话临时试卷请先入库后再执行修复管线");
+    }
+    if (isProjectBundledRouteId(examId)) {
+      throw new Error("仓库内置演示卷不支持此操作");
+    }
+    const loaded = await loadExamSnapshotForRemediation(examId);
+    if (!loaded) throw new Error("未找到试卷或试卷不可用（请确认存储位置与 id）");
+    const beforeQs = loaded.snapshot.questions.map((q) => ({ ...q }));
+    let bundle = loaded.snapshot;
+    bundle = await applyExamRemediationPipelineToSnapshot(
+      bundle,
+      data.ai as AiRuntimePayload | undefined,
+      { workspaceKey: data.workspace_key ?? "default" },
+    );
+    const persist = await persistRemediationDiagramUpdates(beforeQs, bundle, loaded.backend);
+    return {
+      ok: true as const,
+      backend: loaded.backend,
+      changedQuestionCount: persist.changedQuestionCount,
+    };
+  });
+
+const DraftRemediationRuleSchema = z.object({
+  description: z.string().min(8).max(4000),
+  ai: AiRuntimeSchema.optional(),
+});
+
+/** Agent 辅助：自然语言 → 规则 JSON 草案（入库前请人工核对） */
+export const draftExamRemediationRuleWithAi = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => DraftRemediationRuleSchema.parse(data))
+  .handler(async ({ data }) => {
+    return generateExamRemediationRuleDraft(
+      data.description,
+      data.ai as AiRuntimePayload | undefined,
+    );
+  });
+
+/** 读取导入自主学习统计（workspace_settings.importLearning） */
+export const fetchImportLearningOverview = createServerFn({ method: "GET" }).handler(async () => {
+  const profile = await loadStoredImportLearning();
+  return { ok: true as const, profile };
+});
+
+/** 开关：是否在导入 AI 提示中注入「自主学习·导入」补强段 */
+export const setImportLearningAutonomousEnabled = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => z.object({ enabled: z.boolean() }).parse(data))
+  .handler(async ({ data }) => {
+    await setImportLearningEnabled(data.enabled);
     return { ok: true as const };
   });

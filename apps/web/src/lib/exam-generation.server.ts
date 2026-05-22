@@ -14,14 +14,22 @@ import {
   type QuestionType,
   type SolutionStep,
 } from "@/lib/types";
+import {
+  materializeQuestionRasterFigures,
+  parseQuestionRasterFiguresV1,
+} from "@/lib/importRasterFigures.shared";
 import { SESSION_EXAM_ID_PREFIX, type SessionExamSnapshot } from "@/lib/examSession";
+import type { OfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
 import {
   competitionFocusLabelById,
   curriculumSubjectLabel,
+  examTrackLabel,
   gradeLevelLabel,
   isCompetitionUnrestricted,
+  isSchoolSyncExamTrack,
   paperKindLabel,
   scopeLabelById,
+  targetTrackLabel,
   TEXTBOOK_SYNC_SCOPE,
 } from "@/lib/generateCatalog";
 import {
@@ -37,10 +45,29 @@ import { collectParsedQuestionsIssues } from "@/lib/examQuestionValidation";
 import { buildRetryQualityHintsFromIssues } from "@/lib/generationQuality.shared";
 import {
   collectSemiBuiltinsOnlyFromRawQuestions,
+  refreshExamMathRepairMergedRules,
   repairExamQuestionPayloadStringsWithLearningSync,
-  scanBuiltinFixedFragmentsAndLearnRules,
+  scanBuiltinFixedFragmentsAndLearnRulesAsync,
 } from "@/lib/examMathRepairPersist.server";
 import { writeListeningScriptMarkdownForEnglishListeningExam } from "@/lib/listeningAudio.server";
+import { parseDiagramSchemaFromQuestionRecord } from "@/lib/geometryDiagramSchema.shared";
+import { fillGeometryDiagramsForQuestionList } from "@/lib/geometryDiagramInference.server";
+import { computeQuestionFigureDependencyV1 } from "@/lib/questionFigureDependency.shared";
+import { cleanMcqStemInlineOptionResidue } from "@/lib/mcqStemInlineCleaner.shared";
+import { applyImportExamQuestionMinimalRepair } from "@/lib/importExamQuestionRepair.shared";
+import { applyImportQuestionStructureAutocorrect } from "@/lib/importQuestionStructureAutocorrect.shared";
+import {
+  buildImportChainV1,
+  splitImportDocumentIntoQuestionChunksWithMeta,
+} from "@/lib/importDocumentPerQuestionSplit.shared";
+import type { StructuredExamOcrDocument } from "@/lib/ocr/types";
+import {
+  alignImportAiQuestionContentToChunk,
+  applyImportSectionContextToParsedQuestions,
+  findImportSectionForCharOffset,
+  formatImportSectionPromptHint,
+  parseImportDocumentSections,
+} from "@/lib/importSectionContext.shared";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -58,7 +85,7 @@ function resolveExamAiMaxOutputTokens(attempt: number): number {
   return base;
 }
 
-interface GenerationConfig {
+export interface GenerationConfig {
   title: string;
   grade: string;
   subject: string;
@@ -72,6 +99,14 @@ interface GenerationConfig {
    * @default regular_daily
    */
   paper_kind?: string;
+  /** 升学轨道（与年级正交）；缺省校内同步 */
+  exam_track?: string;
+  /** 目标体系（可选） */
+  target_track_id?: string;
+  /** 校内同步：教材版本说明（可选） */
+  textbook_edition_hint?: string;
+  /** 校内同步：单元 / 章节侧重（可选） */
+  chapter_focus?: string;
   /** 竞赛 / 高阶：本学科内竞赛侧重（可多选） */
   competition_focus?: string[];
   notes?: string;
@@ -115,6 +150,9 @@ interface ParsedAiQuestion {
   solution_steps: unknown;
   knowledge_tags: unknown;
   points?: number;
+  /** AI 可选返回结构化几何示意 JSON（与 diagramSchema 二选一） */
+  diagram_schema?: unknown;
+  diagramSchema?: unknown;
 }
 
 /**
@@ -290,7 +328,9 @@ function looksLikeSingleQuestionRecord(o: Record<string, unknown>): boolean {
 }
 
 /** 供导入附图 reconcile 等与解析路径对齐；将 parameters 内 questions 等.lift 到顶层。 */
-export function normalizeSubmitExamPayloadShape(parsed: Record<string, unknown>): Record<string, unknown> {
+export function normalizeSubmitExamPayloadShape(
+  parsed: Record<string, unknown>,
+): Record<string, unknown> {
   const directQ = parsed["questions"];
   if (Array.isArray(directQ) && directQ.length > 0) return parsed;
 
@@ -431,7 +471,7 @@ function normalizeQuestionAliases(raw: Record<string, unknown>): ParsedAiQuestio
     content,
     answer: ans,
   };
-  return merged as ParsedAiQuestion;
+  return merged as unknown as ParsedAiQuestion;
 }
 
 /** 从 submit_exam 载荷中解析题目（兼容 problems / items 等别名与嵌套 exam） */
@@ -467,7 +507,9 @@ function extractQuestionsFromSubmitExamPayload(
 /**
  * 导入管线：统一为顶层 `questions`，去掉 `problems` / `items` 等别名残留，并剥离嵌套 `exam` 内重复题目数组，避免附图 reconcile 与入库路径分叉。
  */
-export function canonicalizeImportedExamPayload(parsed: Record<string, unknown>): Record<string, unknown> {
+export function canonicalizeImportedExamPayload(
+  parsed: Record<string, unknown>,
+): Record<string, unknown> {
   const normalizedQs = extractQuestionsFromSubmitExamPayload(parsed);
   const root = normalizeSubmitExamPayloadShape(parsed);
   if (normalizedQs.length === 0) return root;
@@ -583,16 +625,17 @@ const SUBMIT_EXAM_FIELD_CHEATSHEET = `
 • programming：options 省略；answer 为代码；solution_steps 写思路与复杂度。
 • essay：options 省略；answer 可写要点提纲。
 • cross_*：同理科解答题，options 省略，按交叉学科情境命题。
+• **diagram_schema（可选）**：平面几何题可附加 v1 矢量示意图 JSON（version、points、segments）；纯代数/函数题省略。
 `.trim();
 
 /** 题干中选项行：A. / B． / E、 / F) 等（支持超过 D 的选项） */
-const MCQ_OPTION_LINE = /^([A-Za-z])[\.．、)\:：]\s*(.+)$/;
+const MCQ_OPTION_LINE = /^([A-Za-z])[.．、。):：]\s*(.+)$/;
 
 /** 从题干末尾连续行提取选项块（至少 4 条） */
 function extractTrailingMcqOptions(
   content: string,
 ): { stem: string; options: string[] } | undefined {
-  const lines = content.split(/\r?\n/);
+  const lines = preprocessMcqParenLetterNoise(content).split(/\r?\n/);
   let i = lines.length - 1;
   const collected: string[] = [];
   while (i >= 0) {
@@ -622,7 +665,7 @@ function extractTrailingMcqOptions(
 function extractMcqOptionsByLetter(
   content: string,
 ): { stem: string; options: string[] } | undefined {
-  const lines = content.split(/\r?\n/);
+  const lines = preprocessMcqParenLetterNoise(content).split(/\r?\n/);
   const slots = new Map<string, string>();
   const lineIdx = new Map<string, number>();
   lines.forEach((line, idx) => {
@@ -653,9 +696,9 @@ function extractMcqOptionsByLetter(
  * 题干任意位置出现 A. / B． / A）等（可同一段落内联），按首次出现的字母收集至少 4 个不同选项。
  */
 function extractMcqOptionsInline(content: string): { stem: string; options: string[] } | undefined {
-  const s = content.replace(/\r\n/g, "\n");
+  const s = preprocessMcqParenLetterNoise(content).replace(/\r\n/g, "\n");
   /** 本地模型常输出 a. / b. 小写标签，须与大写 A. 同等识别 */
-  const re = /(?:^|[\n\s])([A-Za-z])([\.．、:：\)）])\s*/g;
+  const re = /(?:^|[\n\s])([A-Za-z])([.．、。:：)）])\s*/g;
   const hits: { start: number; endLabel: number; L: string }[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(s)) !== null) {
@@ -681,11 +724,47 @@ function extractMcqOptionsInline(content: string): { stem: string; options: stri
   return { stem: stem || s, options };
 }
 
+/**
+ * OCR 常见：半角 (C) 被识成 ©，插在 (B) 与 (D) 之间，导致 collectParenLetterHits 凑不齐 A–D 链。
+ * 须在任何「括号字母选项」解析之前调用（幂等）。
+ */
+function preprocessMcqParenLetterNoise(raw: string): string {
+  let s = raw.replace(/\r\n/g, "\n");
+  s = s.replace(/([（(]B[）)])\s*©\s*([（(]D[）)])/g, "$1(C)$2");
+  return s;
+}
+
+/** 选项行末误并入的「整行 A B C D」阅读顺序尾噪 */
+function stripTrailingBareLetterRunFromMcqOption(opt: string): string {
+  return String(opt ?? "")
+    .trim()
+    .replace(/\s+[A-H](?:\s+[A-H]){3}\s*$/i, "")
+    .trim();
+}
+
+/** 题干末尾误扫入的「第(1)题」等与正文重复的栏标 */
+function stripTrailingOcrQuestionNumberEchoFromStem(stem: string): string {
+  return String(stem ?? "")
+    .trim()
+    .replace(/\s*第[（(]\d{1,2}[）)]\s*题\s*$/u, "")
+    .trim();
+}
+
+/** 导入卷常见：模型把单选标成 multiple_choice_multi；答案仅一个字母时降级为单选 */
+function maybeDemoteSpuriousMultiSelect(q: ParsedAiQuestion): ParsedAiQuestion {
+  if (String(q.type ?? "").trim() !== "multiple_choice_multi") return q;
+  const ans = String(q.answer ?? "").trim();
+  if (/^[A-H]$/i.test(ans)) {
+    return { ...q, type: "multiple_choice" };
+  }
+  return q;
+}
+
 /** 半角 / 全角括号内的选项字母（图中顶点 A/B 也会被扫到，须靠有序链消歧） */
 type ParenLetterHit = { idx: number; letter: string; headerLen: number };
 
 function collectParenLetterHits(content: string): ParenLetterHit[] {
-  const s = content.replace(/\r\n/g, "\n");
+  const s = preprocessMcqParenLetterNoise(content).replace(/\r\n/g, "\n");
   const marker = /[（(]([A-Za-z])[）)]\s*/g;
   const hits: ParenLetterHit[] = [];
   let m: RegExpExecArray | null;
@@ -761,7 +840,7 @@ function buildStemAndOptionsFromParenChain(
 function extractParenLetterMcqOptions(
   content: string,
 ): { stem: string; options: string[] } | undefined {
-  const s = content.replace(/\r\n/g, "\n").trim();
+  const s = preprocessMcqParenLetterNoise(content).replace(/\r\n/g, "\n").trim();
   if (!s) return undefined;
   const hits = collectParenLetterHits(s);
   if (hits.length < 4) return undefined;
@@ -784,7 +863,7 @@ function extractParenLetterMcqOptions(
 function tryExtractMcqFromContentBlob(
   blob: string,
 ): { stem: string; options: string[] } | undefined {
-  const t = blob.trim();
+  const t = preprocessMcqParenLetterNoise(blob).trim();
   if (!t) return undefined;
   return (
     extractTrailingMcqOptions(t) ??
@@ -794,15 +873,138 @@ function tryExtractMcqFromContentBlob(
   );
 }
 
+const MCQ_TYPES_NORMALIZE = new Set(["multiple_choice", "multiple_choice_multi"]);
+
+/** 去掉选项串前的 `A.` / `选项A` 等标签，便于与从题干拆出的选项比对 */
+function stripLeadingMcqOptionLabel(opt: string): string {
+  return String(opt ?? "")
+    .trim()
+    .replace(/^[A-H][.．、:：。]\s*/i, "")
+    .replace(/^选项\s*[A-H]\s*/i, "")
+    .trim();
+}
+
+/**
+ * 模型/管线常见问题：options 为 ["A","B",…]、["选项A",…]、["A. A",…] 等占位，真实文本仍在题干行内 (A)(B)(C)(D)。
+ * 此类不得视为「已拆选项」，须继续从 content 回收。
+ */
+function looksLikePlaceholderMcqOptions(opts: string[]): boolean {
+  const head = opts.slice(0, Math.min(opts.length, 6));
+  if (head.length < 4) return false;
+  let hits = 0;
+  for (let i = 0; i < 4; i++) {
+    const raw = String(head[i] ?? "").trim();
+    if (!raw) continue;
+    const letter = String.fromCharCode(65 + i);
+    if (/^选项\s*[A-H]\s*$/i.test(raw)) {
+      hits++;
+      continue;
+    }
+    if (/^[A-H]$/i.test(raw)) {
+      hits++;
+      continue;
+    }
+    if (new RegExp(`^${letter}\\s*[\\.．。]\\s*${letter}\\s*$`, "i").test(raw)) {
+      hits++;
+      continue;
+    }
+    const body = stripLeadingMcqOptionLabel(raw);
+    if (body.length <= 2 && new RegExp(`^${letter}$`, "i").test(body)) hits++;
+  }
+  return hits >= 4;
+}
+
+function mcqOptionBodiesSimilar(a: string, b: string): boolean {
+  const na = a.replace(/\s+/g, "").toLowerCase();
+  const nb = b.replace(/\s+/g, "").toLowerCase();
+  if (!na || !nb) return false;
+  if (na === nb) return true;
+  const n = Math.min(14, na.length, nb.length);
+  if (n < 4) return na === nb;
+  return na.includes(nb.slice(0, n)) || nb.includes(na.slice(0, n));
+}
+
+/**
+ * 占位选项回收 + 题干内联 (A)～(D) 与结构化 options 重复时收敛题干。
+ */
+function polishMcqImportQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
+  const finishMcqStemClean = (qq: ParsedAiQuestion): ParsedAiQuestion => {
+    const raw = qq.options;
+    if (!Array.isArray(raw) || raw.filter((x) => String(x ?? "").trim()).length < 4) return qq;
+    const cleaned = cleanMcqStemInlineOptionResidue(String(qq.content ?? ""));
+    return cleaned === qq.content ? qq : { ...qq, content: cleaned };
+  };
+
+  if (!MCQ_TYPES_NORMALIZE.has(String(q.type ?? "").trim())) return q;
+  const rawOpts = q.options;
+  if (!Array.isArray(rawOpts)) return q;
+  let opts = rawOpts.map((x) => stripTrailingBareLetterRunFromMcqOption(String(x ?? "").trim()));
+  if (opts.filter(Boolean).length < 4) return q;
+
+  let next: ParsedAiQuestion = { ...q, options: opts };
+
+  if (looksLikePlaceholderMcqOptions(opts)) {
+    const blob = preprocessMcqParenLetterNoise(String(next.content ?? ""));
+    const recovered = tryExtractMcqFromContentBlob(blob);
+    if (
+      recovered &&
+      recovered.options.length >= 4 &&
+      !looksLikePlaceholderMcqOptions(recovered.options)
+    ) {
+      opts = recovered.options.map((x) =>
+        stripTrailingBareLetterRunFromMcqOption(String(x ?? "").trim()),
+      );
+      next = {
+        ...next,
+        content: stripTrailingOcrQuestionNumberEchoFromStem(recovered.stem),
+        options: opts,
+      };
+    }
+  }
+
+  const content = preprocessMcqParenLetterNoise(String(next.content ?? ""));
+  if (content !== next.content) {
+    next = { ...next, content };
+  }
+  const ex = extractParenLetterMcqOptions(content);
+  if (!ex || ex.options.length < 4) return finishMcqStemClean(next);
+
+  const norm = opts.slice(0, 4).map(stripLeadingMcqOptionLabel);
+  const exo = ex.options.slice(0, 4).map(stripLeadingMcqOptionLabel);
+  let sim = 0;
+  for (let i = 0; i < 4; i++) {
+    if (mcqOptionBodiesSimilar(norm[i] ?? "", exo[i] ?? "")) sim++;
+  }
+  if (sim >= 3) {
+    return finishMcqStemClean({
+      ...next,
+      content: stripTrailingOcrQuestionNumberEchoFromStem(ex.stem),
+      options: opts.map((o) => stripTrailingBareLetterRunFromMcqOption(o)),
+    });
+  }
+
+  const stemStripped = stripTrailingOcrQuestionNumberEchoFromStem(content);
+  if (stemStripped !== content) {
+    return finishMcqStemClean({ ...next, content: stemStripped, options: opts });
+  }
+  return finishMcqStemClean(next);
+}
+
 /**
  * 选择题 options 修复：空数组 / 漏填时从 content 拆出；合并字符串尝试切开。
  * 在 assertParsedQuestionsComplete 之前调用。
  */
 function normalizeParsedQuestionsMcq(questions: ParsedAiQuestion[]): ParsedAiQuestion[] {
-  return questions.map(normalizeSingleMcqQuestion);
+  return questions.map((q) =>
+    maybeDemoteSpuriousMultiSelect(polishMcqImportQuestion(normalizeSingleMcqQuestion(q))),
+  );
 }
 
-const MCQ_TYPES_NORMALIZE = new Set(["multiple_choice", "multiple_choice_multi"]);
+function mcqNonEmptyOptionCount(q: ParsedAiQuestion): number {
+  const raw = q.options;
+  if (!Array.isArray(raw)) return 0;
+  return raw.reduce((n, x) => (String(x ?? "").trim() ? n + 1 : n), 0);
+}
 
 function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
   if (!MCQ_TYPES_NORMALIZE.has(String(q.type ?? "").trim())) return q;
@@ -819,7 +1021,7 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
       .filter(Boolean);
     const out: string[] = [];
     for (const line of lines) {
-      const m = line.match(/^([A-H])[\.．、:：]\s*(.+)$/);
+      const m = line.match(/^([A-H])[.．、:：。]\s*(.+)$/);
       if (m) out.push(`${m[1]!.toUpperCase()}. ${m[2]!.trim()}`);
     }
     return out.length >= 4 ? out : undefined;
@@ -836,10 +1038,10 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
     if (fromParenOnly && fromParenOnly.options.length >= 4) return fromParenOnly.options;
 
     const strategies: Array<() => string[]> = [
-      () => trimmed.split(/\s*(?=[A-Ha-h][\.．、)\:：])/),
-      () => trimmed.split(/\n(?=\s*[A-Ha-h][\.．、)\:：])/),
-      () => trimmed.split(/\s+(?=[A-Ha-h][\.．、)\:：])/),
-      () => trimmed.split(/(?=[A-Ha-h][\.．、)\:：])/),
+      () => trimmed.split(/\s*(?=[A-Ha-h][.．、。):：])/),
+      () => trimmed.split(/\n(?=\s*[A-Ha-h][.．、。):：])/),
+      () => trimmed.split(/\s+(?=[A-Ha-h][.．、。):：])/),
+      () => trimmed.split(/(?=[A-Ha-h][.．、。):：])/),
     ];
 
     for (const strat of strategies) {
@@ -850,7 +1052,7 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
       if (ok) return ok;
     }
 
-    const semi = trimmed.split(/[；;]\s*(?=[A-H][\.．、])/);
+    const semi = trimmed.split(/[；;]\s*(?=[A-H][.．、。])/);
     if (semi.length >= 4) {
       const parts = semi.map((s) => s.trim()).filter(Boolean);
       const ok = asCleanMinFour(parts);
@@ -868,7 +1070,7 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
   else optArr = [rawOpts];
 
   const okDirect = asCleanMinFour(optArr);
-  if (okDirect) return { ...q, options: okDirect };
+  if (okDirect && !looksLikePlaceholderMcqOptions(okDirect)) return { ...q, options: okDirect };
 
   if (optArr.length === 1 && typeof optArr[0] === "string") {
     const maybe = splitBlobIntoLabeledParts(optArr[0]!.trim());
@@ -902,7 +1104,18 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
   const solo = tryExtractMcqFromContentBlob(content);
   if (solo) return { ...q, content: solo.stem, options: solo.options };
 
-  return q;
+  /** 已有 ≥2 个非空选项（模型直接给出但未凑满 4 条）仍视为合法选择题 */
+  if (mcqNonEmptyOptionCount(q) >= 2) return q;
+
+  /**
+   * OCR/几何卷常被误标为选择题且无 A/B/C/D 块；启发式也无法从题干拆选项。
+   * 降级为解答题以便入库（保留 answer / solution_steps）。
+   */
+  return {
+    ...q,
+    type: "short_answer",
+    options: null,
+  };
 }
 
 function assertParsedQuestionsComplete(questions: ParsedAiQuestion[]): void {
@@ -928,6 +1141,19 @@ function unknownToJson(value: unknown): Json {
   }
 }
 
+/** 校内同步：教材版本与章节侧重写入命题提示（升学选拔等非校内轨道忽略） */
+function schoolSyncTextbookChapterPromptBlock(config: GenerationConfig): string {
+  const et = config.exam_track ?? "school_sync";
+  if (!isSchoolSyncExamTrack(et)) return "";
+  const ed = config.textbook_edition_hint?.trim();
+  const ch = config.chapter_focus?.trim();
+  if (!ed && !ch) return "";
+  let s = "";
+  if (ed) s += `【教材版本 / 教参】${ed}\n`;
+  if (ch) s += `【单元 / 章节侧重】${ch}\n`;
+  return s;
+}
+
 /** 拼装命题 user 文案（compact = 二次重试：极短篇幅以防截断） */
 function buildExamGenerationUserPrompt(
   config: GenerationConfig,
@@ -941,12 +1167,24 @@ function buildExamGenerationUserPrompt(
   const gradeLine = gradeLevelLabel(config.grade);
   const subjectsLine = curriculumSubjectLabel(config.subject);
   const unrestricted = isCompetitionUnrestricted(config.difficulty as Difficulty);
+  const et = config.exam_track ?? "school_sync";
+  const syncTrack = isSchoolSyncExamTrack(et);
+  const examTrackBlock = `【升学阶段】${examTrackLabel(et)}\n`;
+  const targetTrackBlock = config.target_track_id?.trim().length
+    ? `【目标体系】${targetTrackLabel(config.target_track_id)}\n`
+    : "";
+
   const scopeBlock = unrestricted
     ? `【范围】竞赛类试卷：知识点与难度可按竞赛大纲与所选学科自主覆盖，不限课内细分范围。\n`
-    : `【范围】${config.scopes.map((id) => scopeLabelById(id)).join("、")}\n`;
+    : syncTrack
+      ? `【范围】${config.scopes.map((id) => scopeLabelById(id)).join("、")}\n`
+      : `【范围】升学 / 选拔轨道：不按校内单元章节强制约束命题范围；选材须对齐上述升学阶段与目标体系（若有），认知水平仍须符合年级。\n` +
+        (config.scopes.length > 0
+          ? `（参考侧重点：${config.scopes.map((id) => scopeLabelById(id)).join("、")}）\n`
+          : "");
 
   const textbookSyncBlock =
-    !unrestricted && config.scopes.includes(TEXTBOOK_SYNC_SCOPE.id)
+    !unrestricted && syncTrack && config.scopes.includes(TEXTBOOK_SYNC_SCOPE.id)
       ? variant === "compact"
         ? `【教材】贴近该年级教本单元与例题表述。\n`
         : `【教材同步】各题应贴近该年级该学科常见教材的单元、课时与典型例题/习题变式，用语与呈现习惯与教本一致；若同时勾选其它知识领域，须与之协调、不矛盾。\n`
@@ -969,6 +1207,7 @@ function buildExamGenerationUserPrompt(
       : `\n\n【篇幅控制】为避免单次输出被接口截断：solution_steps 每步简明，建议每步 description、reasoning 各不超过 100 字；选择题每选项不超过 70 字。LaTeX 从简。`;
 
   const paperKindLine = `【试卷场景】${paperKindLabel(config.paper_kind)}（命题风格、总分难度梯度须与该场景匹配；奥赛 / 竞赛类侧重区分度与严谨推导）\n`;
+  const textbookChapterLine = schoolSyncTextbookChapterPromptBlock(config);
 
   const qh = config.quality_hints?.trim();
   const qualityLine =
@@ -983,7 +1222,7 @@ function buildExamGenerationUserPrompt(
 【试卷标题】${config.title}
 【年级】${gradeLine}
 【学科】${subjectsLine}
-${paperKindLine}${scopeBlock}${textbookSyncBlock}${focusBlock}${advancedBlock}【难度等级】${config.difficulty}
+${examTrackBlock}${targetTrackBlock}${paperKindLine}${textbookChapterLine}${scopeBlock}${textbookSyncBlock}${focusBlock}${advancedBlock}【难度等级】${config.difficulty}
 【时长 / 总分】${config.duration_min} 分钟 / ${config.total_score} 分
 【题型组成】
 ${composition}
@@ -1051,6 +1290,8 @@ questions 每元素含：type、subject、points、content、options（multiple_
 【试卷标题】${config.title}
 【年级】${gradeLine}
 【学科】${subjectsLine}
+${schoolSyncTextbookChapterPromptBlock(config)}【升学阶段】${examTrackLabel(config.exam_track ?? "school_sync")}
+${config.target_track_id?.trim() ? `【目标体系】${targetTrackLabel(config.target_track_id)}\n` : ""}
 【试卷场景】${paperKindLabel(config.paper_kind)}
 【难度】${config.difficulty}
 【时长/总分】${config.duration_min} 分钟 / ${config.total_score} 分
@@ -1202,6 +1443,13 @@ async function runExamAiGenerationWithValidationRetryInner(
  */
 const SEGMENT_SUBMIT_EXAM_KEY_HINT =
   "【submit_exam 硬约束】questions 数组内每题必须含非空字符串字段 content（完整题干）与 answer（答案）；选择题须含至少 4 条 options。禁止使用空白或省略上述字段。";
+
+/** 线下导入：禁止模型用「另一道标准题」替换 OCR 正文 */
+const OFFLINE_IMPORT_FIDELITY_HINT = `【线下导入·忠实 OCR（硬约束）】
+- 题干 content 必须沿用【正文】中的题号、条件、点名、三角形名称与坐标数值；禁止替换为另一道相似题（例如禁止把 △AOB 改成 △ABC、禁止把 A(0,5) 改成 A(4,0) 除非正文如此）。
+- 卷面无标准答案/解析时：answer 写「待核对」；solution_steps 可写 2 步占位（description/reasoning 均为「待教师核对」），禁止编造完整推导与数值结论。
+- 有 (1)(2) 小问的几何计算题用 short_answer；仅当原文明确要求「证明」时才用 proof 类表述。`;
+
 
 /** 听力型笔试常一次吐出两小题或漏填 options（题干里已有 (A)(B)…）*/
 function listeningCompositionExtraHint(typeLabel: string): string {
@@ -1373,10 +1621,28 @@ async function runExamAiGenerationWithValidationRetry(
 /**
  * 线下导入：工具调用失败时的纯 JSON 回退（适配部分 Ollama / 本地接口不把结果填入 tool_calls、仅在正文输出 JSON）。
  */
+function applyImportSectionContextToSubmitExamPayload(
+  parsed: Record<string, unknown>,
+  fullSourceText: string,
+  chunkTexts: string[] | null,
+): Record<string, unknown> {
+  const qs = extractQuestionsFromSubmitExamPayload(parsed);
+  if (!qs.length) return parsed;
+  const patched = applyImportSectionContextToParsedQuestions(qs, fullSourceText, chunkTexts);
+  const corrected = applyImportQuestionStructureAutocorrect(
+    patched,
+    fullSourceText,
+    chunkTexts,
+  );
+  return { ...parsed, questions: corrected as unknown[] };
+}
+
 async function runImportDocumentPlainJsonFallback(
   body: string,
   ai?: AiRuntimePayload,
-  opts?: { subjectId?: string },
+  opts?: { subjectId?: string; structured?: StructuredExamOcrDocument | null },
+  /** 用于大题语境解析的完整正文（可与 body 不同，例如 body 为截断稿） */
+  fullSourceForSections?: string,
 ): Promise<Record<string, unknown>> {
   const userPrompt = `以下文本来自 PDF / Word / Excel / 图片 OCR 等导入。请整理为一份完整试卷，并输出**唯一一个** JSON 对象（UTF-8），从首字符 { 到末字符 }，禁止 Markdown 围栏、禁止解释性前后缀。
 
@@ -1417,37 +1683,288 @@ ${body}`;
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new Error("正文无法解析为 JSON 对象");
   }
+  return applyImportSectionContextToSubmitExamPayload(
+    parsed as Record<string, unknown>,
+    fullSourceForSections ?? body,
+    null,
+  );
+}
+
+const MAX_IMPORT_PER_QUESTION_SLICES = 72;
+
+/** 单段逐题导入：纯 JSON 回退（questions 恰 1 题）。 */
+async function runImportSingleSlicePlainJsonFallback(
+  sliceBody: string,
+  index1: number,
+  total: number,
+  ai?: AiRuntimePayload,
+  opts?: { subjectId?: string; sectionPromptPrefix?: string },
+): Promise<Record<string, unknown>> {
+  const secPrefix = (opts?.sectionPromptPrefix ?? "").trim();
+  const userPrompt = `${secPrefix ? `${secPrefix}\n\n` : ""}以下 OCR 为整卷中的第 ${index1}/${total} 段。输出**唯一一个** JSON 对象（UTF-8），从首字符 { 到末字符 }，禁止 Markdown 围栏、禁止解释性前后缀。
+键须含 title、subtitle、description、questions。questions **必须且只能含 1 个元素**（一道题）。
+该题须含非空 content、非空 answer、至少 2 步 solution_steps（每步含 step、description、reasoning）；选择题时 options 为≥4 条非空字符串，否则 null。
+
+【本段 OCR】
+${sliceBody}`;
+
+  const mode = ai?.mode ?? "cloud";
+  const baseBody: Record<string, unknown> = {
+    messages: [
+      {
+        role: "system",
+        content:
+          "你只输出一个合法 JSON 对象本身。必须含 title、subtitle、description、questions，且 questions 长度为 1。",
+      },
+      { role: "user", content: userPrompt },
+    ],
+    max_tokens: resolveExamAiMaxOutputTokens(2),
+  };
+  if (mode !== "local") {
+    baseBody.response_format = { type: "json_object" };
+  }
+
+  const data = await callChatCompletions(baseBody, ai, {
+    purpose: "exam",
+    subjectId: opts?.subjectId,
+  });
+  const text = getAssistantTextContent(data);
+  const stripped = text?.trim() ? stripMarkdownCodeFence(text.trim()) : "";
+  if (!stripped) {
+    throw new Error("模型未返回正文");
+  }
+  const balanced = extractFirstBalancedJsonSegment(stripped, "{") ?? stripped;
+  const parsed = tryParseJsonLenient(balanced);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("正文无法解析为 JSON 对象");
+  }
   return parsed as Record<string, unknown>;
+}
+
+async function runImportDocumentAiGenerationForSlice(
+  sliceWithContext: string,
+  index1: number,
+  total: number,
+  learningPrefix: string,
+  ai?: AiRuntimePayload,
+  opts?: { subjectId?: string; sectionPromptPrefix?: string },
+): Promise<{ questions: ParsedAiQuestion[]; submitPayload: Record<string, unknown> }> {
+  const maxSlice = 72_000;
+  const body =
+    sliceWithContext.length > maxSlice
+      ? `${sliceWithContext.slice(0, maxSlice)}\n\n[... 本段过长已截断 ...]`
+      : sliceWithContext;
+
+  const secBlock = (opts?.sectionPromptPrefix ?? "").trim();
+  const userPrompt = `${learningPrefix}${secBlock ? secBlock : ""}${OFFLINE_IMPORT_FIDELITY_HINT}
+
+【逐题整理】整卷 OCR 已按题号切成 ${total} 段，当前为**第 ${index1}/${total} 段**（从本题题号起至下一题题号前）。除本段外不要输出其它题目。
+
+【强制】
+- 必须调用 submit_exam，且 questions **数组长度恰好为 1**（仅一个题目对象）。
+- 该题须：非空 content、非空 answer、至少 2 步 solution_steps（每步含 description、reasoning）；选择题时 options 须为≥4 条互异非空字符串。
+- 若本段含 \`![](…)\` 插图 Markdown，须原样写入 content 或对应选项字符串，禁止丢弃 URL。
+- 若上文【大题语境】已规定本大题为选择题及每小题分值，**必须**遵守其中的 type 与 points；不得随意改为 short_answer 或 1 分。仅当卷面完全无法归类且与【大题语境】无冲突时，才可将 type 设为 short_answer 且 answer 写「待核对」。
+
+【本段 OCR】
+${body}`;
+
+  const data = await callChatCompletions(
+    {
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: userPrompt },
+      ],
+      tools: [examTool],
+      tool_choice: { type: "function", function: { name: "submit_exam" } },
+      reasoning: { effort: "high" },
+      max_tokens: resolveExamAiMaxOutputTokens(1),
+    },
+    ai,
+    { purpose: "exam", subjectId: opts?.subjectId },
+  );
+
+  let parsed: Record<string, unknown>;
+  const argsStr = resolveSubmitExamPayloadString(data);
+  if (argsStr) {
+    parsed = parseSubmitExamArgumentsJson(argsStr);
+  } else {
+    try {
+      parsed = await runImportSingleSlicePlainJsonFallback(body, index1, total, ai, opts);
+    } catch (fallbackErr) {
+      const fb = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
+      throw new Error(
+        `第 ${index1}/${total} 段：无 submit_exam。${buildMissingToolCallDetail(data)} 纯 JSON 回退失败：${fb}`,
+      );
+    }
+  }
+
+  let qs = extractQuestionsFromSubmitExamPayload(parsed);
+  if (qs.length === 0) {
+    throw new Error(`第 ${index1}/${total} 段未解析到题目（questions 为空）`);
+  }
+  if (qs.length > 1) {
+    qs = [qs[0]!];
+  }
+  return { questions: qs, submitPayload: parsed };
+}
+
+/**
+ * 线下导入「逐题整理」：按括号题号切段后 **每段一次** submit_exam，再合并为整卷载荷。
+ * 题号锚点不足 2 个时自动退回 {@link runImportDocumentAiGeneration} 单次整卷调用。
+ */
+export async function runImportDocumentAiGenerationPerQuestion(
+  documentText: string,
+  ai?: AiRuntimePayload,
+  opts?: {
+    subjectId?: string;
+    maxSlices?: number;
+    /** 网关结构化 OCR：layout-first 切段主路径 */
+    structured?: StructuredExamOcrDocument | null;
+  },
+): Promise<Record<string, unknown>> {
+  const trimmed = documentText.trim();
+  if (trimmed.length < 30) {
+    throw new Error("文档正文过短（至少约 30 字），请检查文件是否可读或换格式重试");
+  }
+
+  const chunksMetas = splitImportDocumentIntoQuestionChunksWithMeta({
+    text: trimmed,
+    structured: opts?.structured ?? null,
+    mode: "auto",
+  });
+  const cap = Math.min(chunksMetas.length, opts?.maxSlices ?? MAX_IMPORT_PER_QUESTION_SLICES);
+  const limitedMetas = chunksMetas.slice(0, cap);
+
+  if (limitedMetas.length <= 1) {
+    const whole = await runImportDocumentAiGeneration(trimmed, ai, {
+      subjectId: opts?.subjectId,
+      structured: opts?.structured ?? null,
+    });
+    const rest = { ...(whole as Record<string, unknown>) };
+    delete rest.import_chain;
+    return {
+      ...rest,
+      import_chain: buildImportChainV1(trimmed, opts?.structured ?? null, {
+        chunkCountOverride: 1,
+        pathOverride: "text",
+        confidenceOverride: "low",
+        extraFallbackNote: "逐题模式：切段不足 2 段，已退回整卷单次 AI",
+      }),
+    };
+  }
+
+  const { getImportLearningPromptPrefix } = await import("@/lib/importLearning.server");
+  const learningPrefix = await getImportLearningPromptPrefix();
+  const sections = parseImportDocumentSections(trimmed);
+
+  const mergedQuestions: ParsedAiQuestion[] = [];
+  let mergedTitle = "";
+  let mergedSubtitle: string | null = null;
+  let mergedDescription = "";
+
+  for (let i = 0; i < limitedMetas.length; i++) {
+    const meta = limitedMetas[i]!;
+    const sec = findImportSectionForCharOffset(sections, meta.startIndexInJoined);
+    const sectionPromptPrefix = formatImportSectionPromptHint(sec);
+    const { questions: qsRaw, submitPayload } = await runImportDocumentAiGenerationForSlice(
+      meta.text,
+      i + 1,
+      limitedMetas.length,
+      learningPrefix,
+      ai,
+      { subjectId: opts?.subjectId, sectionPromptPrefix },
+    );
+    let qs = qsRaw;
+    if (qs.length > 0) {
+      const q0 = qs[0]!;
+      const aligned = alignImportAiQuestionContentToChunk(meta.text, q0.content ?? "");
+      if (aligned.content !== q0.content) {
+        qs = [{ ...q0, content: aligned.content }];
+      }
+    }
+    if (i === 0) {
+      mergedTitle = String(submitPayload.title ?? "").trim();
+      mergedSubtitle =
+        submitPayload.subtitle != null && String(submitPayload.subtitle).trim()
+          ? String(submitPayload.subtitle).trim()
+          : null;
+      mergedDescription = String(submitPayload.description ?? "").trim();
+    }
+    mergedQuestions.push(...qs);
+  }
+
+  const chunkTexts = limitedMetas.map((m) => m.text);
+  const reconciled = applyImportQuestionStructureAutocorrect(
+    applyImportSectionContextToParsedQuestions(mergedQuestions, trimmed, chunkTexts),
+    trimmed,
+    chunkTexts,
+  );
+
+  const title = mergedTitle || "线下导入试卷（逐题整理）";
+  let description =
+    mergedDescription ||
+    `共 ${limitedMetas.length} 题，由 OCR 按题号切段后逐题 AI 整理合并；请在列表核对题序与答案。`;
+  if (cap < chunksMetas.length) {
+    description += `\n\n【系统】全文识别到 ${chunksMetas.length} 个题号锚点，本次仅处理前 ${cap} 段；其余请拆卷或提高上限后重试。`;
+  }
+
+  return {
+    title,
+    subtitle: mergedSubtitle ?? "",
+    description,
+    questions: reconciled as unknown[],
+    import_chain: buildImportChainV1(trimmed, opts?.structured ?? null, {
+      chunkCountOverride: limitedMetas.length,
+      metasForConfidence: limitedMetas,
+    }),
+  };
 }
 
 /** 线下文档抽取正文 → AI 整理为 submit_exam（用于 PDF/Word/Excel/图片 OCR 导入） */
 export async function runImportDocumentAiGeneration(
   documentText: string,
   ai?: AiRuntimePayload,
-  opts?: { subjectId?: string },
+  opts?: { subjectId?: string; structured?: StructuredExamOcrDocument | null },
 ): Promise<Record<string, unknown>> {
   const trimmed = documentText.trim();
   if (trimmed.length < 30) {
     throw new Error("文档正文过短（至少约 30 字），请检查文件是否可读或换格式重试");
   }
+  const attachWholeDocChain = (payload: Record<string, unknown>): Record<string, unknown> => {
+    const next = { ...payload };
+    delete next.import_chain;
+    return {
+      ...next,
+      import_chain: buildImportChainV1(trimmed, opts?.structured ?? null),
+    };
+  };
   const max = 120_000;
   const body =
     trimmed.length > max
       ? `${trimmed.slice(0, max)}\n\n[... 后文已截断，以保持单次命题体量 ...]`
       : trimmed;
 
-  const userPrompt = `以下文本来自 PDF / Word / Excel / 图片 OCR 等导入（可能含页眉、页码、表格碎片或识别误差）。请将其**整理为一份完整可用的试卷**，并必须通过 submit_exam 工具提交。
+  const { getImportLearningPromptPrefix } = await import("@/lib/importLearning.server");
+  const learningPrefix = await getImportLearningPromptPrefix();
+
+  const userPrompt = `${learningPrefix}${OFFLINE_IMPORT_FIDELITY_HINT}
+
+以下文本来自 PDF / Word / Excel / 图片 OCR 等导入（可能含页眉、页码、表格碎片或识别误差）。请将其**整理为一份完整可用的试卷**，并必须通过 submit_exam 工具提交。
 
 【任务】
-- 逐题还原题干与分值（若原文有）；题型判断准确；选择题（含多选）须至少 4 个选项与正确答案；其余题型遵守 submit_exam 字段约定。
-- **选择题 JSON 强制**：type 为 multiple_choice / multiple_choice_multi 时，**options 必须是长度≥4 的字符串数组**，每一项对应 A/B/C/D… 的一条选项全文；**禁止**只用 1～2 个长字符串凑合。若 OCR 未拆清选项，请据卷面补全四条互异选项（勿留空串）。
+- 逐题还原题干与分值（若原文有）；题型判断准确；选择题须至少 4 个选项与正确答案；其余题型遵守 submit_exam 字段约定。**仅当原卷明确为「多选 / 不定项」时**才用 \`multiple_choice_multi\`；普通四选一须用 \`multiple_choice\`，禁止把单选标成多选。
+- 行内选项若为 \`(A)(B)(C)(D)\` 形式，**不要把半角 \`(C)\` 写成 ©**；须写合法括号字母以便结构化。
+- **选择题 JSON 强制**：type 为 multiple_choice / multiple_choice_multi 时，**options 必须是长度≥4 的字符串数组**，每一项对应 A/B/C/D… 的一条选项全文；**禁止**只用 1～2 个长字符串凑合。若 OCR 未拆清选项，请据卷面补全四条互异选项（勿留空串）。**禁止**用占位填充（例如 options 仅为单个字母 A/B、仅为「选项A」这类标签、或选项正文与标签相同如「A. A」）；若题干里已有行内 \`(A)…(B)…(C)…(D)…\`，须把 \`content\` 裁成纯提问句，再把四条选项全文写入 \`options\`，**禁止**题干预选项区重复出现。
 - 每题必须有完整 solution_steps（至少 2 步），含 description、reasoning；数学公式使用 LaTeX。
+- **每题 answer 禁止留空**（选择题须写正确选项字母；若某题暂无法确定，可写「待核对」等短文本占位，勿输出空字符串），否则多题批量时易因一题缺字段导致整卷失败。
 - 试卷 title / subtitle / description 请概括试卷内容与知识点。
 - 若局部无法辨认，在 description 中简要说明，题干中尽量依据上下文补全。
 
 【附图 / Markdown 图片】
 - 若正文中含 ![](…) 行（常见：本站路径 \`/import-figures/\`，或云端 Storage 的完整 URL 且路径中含 \`/offline-import/\`），表示该页扫描图或几何原图。**必须**把每一行 **完整写入对应题目的 content**（建议放在该题文字题干之后），不得删除或仅改写为「如图所示」而无图。
 - **严禁**丢弃、改写或合并掉上述 Markdown 图片行；即便重排题号，也必须让每个附图 URL（上述两种之一）仍出现在某一题的 content 字符串中（可与题干同一字段，多行书写）。
+- 若正文分段中出现同一 PDF 多页的 ![](…)（文件名含「第 n 页」），表示整页扫描图。**图示类选择题**须在对应题的 **options 各字符串内**分别附上 Markdown 图片（同一批 import-figures 下的选项缩略图 URL）；若暂时无法拆选项图，至少要把我方提供的整页图 URL 写入题干旁并指向正确页码。
 
 【图片 OCR 常见误差（请结合几何与上下文纠错）】
 - 「△」「△ABC」易被误成「A4」「A4BC」；D、E、H 易被误成「刀」「巴」「碧」「太万」等。
@@ -1455,6 +1972,7 @@ export async function runImportDocumentAiGeneration(
 - 「②」易被误成「4」（如「与第②步」）；「=」「5」易被误成「--」「和」（如「DE=5」）。
 - 插图附近可出现噪声词（如「及AN」「机」）或与正文无关的数字片段；①②③④ 易被误成「@」。
 - 题干末尾数值条件（如「若 AD=12…」）若疑似被截断或乱码，请据图形叙述与选项尽力补全，勿编造数值。
+- **科学记数法**：选项里 $a\\times 10^n$ 的上标易被 OCR 成「°」「*」或与底数断开；整理时请写成 KaTeX 可渲染形式（如 $5\\times 10^4$，JSON 内反斜杠须正确转义）。**化学式**须带下标，如水 $H_2O$、$CO_2$。
 
 【正文】
 ${body}`;
@@ -1476,11 +1994,17 @@ ${body}`;
 
   const argsStr = resolveSubmitExamPayloadString(data);
   if (argsStr) {
-    return parseSubmitExamArgumentsJson(argsStr);
+    return attachWholeDocChain(
+      applyImportSectionContextToSubmitExamPayload(
+        parseSubmitExamArgumentsJson(argsStr),
+        trimmed,
+        null,
+      ),
+    );
   }
 
   try {
-    return await runImportDocumentPlainJsonFallback(body, ai, opts);
+    return attachWholeDocChain(await runImportDocumentPlainJsonFallback(body, ai, opts, trimmed));
   } catch (fallbackErr) {
     const fb = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
     throw new Error(
@@ -1498,28 +2022,49 @@ export type ImportDocumentHints = {
   paper_kind?: string;
   /** 网上导入等待确认的临时卷 */
   import_review_status?: "staging";
+  /** 线下导入原图持久化 URL + 对照标注 */
+  offline_import_media?: OfflineImportPersistedMedia;
+  /** OCR 全文：大题语境 + 误标选择题降级 */
+  sourcePlainText?: string;
+  /** 逐题切段原文（与 questions 下标对齐时可提高大题绑定准确度） */
+  chunkTexts?: string[] | null;
 };
 
 /** AI submit_exam 载荷 → 线下导入快照（无例题） */
-export function buildImportedExamSnapshotFromAiParsed(
+export async function buildImportedExamSnapshotFromAiParsed(
   parsed: Record<string, unknown>,
   hints?: ImportDocumentHints,
-): SessionExamSnapshot {
+): Promise<SessionExamSnapshot> {
   const rawQs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
   if (rawQs.length === 0) {
     throw new Error("文档识别后未得到有效题目，请检查正文清晰度或更换模型后重试");
   }
-  assertParsedQuestionsComplete(rawQs);
+  /** 导入专用：批量 AI 易漏 answer / 分步，再纠正误标选择题（命题路径勿用）。 */
+  const gateQs = applyImportQuestionStructureAutocorrect(
+    applyImportExamQuestionMinimalRepair(rawQs) as ParsedAiQuestion[],
+    hints?.sourcePlainText,
+    hints?.chunkTexts ?? null,
+  ) as ParsedAiQuestion[];
+  assertParsedQuestionsComplete(gateQs);
 
-  scanBuiltinFixedFragmentsAndLearnRules(collectSemiBuiltinsOnlyFromRawQuestions(rawQs));
+  await refreshExamMathRepairMergedRules();
+  await scanBuiltinFixedFragmentsAndLearnRulesAsync(
+    collectSemiBuiltinsOnlyFromRawQuestions(gateQs),
+  );
 
   const examId = crypto.randomUUID();
-  const questions: Question[] = rawQs.map((q, i) => {
+  const questions: Question[] = gateQs.map((q, i) => {
     const tags = q.knowledge_tags;
     const knowledge_tags = Array.isArray(tags) ? tags.map((x) => String(x)) : [];
     const pts = Number.isFinite(Number(q.points)) ? Math.round(Number(q.points)) : 10;
     const fixed = repairExamQuestionPayloadStringsWithLearningSync(q);
-    return {
+    const diagramSchemaParsed = parseDiagramSchemaFromQuestionRecord(
+      q as unknown as Record<string, unknown>,
+    );
+    const rfParsed = parseQuestionRasterFiguresV1(
+      (q as unknown as Record<string, unknown>).raster_figures,
+    );
+    const built: Question = {
       id: crypto.randomUUID(),
       exam_id: examId,
       order_index: i,
@@ -1533,7 +2078,10 @@ export function buildImportedExamSnapshotFromAiParsed(
         : []) as SolutionStep[],
       knowledge_tags,
       points: Math.min(1000, Math.max(1, pts)),
+      ...(diagramSchemaParsed ? { diagram_schema: diagramSchemaParsed } : {}),
+      ...(rfParsed ? { raster_figures: rfParsed } : {}),
     };
+    return materializeQuestionRasterFigures(built);
   });
 
   const totalPts = questions.reduce((s, q) => s + q.points, 0);
@@ -1587,7 +2135,12 @@ export function buildImportedExamSnapshotFromAiParsed(
       : {}),
   };
 
-  return { exam, questions, examples: [] };
+  return {
+    exam,
+    questions,
+    examples: [],
+    ...(hints?.offline_import_media ? { offline_import_media: hints.offline_import_media } : {}),
+  };
 }
 
 /** 例题生成：AI 环境/配置错误应直接提示用户，不能按「单题失败」吞掉 */
@@ -1746,14 +2299,17 @@ export async function buildSessionExamBundle(
   }
   assertParsedQuestionsComplete(rawQs);
 
-  scanBuiltinFixedFragmentsAndLearnRules(collectSemiBuiltinsOnlyFromRawQuestions(rawQs));
+  await refreshExamMathRepairMergedRules();
+  await scanBuiltinFixedFragmentsAndLearnRulesAsync(collectSemiBuiltinsOnlyFromRawQuestions(rawQs));
 
-  const questions: Question[] = attachCompositionTypeLabels(
+  let questions: Question[] = attachCompositionTypeLabels(
     rawQs.map((q, i) => {
-      const tags = q.knowledge_tags;
-      const knowledge_tags = Array.isArray(tags) ? tags.map((x) => String(x)) : [];
+      const knowledge_tags = normalizeKnowledgeTags(q.knowledge_tags);
       const fixed = repairExamQuestionPayloadStringsWithLearningSync(q);
       const pts = Number.isFinite(Number(q.points)) ? Math.round(Number(q.points)) : 10;
+      const diagramSchemaParsed = parseDiagramSchemaFromQuestionRecord(
+        q as unknown as Record<string, unknown>,
+      );
       return {
         id: crypto.randomUUID(),
         exam_id: examId,
@@ -1768,10 +2324,14 @@ export async function buildSessionExamBundle(
           : []) as SolutionStep[],
         knowledge_tags,
         points: Math.min(1000, Math.max(1, pts)),
+        ...(diagramSchemaParsed ? { diagram_schema: diagramSchemaParsed } : {}),
       };
     }),
     config.composition,
   );
+
+  /** 模型未带 diagram_schema 时，按题干补推断矢量几何图（与导入页「推断示意图」同引擎） */
+  questions = await fillGeometryDiagramsForQuestionList(questions, config.ai);
 
   const examples: Example[] = [];
   const finishedAt = new Date().toISOString();
@@ -1938,16 +2498,44 @@ function buildStoredSubjectTags(config: GenerationConfig): string[] {
   const subjectTags = [curriculumSubjectLabel(config.subject)];
   const pk = (config.paper_kind ?? "regular_daily").trim() || "regular_daily";
   const paperTags = [`试卷场景:${paperKindLabel(pk)}`];
-  const scopeTags = isCompetitionUnrestricted(config.difficulty as Difficulty)
+  const et = config.exam_track ?? "school_sync";
+  const trackTags = [`升学阶段:${examTrackLabel(et)}`];
+  const targetTrackId = config.target_track_id?.trim();
+  const targetTags =
+    targetTrackId && targetTrackId.length > 0
+      ? [`目标体系:${targetTrackLabel(targetTrackId)}`]
+      : [];
+  const unrestricted = isCompetitionUnrestricted(config.difficulty as Difficulty);
+  const scopeTags = unrestricted
     ? []
-    : config.scopes.map((id) => `范围:${scopeLabelById(id)}`);
+    : isSchoolSyncExamTrack(et)
+      ? config.scopes.map((id) => `范围:${scopeLabelById(id)}`)
+      : config.scopes.length > 0
+        ? config.scopes.map((id) => `参考范围:${scopeLabelById(id)}`)
+        : [];
   const focusTags =
-    isCompetitionUnrestricted(config.difficulty as Difficulty) && config.competition_focus?.length
+    unrestricted && config.competition_focus?.length
       ? config.competition_focus.map(
           (id) => `竞赛侧重:${competitionFocusLabelById(config.subject, id)}`,
         )
       : [];
-  return [gradeTag, ...subjectTags, ...paperTags, ...scopeTags, ...focusTags];
+  const textbookChapterTags: string[] = [];
+  if (isSchoolSyncExamTrack(et)) {
+    const ed = config.textbook_edition_hint?.trim();
+    const ch = config.chapter_focus?.trim();
+    if (ed) textbookChapterTags.push(`教材版本:${ed.slice(0, 80)}`);
+    if (ch) textbookChapterTags.push(`章节侧重:${ch.slice(0, 120)}`);
+  }
+  return [
+    gradeTag,
+    ...subjectTags,
+    ...paperTags,
+    ...trackTags,
+    ...targetTags,
+    ...textbookChapterTags,
+    ...scopeTags,
+    ...focusTags,
+  ];
 }
 
 const SYSTEM_PROMPT = `你是一位资深的国际竞赛命题专家，长期参与 IMO、ICPC、USAMO、Putnam、统计奥林匹克及国际数据科学竞赛 (Kaggle 类) 的命题与审题工作，同时具备数学物理与数学化学交叉学科的命题经验。
@@ -1973,14 +2561,15 @@ const SYSTEM_PROMPT = `你是一位资深的国际竞赛命题专家，长期参
 8. JSON 字符串里的 LaTeX：勿在文本字段里写出会被 JSON 解析成制表符的前缀（典型地反斜杠加字母 t，会变成 Tab，卷面漏字成「imes」「ext」）；乘号可优先写 Unicode「×」，或在 JSON 内对每个反斜杠按 RFC 正确转义（例如需要 \\times 时须在 JSON 源码里写成双反斜杠加 times）。
 9. 卷面附图：content 支持 Markdown；可用 ![](URL) 嵌入插图（须为可访问 URL；线下导入常见本站 \`/import-figures/…\` 或云端完整 URL 中含 \`/offline-import/…\`）。若用户导入的正文含此类图片行，必须写入对应题目的 content 并**保留 URL**，勿改成无链接的「如图所示」。**禁止编造**不存在的本地路径（如 \`/import-figures/3.png\` 而无对应上传）；命题页未附图的 generated 卷应以文字与 LaTeX 描述几何关系，勿杜撰插图链接。
 10. **插图与公式分界**：\`![](URL)\` **禁止**写在 \`$...$\` 或 \`$$...$$\` 数学公式内，须单独成行放在题干段落中；三角形记号须写 \`$\\\\triangle ABC$\`（JSON 字符串内双反斜杠），禁止裸写 \`\\triangle\`（易被解析成 Tab 导致卷面出现「riangle」乱码）。
-11. **题型组成一致**：用户在命题表单「题型组成」中为某行指定的内置题型，必须与返回的 \`questions[].type\` **按顺序严格对应**——该行选择「选择题（多选）」时 type **必须**为 \`multiple_choice_multi\`，「单选」则为 \`multiple_choice\`；多选题 \`answer\` 须列出全部正确项（如 \`A、C\`）。`;
+11. **题型组成一致**：用户在命题表单「题型组成」中为某行指定的内置题型，必须与返回的 \`questions[].type\` **按顺序严格对应**——该行选择「选择题（多选）」时 type **必须**为 \`multiple_choice_multi\`，「单选」则为 \`multiple_choice\`；多选题 \`answer\` 须列出全部正确项（如 \`A、C\`）。
+12. **平面几何矢量示意图（结构化题库）**：凡题干涉及三角形、圆、垂直、角平分线、辅助线等**尺规平面示意**、且语义上不依赖「原卷扫描图」时，可在 \`diagram_schema\` 给出 **v1** JSON（version \`"1"\`，\`points\` \\{ id, x, y \\} 坐标 **0～100**，\`segments\` \\[\\["A","B"\\],…\\]，可选 \`circles\`）。纯代数 / 科学记数法 / 函数数值 / 概率等**省略** \`diagram_schema\`。**禁止**在题干出现「右图、下图、如图所示、三视图、主视图、立体图、选项配图、统计图、函数图像、坐标系读图」等**依赖原图或位图**的表述时，仍用 \`diagram_schema\`「猜画」顶替——此类题须仅用文字/LaTeX 叙述，并在有真实插图时把 \`![](URL)\` 写入 content；无原图时不得输出矢量 JSON 冒充卷面图。`;
 
 const examTool = {
   type: "function",
   function: {
     name: "submit_exam",
     description:
-      "提交完整试卷 JSON。multiple_choice / multiple_choice_multi 的 options 须至少 4 个字符串；多选题用 multiple_choice_multi。其它题型勿滥用选择题类型。",
+      "提交完整试卷 JSON。multiple_choice / multiple_choice_multi 的 options 须至少 4 个字符串；多选题用 multiple_choice_multi。仅尺规平面几何示意题可在 diagram_schema 中给 v1 矢量 JSON；依赖原卷插图（右图/三视图/选项图/函数图像等）且无 URL 时禁止用 diagram_schema 猜画。其它题型勿滥用选择题类型。",
     parameters: {
       type: "object",
       properties: {
@@ -2052,6 +2641,12 @@ const examTool = {
                 type: "array",
                 items: { type: "string" },
                 minItems: 1,
+              },
+              diagram_schema: {
+                type: "object",
+                description:
+                  '可选。数学平面几何矢量示意图 v1：须含 version:"1"、points[{id,x,y,label?}]（坐标 0–100）、segments[["A","B"],…]；可选 circles[{center,radius?}|{center,through}]。纯代数题省略。',
+                additionalProperties: true,
               },
             },
             required: [
@@ -2577,7 +3172,10 @@ export async function generateAndPersistExam(config: GenerationConfig) {
   }
   assertParsedQuestionsComplete(rawQuestions);
 
-  scanBuiltinFixedFragmentsAndLearnRules(collectSemiBuiltinsOnlyFromRawQuestions(rawQuestions));
+  await refreshExamMathRepairMergedRules();
+  await scanBuiltinFixedFragmentsAndLearnRulesAsync(
+    collectSemiBuiltinsOnlyFromRawQuestions(rawQuestions),
+  );
 
   // Persist（created_at / 命题耗时由外层在命题流程结束后统一写入）
   const { data: examRow, error: examErr } = await supabaseAdmin
@@ -2606,21 +3204,70 @@ export async function generateAndPersistExam(config: GenerationConfig) {
   }
 
   const displayLabels = expandCompositionDisplayLabels(config.composition);
-  const questionRows = rawQuestions.map((q, i) => {
-    const pts = Number.isFinite(Number(q.points)) ? Math.round(Number(q.points)) : 10;
+
+  const tempQuestions: Question[] = rawQuestions.map((q, i) => {
+    const knowledge_tags = normalizeKnowledgeTags(q.knowledge_tags);
     const fixed = repairExamQuestionPayloadStringsWithLearningSync(q);
+    const pts = Number.isFinite(Number(q.points)) ? Math.round(Number(q.points)) : 10;
+    const diagramSchemaParsed = parseDiagramSchemaFromQuestionRecord(
+      q as unknown as Record<string, unknown>,
+    );
     return {
-      exam_id: examRow.id,
+      id: crypto.randomUUID(),
+      exam_id: examRow.id as string,
       order_index: i,
       type: normalizeQuestionType(q.type),
-      type_label: displayLabels[i]!.slice(0, 200),
       subject: String(q.subject ?? "数学").slice(0, 200),
       content: fixed.content,
       options: Array.isArray(fixed.options) ? fixed.options.map((o) => String(o)) : null,
       answer: fixed.answer,
-      solution_steps: Array.isArray(fixed.solution_steps) ? fixed.solution_steps : [],
-      knowledge_tags: normalizeKnowledgeTags(q.knowledge_tags),
+      solution_steps: (Array.isArray(fixed.solution_steps)
+        ? fixed.solution_steps
+        : []) as SolutionStep[],
+      knowledge_tags,
       points: Math.min(1000, Math.max(1, pts)),
+      ...(diagramSchemaParsed ? { diagram_schema: diagramSchemaParsed } : {}),
+    };
+  });
+
+  const filledQuestions = await fillGeometryDiagramsForQuestionList(tempQuestions, config.ai);
+  const rasterReadyQuestions = filledQuestions.map(materializeQuestionRasterFigures);
+
+  if (displayLabels.length !== rasterReadyQuestions.length) {
+    throw new Error(
+      "内部错误：题型组成展开的标签数与题目数不一致（应在 runExamAiGenerationWithValidationRetry 中已拦截）。",
+    );
+  }
+
+  const questionRows = rasterReadyQuestions.map((q, i) => {
+    const diagram_schema: Json | null =
+      q.diagram_schema != null ? (JSON.parse(JSON.stringify(q.diagram_schema)) as Json) : null;
+    const raster_figures: Json | null =
+      q.raster_figures != null ? (JSON.parse(JSON.stringify(q.raster_figures)) as Json) : null;
+    const figure_dependency = JSON.parse(
+      JSON.stringify(q.figure_dependency ?? computeQuestionFigureDependencyV1(q)),
+    ) as Json;
+    const visual_geometry_evidence: Json | null =
+      q.visual_geometry_evidence != null
+        ? (JSON.parse(JSON.stringify(q.visual_geometry_evidence)) as Json)
+        : null;
+    return {
+      id: q.id,
+      exam_id: examRow.id,
+      order_index: i,
+      type: q.type,
+      type_label: displayLabels[i]!.slice(0, 200),
+      subject: q.subject,
+      content: q.content,
+      options: q.options,
+      answer: q.answer,
+      solution_steps: unknownToJson(q.solution_steps),
+      knowledge_tags: normalizeKnowledgeTags(q.knowledge_tags),
+      points: q.points,
+      diagram_schema,
+      raster_figures,
+      figure_dependency,
+      visual_geometry_evidence,
     };
   });
 
@@ -2838,7 +3485,7 @@ export async function syncChatContextToModel(
     ai,
     { purpose: "chat" },
   );
-  const text = getAssistantTextContent(data).trim();
+  const text = (getAssistantTextContent(data) ?? "").trim();
   const parsed = tryParseJsonLenient(text);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     return { ok: true };

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: question-parser-service
+  namespace: zhixue
+spec:
+  selector:
+    app: question-parser-service
+  ports:
+    - port: 8105
+      targetPort: 8105

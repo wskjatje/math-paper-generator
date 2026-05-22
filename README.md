@@ -12,7 +12,11 @@
 | `docs/workflow.md` | 需求 → 组卷 → 例题 → 校验 → 发布流程 |
 | `docs/validation-checklist.md` | 出版前人工清单 |
 | `scripts/validate_all.py` | 结构校验脚本 |
-| `src/`、`public/`、`vite.config.ts` | **Web 应用（TanStack Start）**：React 界面 + 服务端函数（命题、试卷列表等），构建产物面向 Cloudflare Workers |
+| `apps/web/`（`src/`、`public/`、`vite.config.ts`） | **Web 应用（TanStack Start）**：npm workspace `@zhixue/web`；React 界面 + 服务端函数（命题、试卷列表等），构建产物面向 Cloudflare Workers |
+| `services/gateway-api/` | API 网关占位（FastAPI，后续接反向代理与鉴权） |
+| `infrastructure/docker`、`infrastructure/kubernetes` | Compose 全栈编排与 K8s 示例清单 |
+| `docs/architecture/stack-docker.md` | Docker 拓扑与端口说明 |
+| `shared/` | 跨服务契约占位（types / prompts / utils） |
 
 ## 快速开始
 
@@ -25,9 +29,9 @@ make validate   # 校验 examples/ 与 papers/ 下 JSON
 
 校验脚本会遍历 `examples/**/*.json` 与 `papers/**/*.json`，根据根字段 `kind` 选择 Schema。
 
-### Web 应用（Node · 根目录）
+### Web 应用（Node · npm workspaces）
 
-在**仓库根目录**安装依赖并启动开发服务器（UI 与 API 由 TanStack Start 同进程提供）：
+在**仓库根目录**安装依赖（workspace 悬停 `node_modules`），启动的是 `apps/web` 中的 TanStack Start（UI 与 API 同进程）：
 
 ```bash
 npm install

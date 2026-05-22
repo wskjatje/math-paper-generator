@@ -6,6 +6,7 @@
  * 服务端再叠加 data/exam-math-repair-overrides.json。二类｜见 stripExamUiNoiseForPlainExport。
  */
 import { applyExamMathBuiltinLibraryRules } from "@/lib/examMathRepairLibrary.shared";
+import { stripGotOcrPageHallucinations } from "@/lib/offlineExamCoordinateOcrNormalize.shared";
 
 /**
  * 零宽 / 不间断 / 全角等 Unicode 空白：从 Word、PDF、浏览器复制来的 NBSP、ZWSP、U+3000 等会插在
@@ -15,7 +16,7 @@ import { applyExamMathBuiltinLibraryRules } from "@/lib/examMathRepairLibrary.sh
 export function normalizeExamTextUnicodeNoise(s: string): string {
   if (!s || typeof s !== "string") return s;
   let out = s;
-  // 零宽类：删除（避免 `\ text`、`$​$` 等肉眼不可见断裂）
+  // 零宽类：删除（避免反斜杠与命令名之间插入零宽字符、或空的 dollar 对等肉眼不可见断裂）
   out = out.replace(/[\u200B-\u200D\u2060]/g, "");
   // BOM 若夹在正文中间一并去掉（留文件首 BOM 给上游处理）
   out = out.replace(/\uFEFF/g, "");
@@ -124,12 +125,49 @@ export function repairLatexJsonTabCorruption(s: string): string {
 }
 
 /**
+ * 科学记数法与化学式：OCR/浏览器复制常见 °、* 代替上标；选项 ©→(C)；H2O/CO₂ 等。
+ * 在自学库之前执行，产出可交给 KaTeX 的 `$…$` 片段。
+ */
+export function repairScientificNotationAndChemistryOcr(s: string): string {
+  if (!s || typeof s !== "string") return s;
+  let out = s;
+  out = out.replace(/\(©\)/g, "(C)");
+  out = out.replace(/（©）/g, "（C）");
+  // Unicode 下标先转成 LaTeX，便于与公式块一致
+  out = out.replace(/H₂O/g, "$H_2O$");
+  out = out.replace(/CO₂/g, "$CO_2$");
+  out = out.replace(
+    /(\d+(?:\.\d+)?)\s*[×xX]\s*10\s*°\s*([0-9])/g,
+    (_, a, b) => `$${a} \\times 10^{${b}}$`,
+  );
+  out = out.replace(
+    /(\d+(?:\.\d+)?)\s*[×xX]\s*10\s*\*\s*([0-9])/g,
+    (_, a, b) => `$${a} \\times 10^{${b}}$`,
+  );
+  // 「×105」「x104」：10 与一位指数粘连（模型/OCR 常漏 ^{ }，卷面易显示成 105）
+  out = out.replace(
+    /(\d+(?:\.\d+)?)\s*[×xX]\s*10(\d)(?!\d)/g,
+    (_, a, b) => `$${a} \\times 10^{${b}}$`,
+  );
+  // 孤立「10°4」类（缺失乘号但仍能看出幂次）
+  out = out.replace(/\b10\s*°\s*([0-9])\b/g, (_, d) => `$10^{${d}}$`);
+  if (!/\$H_2O\$/.test(out)) out = out.replace(/\bH2O\b/g, "$H_2O$");
+  if (!/\$CO_2\$/.test(out)) out = out.replace(/\bCO2\b/g, "$CO_2$");
+  out = out.replace(/\bH\s*2\s*O\b/gi, "$H_2O$");
+  out = out.replace(/\bC\s*O\s*2\b/gi, "$CO_2$");
+  if (!/\$H_2SO_4\$/.test(out)) out = out.replace(/\bH2SO4\b/g, "$H_2SO_4$");
+  out = out.replace(/\bH\s*2\s*SO\s*4\b/gi, "$H_2SO_4$");
+  return out;
+}
+
+/**
  * 内置「自学库」合并后的第一类修复（不含磁盘 overrides）。全站字符串修复请优先用此入口。
  */
 export function repairExamMathCanonicalSync(s: string): string {
-  return applyExamMathBuiltinLibraryRules(
-    repairLatexJsonTabCorruption(normalizeExamTextUnicodeNoise(s)),
-  );
+  const normalized = normalizeExamTextUnicodeNoise(s);
+  const tabFixed = repairLatexJsonTabCorruption(normalized);
+  const sciChem = repairScientificNotationAndChemistryOcr(tabFixed);
+  return stripGotOcrPageHallucinations(applyExamMathBuiltinLibraryRules(sciChem));
 }
 
 /** 修复 solution_steps 数组内各步描述 */
@@ -220,7 +258,7 @@ export function normalizeMarkdownExportArtifacts(raw: string): string {
  */
 export function applyExamTextCanonicalFilters(raw: string): string {
   if (!raw || typeof raw !== "string") return raw;
-  let s = repairExamMathCanonicalSync(raw);
+  let s = stripGotOcrPageHallucinations(repairExamMathCanonicalSync(raw));
   s = stripExamUiNoiseForPlainExport(s);
   s = collapseGluedDuplicateEquation(s);
   s = collapseDuplicateUnits(s);

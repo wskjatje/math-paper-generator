@@ -1,6 +1,6 @@
 /**
- * 本机 MySQL 连接信息（仅服务端；写入 data/mysql-connection.json，已加入 .gitignore）
- * 密码一律以 AES-256-GCM 密文保存（passwordEnc）；密钥来自 MYSQL_PASSWORD_ENC_KEY 或首次保存时生成的 data/mysql-password-master.key。
+ * MySQL 连接：优先读取 Supabase workspace_settings.settings.mysql（passwordEnc），其次 data/mysql-connection.json。
+ * 密码以 AES-256-GCM 密文保存；密钥来自 MYSQL_PASSWORD_ENC_KEY 或 data/mysql-password-master.key。
  */
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -10,6 +10,10 @@ import {
   getMysqlEncryptionKeySource,
 } from "@/lib/mysqlPasswordCrypto.server";
 import { resolveProjectRoot } from "@/lib/projectRoot.server";
+import { getSupabaseAdmin } from "@/lib/supabaseOptional.server";
+import { persistMysqlCredentialsToMysqlWorkspaceSettings } from "@/lib/workspaceSettingsStore.server";
+
+const WS_KEY = "default";
 
 export type MysqlConnectionForm = {
   host: string;
@@ -31,11 +35,47 @@ async function readConfigRaw(): Promise<Record<string, unknown> | null> {
   } catch (e: unknown) {
     const code = e && typeof e === "object" && "code" in e ? (e as NodeJS.ErrnoException).code : "";
     if (code === "ENOENT") return null;
+    if (e instanceof SyntaxError) {
+      console.warn("[mysql] mysql-connection.json 非合法 JSON，已忽略");
+      return null;
+    }
     throw e;
   }
 }
 
-export async function loadMysqlConnection(): Promise<MysqlConnectionForm | null> {
+async function loadMysqlConnectionFromSupabase(): Promise<MysqlConnectionForm | null> {
+  const db = getSupabaseAdmin();
+  if (!db) return null;
+  const { data } = await db
+    .from("workspace_settings")
+    .select("settings")
+    .eq("workspace_key", WS_KEY)
+    .maybeSingle();
+  const raw = data?.settings as Record<string, unknown> | undefined;
+  const m = raw?.mysql;
+  if (!m || typeof m !== "object") return null;
+  const o = m as Record<string, unknown>;
+  const host = typeof o.host === "string" ? o.host : "";
+  const user = typeof o.user === "string" ? o.user : "";
+  const database = typeof o.database === "string" ? o.database : "";
+  const port = typeof o.port === "number" && Number.isFinite(o.port) ? o.port : 3306;
+  let password = "";
+  try {
+    if (typeof o.passwordEnc === "string" && o.passwordEnc.length > 0) {
+      password = decryptMysqlPassword(o.passwordEnc);
+    }
+  } catch (e) {
+    console.warn(
+      "[mysql] workspace_settings 中 MySQL 密码密文无法解密，已忽略该块",
+      e instanceof Error ? e.message : e,
+    );
+    return null;
+  }
+  if (!host || !user || !database) return null;
+  return { host, port, user, password, database };
+}
+
+async function loadMysqlConnectionFromFile(): Promise<MysqlConnectionForm | null> {
   const o = await readConfigRaw();
   if (!o) return null;
   const host = typeof o.host === "string" ? o.host : "";
@@ -44,14 +84,62 @@ export async function loadMysqlConnection(): Promise<MysqlConnectionForm | null>
   const port = typeof o.port === "number" && Number.isFinite(o.port) ? o.port : 3306;
 
   let password = "";
-  if (typeof o.passwordEnc === "string" && o.passwordEnc.length > 0) {
-    password = decryptMysqlPassword(o.passwordEnc);
-  } else if (typeof o.password === "string") {
-    password = o.password;
+  try {
+    if (typeof o.passwordEnc === "string" && o.passwordEnc.length > 0) {
+      password = decryptMysqlPassword(o.passwordEnc);
+    } else if (typeof o.password === "string") {
+      password = o.password;
+    }
+  } catch (e) {
+    console.warn(
+      "[mysql] 无法解密已保存的密码（密钥变更或密文损坏）。请在设置页重新输入密码并保存。",
+      e instanceof Error ? e.message : e,
+    );
+    return null;
   }
 
   if (!host || !user || !database) return null;
   return { host, port, user, password, database };
+}
+
+export async function loadMysqlConnection(): Promise<MysqlConnectionForm | null> {
+  const fromDb = await loadMysqlConnectionFromSupabase();
+  if (fromDb) return fromDb;
+  return loadMysqlConnectionFromFile();
+}
+
+async function upsertMysqlCredentialsIntoSupabaseWorkspace(
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const db = getSupabaseAdmin();
+  if (!db) return;
+  const { data } = await db
+    .from("workspace_settings")
+    .select("settings")
+    .eq("workspace_key", WS_KEY)
+    .maybeSingle();
+  const raw =
+    data?.settings && typeof data.settings === "object"
+      ? { ...(data.settings as Record<string, unknown>) }
+      : {};
+  raw.mysql = {
+    host: payload.host,
+    port: payload.port,
+    user: payload.user,
+    database: payload.database,
+    ...(typeof payload.passwordEnc === "string" && payload.passwordEnc.length > 0
+      ? { passwordEnc: payload.passwordEnc }
+      : {}),
+  };
+  const { error } = await db.from("workspace_settings").upsert(
+    {
+      workspace_key: WS_KEY,
+      settings: raw,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "workspace_key" },
+  );
+  if (error) console.warn("[mysql] Supabase workspace_settings upsert failed:", error.message);
 }
 
 export async function saveMysqlConnection(c: MysqlConnectionForm): Promise<void> {
@@ -76,6 +164,17 @@ export async function saveMysqlConnection(c: MysqlConnectionForm): Promise<void>
   }
 
   await writeFile(mysqlConfigPath(), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+  await upsertMysqlCredentialsIntoSupabaseWorkspace(payload);
+  const { invalidateMysqlPoolCache } = await import("@/lib/examStorage/mysqlExamStore.server");
+  invalidateMysqlPoolCache();
+
+  await persistMysqlCredentialsToMysqlWorkspaceSettings({
+    host: payload.host as string,
+    port: typeof payload.port === "number" ? payload.port : Number(payload.port),
+    user: payload.user as string,
+    database: payload.database as string,
+    ...(typeof payload.passwordEnc === "string" ? { passwordEnc: payload.passwordEnc } : {}),
+  });
 }
 
 export type MysqlUiState = {
@@ -85,17 +184,63 @@ export type MysqlUiState = {
   user: string | null;
   database: string | null;
   passwordSaved: boolean;
-  /** 文件中是否为密文 passwordEnc */
   passwordStoredEncrypted: boolean;
-  /** 加密密钥来源：环境变量 / 本机文件 / 尚未生成（首次保存连接后会生成本机密钥文件） */
   encryptionKeySource: "env" | "local-file" | "will-create";
+  /** 当前生效连接是否来自 Supabase workspace_settings（否则来自本地文件） */
+  source: "supabase" | "file";
 };
 
-export async function getMysqlUiState(): Promise<MysqlUiState> {
-  const raw = await readConfigRaw();
-  const keySource = getMysqlEncryptionKeySource();
+async function supabaseMysqlBlock(): Promise<Record<string, unknown> | null> {
+  const db = getSupabaseAdmin();
+  if (!db) return null;
+  const { data } = await db
+    .from("workspace_settings")
+    .select("settings")
+    .eq("workspace_key", WS_KEY)
+    .maybeSingle();
+  const raw = data?.settings as Record<string, unknown> | undefined;
+  const m = raw?.mysql;
+  return m && typeof m === "object" ? (m as Record<string, unknown>) : null;
+}
 
-  if (!raw) {
+export async function getMysqlUiState(): Promise<MysqlUiState> {
+  let keySource: MysqlUiState["encryptionKeySource"] = "will-create";
+  try {
+    keySource = getMysqlEncryptionKeySource();
+  } catch (e) {
+    console.warn("[getMysqlUiState] encryption key source", e);
+  }
+
+  try {
+    const fromSupa = await loadMysqlConnectionFromSupabase();
+    const active = fromSupa ?? (await loadMysqlConnectionFromFile());
+    const fromSupaBlock = await supabaseMysqlBlock();
+    const rawFile = await readConfigRaw();
+
+    const supaHasEnc =
+      typeof fromSupaBlock?.passwordEnc === "string" &&
+      (fromSupaBlock.passwordEnc as string).length > 0;
+    const fileHasEnc =
+      typeof rawFile?.passwordEnc === "string" && (rawFile.passwordEnc as string).length > 0;
+    const fileHasPlain =
+      typeof rawFile?.password === "string" && (rawFile.password as string).length > 0;
+
+    const source: "supabase" | "file" = fromSupa ? "supabase" : "file";
+    const configured = !!active;
+
+    return {
+      configured,
+      host: active?.host ?? null,
+      port: active?.port ?? null,
+      user: active?.user ?? null,
+      database: active?.database ?? null,
+      passwordSaved: supaHasEnc || fileHasEnc || fileHasPlain,
+      passwordStoredEncrypted: supaHasEnc || fileHasEnc,
+      encryptionKeySource: keySource,
+      source,
+    };
+  } catch (e) {
+    console.warn("[getMysqlUiState] 读取 MySQL 配置失败，已降级为未配置状态", e);
     return {
       configured: false,
       host: null,
@@ -105,26 +250,7 @@ export async function getMysqlUiState(): Promise<MysqlUiState> {
       passwordSaved: false,
       passwordStoredEncrypted: false,
       encryptionKeySource: keySource,
+      source: "file",
     };
   }
-
-  const host = typeof raw.host === "string" ? raw.host : "";
-  const user = typeof raw.user === "string" ? raw.user : "";
-  const database = typeof raw.database === "string" ? raw.database : "";
-  const port = typeof raw.port === "number" && Number.isFinite(raw.port) ? raw.port : 3306;
-  const hasEnc =
-    typeof raw.passwordEnc === "string" && (raw.passwordEnc as string).length > 0;
-  const hasPlain =
-    typeof raw.password === "string" && (raw.password as string).length > 0;
-
-  return {
-    configured: !!(host && user && database),
-    host: host || null,
-    port,
-    user: user || null,
-    database: database || null,
-    passwordSaved: hasEnc || hasPlain,
-    passwordStoredEncrypted: hasEnc,
-    encryptionKeySource: keySource,
-  };
 }

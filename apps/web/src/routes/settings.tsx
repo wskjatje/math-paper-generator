@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useState, useEffect, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,6 +8,22 @@ import {
   toAiRuntimePayload,
   type AiSettingsForm,
 } from "@/lib/aiSettingsStorage";
+import {
+  DEFAULT_WEB_SEARCH_SETTINGS,
+  loadWebSearchSettings,
+  saveWebSearchSettings,
+  type WebSearchSettingsForm,
+} from "@/lib/webSearchSettingsStorage";
+import {
+  DEFAULT_GATEWAY_SETTINGS,
+  loadGatewaySettings,
+  saveGatewaySettings,
+  type GatewaySettingsForm,
+} from "@/lib/gatewaySettingsStorage";
+import {
+  fetchWorkspaceIntegrationSettings,
+  saveWorkspaceIntegrationSettings,
+} from "@/lib/workspaceSettings.functions.server";
 import { DEFAULT_CLOUD_MODEL } from "@/lib/aiRuntime.shared";
 import {
   probeAiConnection,
@@ -15,7 +31,10 @@ import {
   fetchAiSettingsFromDb,
   saveAiSettingsToDb,
   listLocalModels,
+  fetchImportLearningOverview,
+  setImportLearningAutonomousEnabled,
 } from "@/lib/exam.functions.server";
+import type { StoredImportLearning } from "@/lib/importLearning.shared";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -33,6 +52,8 @@ import {
   ChevronDown,
   RefreshCw,
   Download,
+  Globe,
+  Camera,
 } from "lucide-react";
 import { FormPanel } from "@/components/layout/FormPanel";
 import {
@@ -78,16 +99,14 @@ import { GENERATION_ERROR_CATEGORY_LABELS } from "@/lib/generationQuality.shared
 import { CURRICULUM_SUBJECT_OPTIONS } from "@/lib/generateCatalog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const CONTROL =
   "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
 /** 本地设置页输入/下拉统一底色（避免原生 select 与相邻 input 观感不一致） */
-const LOCAL_FIELD_CONTROL = cn(
-  CONTROL,
-  "bg-background text-foreground antialiased",
-);
+const LOCAL_FIELD_CONTROL = cn(CONTROL, "bg-background text-foreground antialiased");
 
 const LOAD_MODELS_BTN =
   "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-card px-3 py-2.5 text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-50";
@@ -143,6 +162,12 @@ function currentExamPersistenceSummary(
         sub: o.supabaseUrlHost ? `主机 ${o.supabaseUrlHost}` : undefined,
       };
     }
+    if (o.mysqlReachable) {
+      return {
+        headline: "本地 MySQL（未配云端时的实际存储）",
+        sub: "当前选项为「仅云端列表」但服务端未配置 Supabase；试卷与教育 OS 已自动走同一 MySQL。",
+      };
+    }
     if (lw) {
       return {
         headline: `${localLabel}（云端未配置，已回退）`,
@@ -176,6 +201,12 @@ function currentExamPersistenceSummary(
     return {
       headline: "云端（自动，优先写云端）",
       sub: o.supabaseUrlHost ? `主机 ${o.supabaseUrlHost}` : undefined,
+    };
+  }
+  if (o.mysqlReachable) {
+    return {
+      headline: "本地 MySQL（自动，当前未配云端）",
+      sub: "试卷与教育 OS 一体写入 zhixue；配置 Supabase 后将优先云端。",
     };
   }
   if (lw) {
@@ -217,8 +248,16 @@ function SettingsPage() {
   const probeToolFn = useServerFn(probeSubmitExamToolCallFn);
   const fetchDbFn = useServerFn(fetchAiSettingsFromDb);
   const saveDbFn = useServerFn(saveAiSettingsToDb);
+  const fetchWsFn = useServerFn(fetchWorkspaceIntegrationSettings);
+  const saveWsFn = useServerFn(saveWorkspaceIntegrationSettings);
   const loadModelsFn = useServerFn(listLocalModels);
   const [form, setForm] = useState<AiSettingsForm>(() => ({ ...DEFAULT_AI_SETTINGS }));
+  const [webSearchForm, setWebSearchForm] = useState<WebSearchSettingsForm>(() => ({
+    ...DEFAULT_WEB_SEARCH_SETTINGS,
+  }));
+  const [gatewayForm, setGatewayForm] = useState<GatewaySettingsForm>(() => ({
+    ...DEFAULT_GATEWAY_SETTINGS,
+  }));
   const [mounted, setMounted] = useState(false);
   const [testing, setTesting] = useState(false);
   const [toolTesting, setToolTesting] = useState(false);
@@ -229,12 +268,23 @@ function SettingsPage() {
 
   useEffect(() => {
     setForm(loadAiSettings());
+    setWebSearchForm(loadWebSearchSettings());
+    setGatewayForm(loadGatewaySettings());
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (!mounted) return;
     void (async () => {
+      try {
+        const ws = await fetchWsFn();
+        setGatewayForm({ ...DEFAULT_GATEWAY_SETTINGS, ...(ws.settings.gateway ?? {}) });
+        setWebSearchForm({ ...DEFAULT_WEB_SEARCH_SETTINGS, ...(ws.settings.webSearch ?? {}) });
+      } catch (e) {
+        console.warn("[settings] fetchWorkspaceIntegrationSettings:", e);
+        setGatewayForm(loadGatewaySettings());
+        setWebSearchForm(loadWebSearchSettings());
+      }
       try {
         const res = await fetchDbFn();
         if (res.ok) {
@@ -245,20 +295,50 @@ function SettingsPage() {
         console.warn("[settings] fetchAiSettingsFromDb:", e);
       }
     })();
-  }, [mounted, fetchDbFn]);
+  }, [mounted, fetchWsFn, fetchDbFn]);
 
   const update = <K extends keyof AiSettingsForm>(key: K, value: AiSettingsForm[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
   };
 
+  const updateWebSearch = <K extends keyof WebSearchSettingsForm>(
+    key: K,
+    value: WebSearchSettingsForm[K],
+  ) => {
+    setWebSearchForm((f) => ({ ...f, [key]: value }));
+  };
+
   const handleSave = async () => {
+    try {
+      await saveWsFn({
+        data: {
+          gateway: { baseUrl: gatewayForm.baseUrl },
+          webSearch: {
+            tavilyApiKey: webSearchForm.tavilyApiKey,
+            braveApiKey: webSearchForm.braveApiKey,
+            provider: webSearchForm.provider,
+          },
+        },
+      });
+    } catch (e) {
+      saveWebSearchSettings(webSearchForm);
+      saveGatewaySettings(gatewayForm);
+      toast.warning(
+        e instanceof Error
+          ? `${e.message}（网关与检索已降级写入本机浏览器）`
+          : "集成配置已降级写入本机浏览器",
+      );
+    }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("mpg-web-search-settings-changed"));
+    }
     saveAiSettings(form);
     try {
       const res = await saveDbFn({ data: form });
       if (res.ok) {
-        toast.success("已保存：本机与数据库已同步（换浏览器后会自动加载）");
+        toast.success("已保存：模型偏好与集成配置已写入数据库（换浏览器后会自动加载）");
       } else if (res.reason === "no_supabase") {
-        toast.success("已保存到本机浏览器；服务端未配置 Supabase，无法同步到其他设备");
+        toast.success("模型偏好已保存到本机；服务端未配置 Supabase 时无法云端同步");
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "写入数据库失败");
@@ -317,8 +397,8 @@ function SettingsPage() {
     }
   };
 
-  const subjectOverrideCount = Object.keys(form.localSubjectModels ?? {}).filter(
-    (k) => (form.localSubjectModels?.[k] ?? "").trim(),
+  const subjectOverrideCount = Object.keys(form.localSubjectModels ?? {}).filter((k) =>
+    (form.localSubjectModels?.[k] ?? "").trim(),
   ).length;
 
   const openSubjectModelsDialog = () => {
@@ -418,16 +498,14 @@ function SettingsPage() {
                 </Field>
                 {cloudModelLooksLikeKey && (
                   <p className="text-sm text-destructive" role="alert">
-                    勿填密钥于此；密钥进 .env，本框填模型 ID（通常含 <code className="text-xs">/</code>）。
+                    勿填密钥于此；密钥进 .env，本框填模型 ID（通常含{" "}
+                    <code className="text-xs">/</code>）。
                   </p>
                 )}
               </>
             ) : (
               <>
-                <Field
-                  label="本地接口根 URL"
-                  hint="如 http://127.0.0.1:11434；第三方勿以 /v1 结尾"
-                >
+                <Field label="本地接口根 URL" hint="如 http://127.0.0.1:11434；第三方勿以 /v1 结尾">
                   <div className="space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
                       <input
@@ -451,7 +529,9 @@ function SettingsPage() {
                       </button>
                     </div>
                     {loadedModels.length > 0 && (
-                      <p className="text-xs text-muted-foreground">已载入 {loadedModels.length} 个</p>
+                      <p className="text-xs text-muted-foreground">
+                        已载入 {loadedModels.length} 个
+                      </p>
                     )}
                   </div>
                 </Field>
@@ -505,7 +585,8 @@ function SettingsPage() {
                       </button>
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      测试连接、「测试 submit_exam」与命题共用；未在右侧弹窗单独填写的学科，命题时亦使用此处所选模型。
+                      测试连接、「测试
+                      submit_exam」与命题共用；未在右侧弹窗单独填写的学科，命题时亦使用此处所选模型。
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {subjectOverrideCount > 0
@@ -527,10 +608,7 @@ function SettingsPage() {
                     </DialogHeader>
                     <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-3">
                       {CURRICULUM_SUBJECT_OPTIONS.map((s) => {
-                        const sel = subjectModelSelectValue(
-                          subjectModelsDraft[s.id],
-                          loadedModels,
-                        );
+                        const sel = subjectModelSelectValue(subjectModelsDraft[s.id], loadedModels);
                         const showManual =
                           loadedModels.length > 0 && sel === SUBJECT_MODEL_SELECT_OTHER;
                         return (
@@ -576,9 +654,8 @@ function SettingsPage() {
                                       aria-label={`${s.label} 命题模型`}
                                     >
                                       <option value="">
-                                        使用本地默认模型（{(
-                                          form.localModel ?? ""
-                                        ).trim() || "未设置"}）
+                                        使用本地默认模型（
+                                        {(form.localModel ?? "").trim() || "未设置"}）
                                       </option>
                                       {loadedModels.map((m) => (
                                         <option key={m} value={m}>
@@ -671,6 +748,93 @@ function SettingsPage() {
               </>
             )}
 
+            <div className="mt-4 space-y-4 rounded-lg border border-border/60 bg-muted/15 px-4 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Globe className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="text-sm font-semibold text-foreground">
+                  外网检索 API（线下导入）
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                用于「导入线下试卷」页的网页搜索；密钥保存在本机浏览器，检索由服务端代发至 Tavily /
+                Brave（可与部署环境里的同名变量叠加，此处填写优先）。
+              </p>
+              <Field label="Tavily API Key（可选）">
+                <input
+                  type="password"
+                  value={webSearchForm.tavilyApiKey}
+                  onChange={(e) => updateWebSearch("tavilyApiKey", e.target.value)}
+                  placeholder="未填时可依赖服务端 MPG_TAVILY_API_KEY"
+                  autoComplete="off"
+                  className={LOCAL_FIELD_CONTROL}
+                />
+              </Field>
+              <Field label="Brave Search API Key（可选）">
+                <input
+                  type="password"
+                  value={webSearchForm.braveApiKey}
+                  onChange={(e) => updateWebSearch("braveApiKey", e.target.value)}
+                  placeholder="未填时可依赖服务端 MPG_BRAVE_SEARCH_API_KEY"
+                  autoComplete="off"
+                  className={LOCAL_FIELD_CONTROL}
+                />
+              </Field>
+              <Field
+                label="检索提供方"
+                hint="自动：在已有密钥前提下优先 Tavily。与服务端 MPG_WEB_SEARCH_PROVIDER 类似；此处选择会随请求一并下发。"
+              >
+                <select
+                  className={cn(LOCAL_FIELD_CONTROL, "cursor-pointer")}
+                  value={webSearchForm.provider}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "auto" || v === "tavily" || v === "brave")
+                      updateWebSearch("provider", v);
+                  }}
+                  aria-label="外网检索优先提供方"
+                >
+                  <option value="auto">自动（优先 Tavily）</option>
+                  <option value="tavily">仅 Tavily</option>
+                  <option value="brave">仅 Brave</option>
+                </select>
+              </Field>
+            </div>
+
+            <div className="mt-4 space-y-4 rounded-lg border border-border/60 bg-muted/15 px-4 py-4">
+              <div className="flex flex-wrap items-center gap-2">
+                <Camera className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                <span className="text-sm font-semibold text-foreground">
+                  API 网关 · 图片 OCR（线下导入）
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                导入线下试卷时，图片会优先由服务端请求此处填写的网关{" "}
+                <code className="rounded bg-muted px-1 text-[11px]">/api/v1/ocr/image</code>
+                ；留空则仅用服务器环境变量{" "}
+                <code className="rounded bg-muted px-1 text-[11px]">MPG_GATEWAY_URL</code>
+                。须先执行{" "}
+                <code className="rounded bg-muted px-1 text-[11px]">npm run docker:api:detach</code>
+                （<code className="rounded bg-muted px-1 text-[11px]">dev:host</code> 会自动执行；
+                <code className="rounded bg-muted px-1 text-[11px]">dev:clean</code> 不会）。直连 Docker
+                网关推荐{" "}
+                <code className="rounded bg-muted px-1 text-[11px]">http://127.0.0.1:8090</code>
+                ；若用 Vite 代理（<code className="rounded bg-muted px-1 text-[11px]">dev:host</code>
+                ）可填{" "}
+                <code className="rounded bg-muted px-1 text-[11px]">http://127.0.0.1:8080</code>。
+              </p>
+              <Field label="网关根 URL（可选）">
+                <input
+                  value={gatewayForm.baseUrl}
+                  onChange={(e) => setGatewayForm((g) => ({ ...g, baseUrl: e.target.value }))}
+                  placeholder="http://127.0.0.1:8090"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className={LOCAL_FIELD_CONTROL}
+                  aria-label="API 网关根 URL，用于线下导入图片 OCR"
+                />
+              </Field>
+            </div>
+
             <div
               className="flex flex-wrap gap-3 pt-2"
               title="本地请求经开发服务器转发；远程部署时不可用本机 127.0.0.1"
@@ -694,9 +858,7 @@ function SettingsPage() {
                 disabled={testing || (cloudMode && cloudModelLooksLikeKey)}
                 onClick={handleTest}
                 title={
-                  cloudMode && cloudModelLooksLikeKey
-                    ? "请先修正云端模型 ID"
-                    : "检测接口是否可达"
+                  cloudMode && cloudModelLooksLikeKey ? "请先修正云端模型 ID" : "检测接口是否可达"
                 }
                 className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
               >
@@ -749,6 +911,8 @@ function DataStorageTab() {
   const createMysqlDbFn = useServerFn(createMysqlDatabaseFromForm);
   const applyMysqlFn = useServerFn(applyMysqlZhixueSchema);
   const mysqlSqlFn = useServerFn(getMysqlBundledSchemaSql);
+  const fetchImportLearningFn = useServerFn(fetchImportLearningOverview);
+  const setImportLearningFn = useServerFn(setImportLearningAutonomousEnabled);
 
   const [overview, setOverview] = useState<DataSettingsOverview | null>(null);
   const [loading, setLoading] = useState(true);
@@ -758,6 +922,10 @@ function DataStorageTab() {
   const [storagePref, setStoragePref] = useState<ExamStoragePreference>("auto");
 
   const [mysqlUi, setMysqlUi] = useState<MysqlUiState | null>(null);
+  const [importLearningProfile, setImportLearningProfile] = useState<StoredImportLearning | null>(
+    null,
+  );
+  const [importLearningSaving, setImportLearningSaving] = useState(false);
   const [mysqlHost, setMysqlHost] = useState("127.0.0.1");
   const [mysqlPort, setMysqlPort] = useState(3306);
   const [mysqlUser, setMysqlUser] = useState("root");
@@ -778,6 +946,14 @@ function DataStorageTab() {
     window.addEventListener("mpg-generation-habits-sync", bump);
     return () => window.removeEventListener("mpg-generation-habits-sync", bump);
   }, []);
+
+  useEffect(() => {
+    void fetchImportLearningFn()
+      .then((r) => {
+        if (r.ok && r.profile) setImportLearningProfile(r.profile as StoredImportLearning);
+      })
+      .catch(() => {});
+  }, [fetchImportLearningFn]);
 
   const refreshAll = async () => {
     setLoading(true);
@@ -901,7 +1077,7 @@ function DataStorageTab() {
     setMysqlBusy("save");
     try {
       await saveMysqlFn({ data: mysqlConnPayload() });
-      toast.success("MySQL 连接已保存到服务端 data/mysql-connection.json（勿提交 Git）");
+      toast.success("MySQL 连接已保存（本地文件 + 若已配置 Supabase 则同步至 workspace_settings）");
       void refreshAll();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "保存失败");
@@ -942,7 +1118,7 @@ function DataStorageTab() {
           connection: mysqlConnPayload(),
         },
       });
-      toast.success("MySQL 建表脚本已执行（若表已存在则跳过创建）");
+      toast.success("建表完成，已写入默认配置");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "执行失败");
     } finally {
@@ -1006,8 +1182,7 @@ function DataStorageTab() {
     <>
       {mysqlUi?.configured ? (
         <p className="text-xs text-muted-foreground">
-          已保存{" "}
-          <code className="rounded bg-muted px-1 text-[11px]">{mysqlUi.host}</code> /{" "}
+          已保存 <code className="rounded bg-muted px-1 text-[11px]">{mysqlUi.host}</code> /{" "}
           <code className="rounded bg-muted px-1 text-[11px]">{mysqlUi.database}</code>
         </p>
       ) : (
@@ -1015,11 +1190,15 @@ function DataStorageTab() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="主机">
+        <Field
+          label="主机"
+          hint="经 Docker 网关（:8090）访问时填 host.docker.internal；本机直连 Vite（:8080）可填 127.0.0.1"
+        >
           <Input
             value={mysqlHost}
             onChange={(e) => setMysqlHost(e.target.value)}
             autoComplete="off"
+            placeholder="host.docker.internal"
             className="font-mono text-sm"
           />
         </Field>
@@ -1096,7 +1275,11 @@ function DataStorageTab() {
           className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
           title="需目标数据库已存在；新建库请先点上一按钮"
         >
-          {mysqlBusy === "test" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlugZap className="h-4 w-4" />}
+          {mysqlBusy === "test" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <PlugZap className="h-4 w-4" />
+          )}
           测试连接
         </button>
         <button
@@ -1105,7 +1288,11 @@ function DataStorageTab() {
           onClick={() => void handleMysqlSave()}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-95 disabled:opacity-50"
         >
-          {mysqlBusy === "save" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          {mysqlBusy === "save" ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4" />
+          )}
           保存连接
         </button>
       </div>
@@ -1132,7 +1319,11 @@ function DataStorageTab() {
             onClick={() => void handleMysqlLoadSql()}
             className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
           >
-            {mysqlBusy === "sql" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Terminal className="h-4 w-4" />}
+            {mysqlBusy === "sql" ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Terminal className="h-4 w-4" />
+            )}
             加载 SQL 预览
           </button>
           <button
@@ -1163,10 +1354,65 @@ function DataStorageTab() {
 
   return (
     <div className="space-y-8">
+      <p className="text-sm text-muted-foreground">
+        <Link to="/remediation-rules" className="text-primary underline-offset-4 hover:underline">
+          试卷修复管线规则
+        </Link>
+        （多套卷共用，存 MySQL）：管理规则、对已入库试卷重跑、Agent 起草草案。
+      </p>
+      <FormPanel className="space-y-3">
+        <h2 className="text-base font-semibold text-foreground">导入自主学习</h2>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          每次导入成功或失败后更新统计；下一次 AI
+          整卷导入时在提示词前注入「自主学习·导入」补强（附图保留、选择题拆分、解析步数等）。数据写入
+          workspace_settings。
+        </p>
+        <label className="flex cursor-pointer items-start gap-3 text-sm">
+          <Checkbox
+            checked={importLearningProfile?.autonomousLearningEnabled !== false}
+            disabled={importLearningProfile == null || importLearningSaving}
+            onCheckedChange={(v) => {
+              void (async () => {
+                const next = v === true;
+                setImportLearningSaving(true);
+                try {
+                  await setImportLearningFn({ data: { enabled: next } });
+                  const r = await fetchImportLearningFn();
+                  if (r.ok && r.profile)
+                    setImportLearningProfile(r.profile as StoredImportLearning);
+                  toast.success(next ? "已启用导入自主学习" : "已关闭导入自主学习");
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : String(e));
+                } finally {
+                  setImportLearningSaving(false);
+                }
+              })();
+            }}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="font-medium text-foreground">启用导入自主学习补强</span>
+            <span className="block text-xs text-muted-foreground">
+              关闭后保留累计数据，仅不向模型注入补强文案。
+            </span>
+          </span>
+        </label>
+        {importLearningProfile ? (
+          <p className="text-xs text-muted-foreground">
+            累计成功 {importLearningProfile.successCount} · 失败 {importLearningProfile.failCount} ·
+            当前语境连续成功 {importLearningProfile.consecutiveSuccesses}
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">加载统计中或未连接数据库…</p>
+        )}
+      </FormPanel>
       <FormPanel className="space-y-4">
         <h2 className="text-base font-semibold text-foreground">系统更新</h2>
         <p className="text-xs text-muted-foreground">
-          当前版本：<code className="rounded bg-muted px-1 text-[11px]">v{updateInfo?.currentVersion ?? "—"}</code>
+          当前版本：
+          <code className="rounded bg-muted px-1 text-[11px]">
+            v{updateInfo?.currentVersion ?? "—"}
+          </code>
           {updateInfo?.checkedAtIso ? (
             <>
               {" · "}最近检查：{new Date(updateInfo.checkedAtIso).toLocaleString()}
@@ -1202,7 +1448,9 @@ function DataStorageTab() {
         {updateInfo ? (
           <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-foreground">
             {updateInfo.latestVersion == null ? (
-              <p className="text-muted-foreground">未能获取远端版本信息（请检查网络或稍后重试）。</p>
+              <p className="text-muted-foreground">
+                未能获取远端版本信息（请检查网络或稍后重试）。
+              </p>
             ) : updateInfo.hasUpdate ? (
               <p>
                 检测到新版本：<strong>v{updateInfo.latestVersion}</strong>
@@ -1210,12 +1458,15 @@ function DataStorageTab() {
               </p>
             ) : (
               <p>
-                已是最新版本（当前 v{updateInfo.currentVersion}，远端 v{updateInfo.latestVersion}）。
+                已是最新版本（当前 v{updateInfo.currentVersion}，远端 v{updateInfo.latestVersion}
+                ）。
               </p>
             )}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">点击“检查更新”后将从 GitHub Release 获取最新版本。</p>
+          <p className="text-xs text-muted-foreground">
+            点击“检查更新”后将从 GitHub Release 获取最新版本。
+          </p>
         )}
       </FormPanel>
 
@@ -1245,18 +1496,22 @@ function DataStorageTab() {
             onChange={(e) => {
               setAutonomousLearningEnabled(e.target.checked);
               setHabitSnap(loadGenerationHabits());
-              toast.success(e.target.checked ? "已开启自主学习优化" : "已关闭自主学习（不再注入习惯补强）");
+              toast.success(
+                e.target.checked ? "已开启自主学习优化" : "已关闭自主学习（不再注入习惯补强）",
+              );
             }}
           />
-          <Label htmlFor="mpg-autonomous-learning" className="cursor-pointer text-sm text-foreground">
+          <Label
+            htmlFor="mpg-autonomous-learning"
+            className="cursor-pointer text-sm text-foreground"
+          >
             启用命题自主学习优化
           </Label>
         </div>
         <div className="rounded-md border border-border/60 bg-muted/25 px-3 py-2 text-sm space-y-1.5">
           <p>
             <span className="text-muted-foreground">成功命题：</span>
-            {habitSnap.successCount} 次 ·{" "}
-            <span className="text-muted-foreground">失败：</span>
+            {habitSnap.successCount} 次 · <span className="text-muted-foreground">失败：</span>
             {habitSnap.failCount} 次
             {habitSnap.autonomousLearningEnabled !== false ? (
               <>
@@ -1277,8 +1532,9 @@ function DataStorageTab() {
               {Object.entries(habitSnap.errorCategoryCounts).map(([k, n]) =>
                 n ? (
                   <li key={k}>
-                    {GENERATION_ERROR_CATEGORY_LABELS[k as keyof typeof GENERATION_ERROR_CATEGORY_LABELS] ??
-                      k}
+                    {GENERATION_ERROR_CATEGORY_LABELS[
+                      k as keyof typeof GENERATION_ERROR_CATEGORY_LABELS
+                    ] ?? k}
                     ：{n}
                   </li>
                 ) : null,
@@ -1336,9 +1592,14 @@ function DataStorageTab() {
                 >
                   <div className="flex items-start gap-2">
                     <RadioGroupItem value="auto" id="exam-store-auto" className="mt-0.5" />
-                    <Label htmlFor="exam-store-auto" className="cursor-pointer font-normal leading-snug">
+                    <Label
+                      htmlFor="exam-store-auto"
+                      className="cursor-pointer font-normal leading-snug"
+                    >
                       <span className="text-foreground">自动</span>
-                      <span className="block text-xs text-muted-foreground">云端+本地，能写则入库</span>
+                      <span className="block text-xs text-muted-foreground">
+                        云端+本地，能写则入库
+                      </span>
                     </Label>
                   </div>
                   <div className="flex items-start gap-2">
@@ -1348,7 +1609,9 @@ function DataStorageTab() {
                       className="cursor-pointer font-normal leading-snug"
                     >
                       <span className="text-foreground">项目内置 + 本地卷</span>
-                      <span className="block text-xs text-muted-foreground">演示+本地，新建先本地</span>
+                      <span className="block text-xs text-muted-foreground">
+                        演示+本地，新建先本地
+                      </span>
                     </Label>
                   </div>
                   <div className="flex items-start gap-2">
@@ -1392,25 +1655,35 @@ function DataStorageTab() {
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              云端 <span className={overview.supabaseConfigured ? "text-emerald-700 dark:text-emerald-400" : ""}>
+              云端{" "}
+              <span
+                className={
+                  overview.supabaseConfigured ? "text-emerald-700 dark:text-emerald-400" : ""
+                }
+              >
                 {overview.supabaseConfigured ? "已连" : "未配"}
               </span>
               {overview.supabaseUrlHost ? (
                 <>
                   {" "}
-                  <code className="rounded bg-muted px-1 text-[10px]">{overview.supabaseUrlHost}</code>
+                  <code className="rounded bg-muted px-1 text-[10px]">
+                    {overview.supabaseUrlHost}
+                  </code>
                 </>
               ) : null}
               {" · "}
               直连{" "}
-              <span className={overview.databaseUrlConfigured ? "text-emerald-700 dark:text-emerald-400" : ""}>
+              <span
+                className={
+                  overview.databaseUrlConfigured ? "text-emerald-700 dark:text-emerald-400" : ""
+                }
+              >
                 {overview.databaseUrlConfigured ? "已配" : "未配"}
               </span>
             </p>
           </div>
         )}
       </FormPanel>
-
 
       <Dialog open={cloudStorageConfigOpen} onOpenChange={setCloudStorageConfigOpen}>
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
@@ -1469,7 +1742,9 @@ function DataStorageTab() {
               <p className="text-sm font-medium text-foreground">本页执行迁移</p>
               <p className="text-xs text-muted-foreground">
                 需 <code className="rounded bg-muted px-1 text-[11px]">DATABASE_URL</code> 与{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">ALLOW_UI_DB_MIGRATIONS=true</code>
+                <code className="rounded bg-muted px-1 text-[11px]">
+                  ALLOW_UI_DB_MIGRATIONS=true
+                </code>
               </p>
               <button
                 type="button"
@@ -1489,7 +1764,9 @@ function DataStorageTab() {
                 执行迁移
               </button>
               {overview && !overview.canRunUiMigration && (
-                <p className="text-xs text-amber-800 dark:text-amber-200/90">条件未满足，按钮不可用</p>
+                <p className="text-xs text-amber-800 dark:text-amber-200/90">
+                  条件未满足，按钮不可用
+                </p>
               )}
             </div>
           </div>

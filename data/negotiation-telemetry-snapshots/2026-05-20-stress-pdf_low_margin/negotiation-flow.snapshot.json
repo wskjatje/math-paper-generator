@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "snapshot_kind": "negotiation_slo_frozen",
+  "captured_at": "2026-05-21T01:08:05.780Z",
+  "corpus_path": "apps/web/tests/fixtures/reading-flow/corpus",
+  "corpus_label": "stress-pdf_low_margin@pdf_low_margin",
+  "case_ids": [
+    "negotiation-pressure-dense-enum",
+    "negotiation-pressure-multi-figure",
+    "negotiation-pressure-qwf-chain",
+    "reading-corpus-cue-unbound-warn-01",
+    "reading-corpus-qwf-pass-01"
+  ],
+  "negotiation_runtime": "negotiation_runtime_v1",
+  "metric_registry": "v1",
+  "replay_mutation": "none",
+  "aggregate": {
+    "deferToNextPageRate": 0.7083333333333334,
+    "keepWithFigureNegotiationRate": 1,
+    "semanticConstraintViolationRate": 0.5882352941176471,
+    "splitClusterRate": 0,
+    "meanContinuityLossDelta": 15,
+    "continuityPreservationAfterNegotiation": 64,
+    "meanPhysicalPageCount": 5.8,
+    "negotiationSeverityDistribution": {
+      "low": 0,
+      "medium": 7,
+      "high": 0,
+      "catastrophic": 10
+    }
+  },
+  "rates": {
+    "semantic_constraint_violation_rate": {
+      "numerator": 10,
+      "denominator": 17,
+      "rate": 0.5882352941176471,
+      "population": "negotiation_decisions",
+      "higher_is_worse": true
+    },
+    "keep_with_figure_negotiation_rate": {
+      "numerator": 10,
+      "denominator": 10,
+      "rate": 1,
+      "population": "groups_with_keep_with_figure",
+      "higher_is_worse": true
+    },
+    "defer_to_next_page_rate": {
+      "numerator": 17,
+      "denominator": 24,
+      "rate": 0.7083333333333334,
+      "population": "positioned_groups",
+      "higher_is_worse": true
+    },
+    "split_cluster_rate": {
+      "numerator": 0,
+      "denominator": 10,
+      "rate": 0,
+      "population": "question_with_figure_groups",
+      "higher_is_worse": true
+    }
+  },
+  "scores": {
+    "continuity_preservation_after_negotiation": {
+      "value": 64,
+      "document_count": 5,
+      "higher_is_better": true
+    }
+  },
+  "resilience": {
+    "version": "v1",
+    "severity_distribution": {
+      "low": 0,
+      "medium": 7,
+      "high": 0,
+      "catastrophic": 10
+    },
+    "critical_path_break_rate": 1,
+    "cascading_negotiation_rate": 0.25,
+    "compound_compromise_rate": 0.9411764705882353,
+    "catastrophic_spread_rate": 0.5882352941176471
+  }
+}

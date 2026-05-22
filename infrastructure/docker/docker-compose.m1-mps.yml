@@ -1,0 +1,18 @@
+# Apple Silicon：本机 MPS 跑 GOT-OCR（:8101），网关走 host.docker.internal。
+# 用法（仓库根）：
+#   终端 A: npm run got-ocr:native
+#   终端 B: npm run docker:api:mps && npm run dev -w @zhixue/web
+# 见 docs/architecture/got-ocr-m1-native.md
+
+services:
+  ocr-service:
+    profiles: ["docker-ocr"]
+
+  gateway:
+    environment:
+      OCR_SERVICE_URL: http://host.docker.internal:8101
+    depends_on: !reset
+      - formula-service
+      - vision-service
+      - agent-service
+      - question-parser-service

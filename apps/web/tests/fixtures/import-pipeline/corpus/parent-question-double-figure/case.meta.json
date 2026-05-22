@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "case_id": "parent-question-double-figure",
+  "taxonomy": "healthy_materialized_bind",
+  "l3_real_world": true,
+  "expected_canonical_signals": [
+    "supply_state.materialized",
+    "registry_entries>0",
+    "linker_bound>0",
+    "refs_bound_total>0"
+  ],
+  "intentional_drift": false,
+  "notes": "共图大题 L3：input 误将双图挂在大题；入库 sanitize 内 align 后子题按图①/② bind。"
+}

@@ -10,8 +10,7 @@ export const Route = createFileRoute("/about")({
       { title: "关于 — 知学 Zhixue" },
       {
         name: "description",
-        content:
-          "知学 Zhixue 是一座开源的竞赛与奥数试题档案，所有内容含分步推导。",
+        content: "知学 Zhixue 是一座开源的竞赛与奥数试题档案，所有内容含分步推导。",
       },
     ],
   }),

@@ -89,7 +89,8 @@ export function loadExampleJobs(): ExampleGenJob[] {
 export function hasAnyRunningGenerationJob(): boolean {
   const root = loadRoot();
   return (
-    root.paper.some((j) => j.status === "running") || root.example.some((j) => j.status === "running")
+    root.paper.some((j) => j.status === "running") ||
+    root.example.some((j) => j.status === "running")
   );
 }
 
@@ -189,7 +190,10 @@ function runningJobAgeMs(job: { updatedAt: string }, nowMs: number): number {
  * 将长期处于 `running` 的任务标记为 `failed`，避免异常退出后队列永久卡住。
  * @returns 各自释放条数
  */
-export function releaseStaleRunningGenerationJobs(nowMs?: number): { paper: number; example: number } {
+export function releaseStaleRunningGenerationJobs(nowMs?: number): {
+  paper: number;
+  example: number;
+} {
   if (typeof window === "undefined") return { paper: 0, example: 0 };
   const t0 = typeof nowMs === "number" ? nowMs : Date.now();
   const root = loadRoot();

@@ -240,9 +240,38 @@ function prepareClonedDocumentForHtml2Canvas(clonedDoc: Document, root: HTMLElem
     .border-border { border-color: #e5e7eb !important; }
 
     /* 导出域内凡带 bg-* 的块一律与白底同色（避免羊皮纸/浅灰第二種底色）；实心主色圆点保留 */
-    .exam-print-root [class*="bg-"]:not(.bg-primary) {
+    .exam-print-root [class*="bg-"]:not(.bg-primary):not(.exam-geometry-diagram) {
       background-color: ${PDF_EXPORT_PAGE_BG} !important;
       background-image: none !important;
+    }
+    /*
+     * html2canvas 克隆里已移除 Tailwind；text-foreground/55 等修饰类不存在，
+     * SVG 使用 stroke=currentColor 时墨色丢失 → 示意图整段空白。以下强制具象墨色。
+     */
+    .exam-print-root figure.exam-geometry-diagram {
+      background-color: #f1f5f9 !important;
+      border-color: #e5e7eb !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram figcaption {
+      color: #64748b !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram svg {
+      color: #1e293b !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram svg line {
+      stroke: #1e293b !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram svg path {
+      stroke: rgba(30, 41, 59, 0.55) !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram svg circle[stroke] {
+      stroke: rgba(30, 41, 59, 0.7) !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram svg g > circle[fill] {
+      fill: #1e293b !important;
+    }
+    .exam-print-root figure.exam-geometry-diagram svg text {
+      fill: #1e293b !important;
     }
     .exam-print-root .rounded-full.bg-primary {
       background-color: #1e3a5f !important;
@@ -334,70 +363,72 @@ export async function downloadElementAsPdf(element: HTMLElement, fileName: strin
       );
     }
 
-  /** 过长画布在个别浏览器会拒绝 toDataURL；略缩小再试 */
-  const maxSide = 8192;
-  let exportCanvas = canvas;
-  if (canvas.width > maxSide || canvas.height > maxSide) {
-    const r = Math.min(maxSide / canvas.width, maxSide / canvas.height, 1);
-    const scaled = document.createElement("canvas");
-    scaled.width = Math.floor(canvas.width * r);
-    scaled.height = Math.floor(canvas.height * r);
-    const ctx = scaled.getContext("2d");
-    if (!ctx) throw new Error("无法创建画布上下文");
-    ctx.fillStyle = PDF_EXPORT_PAGE_BG;
-    ctx.fillRect(0, 0, scaled.width, scaled.height);
-    ctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
-    exportCanvas = scaled;
-  }
+    /** 过长画布在个别浏览器会拒绝 toDataURL；略缩小再试 */
+    const maxSide = 8192;
+    let exportCanvas = canvas;
+    if (canvas.width > maxSide || canvas.height > maxSide) {
+      const r = Math.min(maxSide / canvas.width, maxSide / canvas.height, 1);
+      const scaled = document.createElement("canvas");
+      scaled.width = Math.floor(canvas.width * r);
+      scaled.height = Math.floor(canvas.height * r);
+      const ctx = scaled.getContext("2d");
+      if (!ctx) throw new Error("无法创建画布上下文");
+      ctx.fillStyle = PDF_EXPORT_PAGE_BG;
+      ctx.fillRect(0, 0, scaled.width, scaled.height);
+      ctx.drawImage(canvas, 0, 0, scaled.width, scaled.height);
+      exportCanvas = scaled;
+    }
 
-  /**
-   * jsPDF 嵌入超大 PNG 的 data URL 在部分浏览器会异常（空白页）；试卷导出统一用高质量 JPEG，兼容性最好。
-   */
-  let imgData: string;
-  const jpegQuality = 0.94;
-  try {
-    imgData = exportCanvas.toDataURL("image/jpeg", jpegQuality);
-    if (!imgData.startsWith("data:image/jpeg") || imgData.length < 500) {
-      throw new Error("jpeg_empty");
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    if (msg.includes("Tainted") || msg.includes("security")) {
-      throw new Error("页面含无法导出的跨域资源，请改用「打印」另存为 PDF");
-    }
+    /**
+     * jsPDF 嵌入超大 PNG 的 data URL 在部分浏览器会异常（空白页）；试卷导出统一用高质量 JPEG，兼容性最好。
+     */
+    let imgData: string;
+    const jpegQuality = 0.94;
     try {
-      imgData = exportCanvas.toDataURL("image/png");
-      if (!imgData.startsWith("data:image/png") || imgData.length < 500) {
-        throw new Error("png_empty");
+      imgData = exportCanvas.toDataURL("image/jpeg", jpegQuality);
+      if (!imgData.startsWith("data:image/jpeg") || imgData.length < 500) {
+        throw new Error("jpeg_empty");
       }
-    } catch (e2) {
-      throw new Error(
-        e2 instanceof Error ? e2.message : "无法生成图片数据，请改用「打印」另存为 PDF",
-      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (msg.includes("Tainted") || msg.includes("security")) {
+        throw new Error("页面含无法导出的跨域资源，请改用「打印」另存为 PDF");
+      }
+      try {
+        imgData = exportCanvas.toDataURL("image/png");
+        if (!imgData.startsWith("data:image/png") || imgData.length < 500) {
+          throw new Error("png_empty");
+        }
+      } catch (e2) {
+        throw new Error(
+          e2 instanceof Error ? e2.message : "无法生成图片数据，请改用「打印」另存为 PDF",
+        );
+      }
     }
-  }
 
-  const imageFormat = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
+    const imageFormat = imgData.startsWith("data:image/png") ? "PNG" : "JPEG";
 
-  const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const imgWidth = pageWidth;
-  const imgHeight = (exportCanvas.height * pageWidth) / exportCanvas.width;
-  let heightLeft = imgHeight;
-  let position = 0;
-  pdf.addImage(imgData, imageFormat, 0, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
-
-  while (heightLeft > 0) {
-    position = heightLeft - imgHeight;
-    pdf.addPage();
+    const pdf = new jsPDF({ orientation: "p", unit: "mm", format: "a4", compress: true });
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const imgWidth = pageWidth;
+    const imgHeight = (exportCanvas.height * pageWidth) / exportCanvas.width;
+    let heightLeft = imgHeight;
+    let position = 0;
     pdf.addImage(imgData, imageFormat, 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
-  }
 
-  const safe = fileName.replace(/[/\\?%*:|"<>]/g, "_").trim() || "试卷";
-  pdf.save(`${safe}.pdf`);
+    // @epl-ast-contract-allow ADR-O18 LEGACY raster snapshot PDF — migrate to negotiated projection (P3.3)
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight;
+      // @epl-ast-contract-allow ADR-O18 LEGACY heuristic addPage until lowerNegotiatedDocumentToPdfModel drives pages
+      pdf.addPage();
+      pdf.addImage(imgData, imageFormat, 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+    }
+
+    const safe = fileName.replace(/[/\\?%*:|"<>]/g, "_").trim() || "试卷";
+    pdf.save(`${safe}.pdf`);
   } finally {
     element.classList.remove(EXAM_SNAPSHOT_COMPACT_CLASS);
   }

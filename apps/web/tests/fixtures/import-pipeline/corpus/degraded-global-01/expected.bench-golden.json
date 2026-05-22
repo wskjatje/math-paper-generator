@@ -1,0 +1,24 @@
+{
+  "projection_version": 1,
+  "questions_total": 2,
+  "supply_state_counts": {
+    "materialized": 1,
+    "missing": 1
+  },
+  "materialized_rate_bps": 5000,
+  "registry_entries": 1,
+  "refs_bound_total": 1,
+  "provenance_artifacts": 1,
+  "linker_bound": 0,
+  "linker_skipped_already_bound": 0,
+  "timeline_phase_ok": {
+    "ocr_crop": 2,
+    "crop_persist": 2,
+    "markdown_reconcile": 2,
+    "raster_materialize": 1,
+    "registry_publish": 2,
+    "ownership_refs": 1,
+    "linker": 1,
+    "runtime_supply": 1
+  }
+}

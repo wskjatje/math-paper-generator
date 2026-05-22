@@ -1,0 +1,45 @@
+{
+  "exam": {
+    "id": "l3-ocr-no-crop",
+    "title": "L3 OCR 有框无落盘",
+    "subtitle": null,
+    "subjects": ["数学"],
+    "difficulty": "intermediate",
+    "duration_min": 60,
+    "total_score": 100,
+    "source": "imported",
+    "is_featured": false,
+    "description": "网关/OCR 产出裁图计划但未 persist；卷面无 raster/registry",
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "generation_duration_sec": null
+  },
+  "questions": [
+    {
+      "id": "l3-ocr-q5",
+      "exam_id": "l3-ocr-no-crop",
+      "order_index": 0,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "(5) 如图①，求△ABC的面积。",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 5
+    },
+    {
+      "id": "l3-ocr-q6",
+      "exam_id": "l3-ocr-no-crop",
+      "order_index": 1,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "(6) 见图②，证明结论。",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 5
+    }
+  ],
+  "examples": []
+}

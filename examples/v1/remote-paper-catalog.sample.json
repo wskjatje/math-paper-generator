@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "org-unique-id-per-paper",
+      "year": 2025,
+      "gradeId": "pri_g3_s1",
+      "subjectId": "math",
+      "paper_kind": "regular_final",
+      "title": "试卷在清单中的显示名称（请改为真实标题）",
+      "plainText": "在此粘贴您依法有权使用的完整卷面纯文本；或使用 textUrl 指向您托管的 UTF-8 文本文件（须足够长度以满足导入校验）。"
+    }
+  ]
+}

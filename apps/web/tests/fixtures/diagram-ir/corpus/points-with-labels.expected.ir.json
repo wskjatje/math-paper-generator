@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "source": "rule_geometry",
+  "primitives": [
+    {
+      "type": "point",
+      "id": "O",
+      "x": 50,
+      "y": 50,
+      "label": "O"
+    },
+    {
+      "type": "point",
+      "id": "P",
+      "x": 70,
+      "y": 30,
+      "label": "P"
+    },
+    {
+      "type": "line",
+      "from": "O",
+      "to": "P"
+    }
+  ],
+  "viewport": {
+    "width": 100,
+    "height": 100
+  },
+  "metadata": {
+    "diagram_schema_normalize": "v1_subset_points_segments",
+    "diagram_schema_layout_engine": "angle_copy_constraints_v1",
+    "normalizer_capabilities_version": 1
+  }
+}

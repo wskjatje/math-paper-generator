@@ -71,9 +71,7 @@ export function buildAutonomousLearningHints(input: {
       "【自主学习·强化】近期命题未通过校验的比例偏高：在调用 submit_exam 前请逐项自检：选择题 options 至少 4 条、多问 answer 与题干编号一致、方程类须在解析中体现代入验算。",
     );
   } else if (total >= 2 && failRate >= 0.2 && fc >= 2) {
-    lines.push(
-      "【自主学习】建议本题提交前对易错点做一次快速自检（选项条数、多问编号、空字段）。",
-    );
+    lines.push("【自主学习】建议本题提交前对易错点做一次快速自检（选项条数、多问编号、空字段）。");
   }
 
   if (streak >= 6) {

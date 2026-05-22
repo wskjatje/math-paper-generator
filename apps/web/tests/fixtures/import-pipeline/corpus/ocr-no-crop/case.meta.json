@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "case_id": "ocr-no-crop",
+  "taxonomy": "no_materialization",
+  "l3_real_world": true,
+  "detected_taxonomy_also": "no_materialization",
+  "expected_canonical_signals": [
+    "producer.crop_jobs_emitted>0",
+    "producer.crops_persisted=0",
+    "materialized_rate_bps=0",
+    "registry_entries=0",
+    "timeline.crop_persist=false"
+  ],
+  "intentional_drift": false,
+  "notes": "Producer 契约：OCR/裁图作业已计划（crop_jobs_emitted>0）但零落盘；与 recognition 成功解耦。典型场景：仅 OCR 默认、persist 失败、或 ocrOnly 路径。"
+}

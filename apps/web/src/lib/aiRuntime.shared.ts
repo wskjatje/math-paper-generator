@@ -23,7 +23,7 @@ export type AiRuntimePayload = {
 
 export const DEFAULT_CLOUD_MODEL = "google/gemini-2.5-pro";
 
-export type LocalModelResolvePurpose = "chat" | "exam";
+export type LocalModelResolvePurpose = "chat" | "exam" | "ocr_repair";
 
 export type LocalModelResolveOptions = {
   purpose: LocalModelResolvePurpose;
@@ -70,10 +70,27 @@ export function resolveLocalInferenceModel(
     return ai?.localModel?.trim();
   }
   const fallback = ai.localModel?.trim();
+  const map = ai.localSubjectModels;
+
+  if (resolve.purpose === "ocr_repair") {
+    const dedicated = map?.["ocr_repair"]?.trim();
+    if (dedicated) return dedicated;
+    const sidRaw = resolve.subjectId?.trim();
+    if (map && typeof map === "object" && sidRaw) {
+      const direct = map[sidRaw]?.trim();
+      if (direct) return direct;
+      const norm = normalizeSubjectIdForModelMap(sidRaw);
+      if (norm) {
+        const m2 = map[norm]?.trim();
+        if (m2) return m2;
+      }
+    }
+    return fallback;
+  }
+
   if (resolve.purpose === "chat") {
     return fallback;
   }
-  const map = ai.localSubjectModels;
   const sidRaw = resolve.subjectId?.trim();
   if (map && typeof map === "object" && sidRaw) {
     const direct = map[sidRaw]?.trim();

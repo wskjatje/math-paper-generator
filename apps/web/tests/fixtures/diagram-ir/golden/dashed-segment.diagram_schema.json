@@ -1,0 +1,10 @@
+{
+  "version": "1",
+  "meta": { "layout_engine": "square_chain_constraints_v1" },
+  "points": [
+    { "id": "E", "x": 10, "y": 40 },
+    { "id": "F", "x": 40, "y": 40 }
+  ],
+  "segments": [["E", "F"]],
+  "segments_dashed": [["E", "F"]]
+}

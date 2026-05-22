@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles, Library, Upload, Info, Settings } from "lucide-react";
+import { Sparkles, Library, Upload, Info, Settings, GraduationCap, Wrench } from "lucide-react";
 
 export function SiteHeader() {
   return (
@@ -32,6 +32,12 @@ export function SiteHeader() {
           </NavLink>
           <NavLink to="/offline-imports" icon={<Upload className="h-4 w-4" />}>
             导入线下卷
+          </NavLink>
+          <NavLink to="/education-os" icon={<GraduationCap className="h-4 w-4" />}>
+            教育 OS
+          </NavLink>
+          <NavLink to="/remediation-rules" icon={<Wrench className="h-4 w-4" />}>
+            修复管线
           </NavLink>
           <NavLink to="/settings" icon={<Settings className="h-4 w-4" />}>
             设置

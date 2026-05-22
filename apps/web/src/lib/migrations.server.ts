@@ -22,8 +22,12 @@ export async function readSortedMigrations(): Promise<MigrationFile[]> {
   const sqlFiles = names.filter((f) => f.endsWith(".sql")).sort();
   const out: MigrationFile[] = [];
   for (const name of sqlFiles) {
-    const sql = await readFile(path.join(migrationsDir(), name), "utf8");
-    out.push({ name, sql });
+    try {
+      const sql = await readFile(path.join(migrationsDir(), name), "utf8");
+      out.push({ name, sql });
+    } catch (e) {
+      console.warn(`[migrations] 跳过无法读取的文件: ${name}`, e);
+    }
   }
   return out;
 }

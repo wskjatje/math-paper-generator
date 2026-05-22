@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: formula-service
+  namespace: zhixue
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: formula-service
+  template:
+    metadata:
+      labels:
+        app: formula-service
+    spec:
+      containers:
+        - name: formula
+          image: zhixue/formula-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8102

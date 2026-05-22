@@ -13,7 +13,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { ExamCardActionRow, EXAM_CARD_ACTION_LABEL_CLASS } from "@/components/exam/ExamCardActionRow";
+import {
+  ExamCardActionRow,
+  EXAM_CARD_ACTION_LABEL_CLASS,
+} from "@/components/exam/ExamCardActionRow";
 import { ExampleGenerationJobQueueControl } from "@/components/generation/GenerationJobQueues";
 import { useExampleGenJobs } from "@/hooks/useGenerationJobs";
 import { Button } from "@/components/ui/button";
@@ -27,7 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fetchAiSettingsFromDb, getBackendCapabilities, listExams, softDeleteUserExam } from "@/lib/exam.functions.server";
+import {
+  fetchAiSettingsFromDb,
+  getBackendCapabilities,
+  listExams,
+  softDeleteUserExam,
+} from "@/lib/exam.functions.server";
 import { saveAiSettings } from "@/lib/aiSettingsStorage";
 import { syncExamStoragePreferenceToCookie } from "@/lib/examStoragePreference";
 import { examProvenance, userExamSoftDeletable } from "@/lib/examProvenance";
@@ -123,7 +131,7 @@ function Library() {
   const [diff, setDiff] = useState<Difficulty | "all">("all");
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
-  const [provenanceFilter, setProvenanceFilter] = useState<"all" | "generated" | "imported">("all");
+  const [provenanceFilter, setProvenanceFilter] = useState<"all" | "generated" | "curated">("all");
 
   useEffect(() => {
     writePageFilterSnapshot("library", {
@@ -310,7 +318,11 @@ function Library() {
               <RefreshCw className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
               刷新列表
             </Button>
-            <Button asChild size="sm" className="gap-1.5 bg-primary font-semibold tracking-wide text-primary-foreground shadow-sm">
+            <Button
+              asChild
+              size="sm"
+              className="gap-1.5 bg-primary font-semibold tracking-wide text-primary-foreground shadow-sm"
+            >
               <Link to="/generate">
                 <Sparkles className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
                 生成新试卷
@@ -347,14 +359,21 @@ function Library() {
               <select
                 value={provenanceFilter}
                 onChange={(e) =>
-                  setProvenanceFilter(e.target.value as "all" | "generated" | "imported")
+                  setProvenanceFilter(e.target.value as "all" | "generated" | "curated")
                 }
                 className={SELECT_FIELD}
               >
-                <option value="all">全部</option>
+                <option value="all">全部（不含线下导入）</option>
                 <option value="generated">AI 命题</option>
-                <option value="imported">线下导入</option>
+                <option value="curated">精选 / 演示</option>
               </select>
+              <p className="text-[11px] text-muted-foreground">
+                线下导入卷请至{" "}
+                <Link to="/offline-imports" className="text-primary hover:underline">
+                  导入线下卷
+                </Link>
+                。
+              </p>
             </label>
             <label className="block min-w-[11rem] flex-1 space-y-1.5">
               <span className="text-xs text-muted-foreground">年级</span>
@@ -413,8 +432,7 @@ function Library() {
                   persistEnabled === true && types.length > 0 && e.storage_source !== "project";
 
                 const exampleJobPending = exampleGenJobs.find(
-                  (j) =>
-                    j.examId === e.id && (j.status === "queued" || j.status === "running"),
+                  (j) => j.examId === e.id && (j.status === "queued" || j.status === "running"),
                 );
                 const isExampleJobBusy = Boolean(exampleJobPending);
 
@@ -544,9 +562,7 @@ function Library() {
                                   aria-hidden
                                 />
                                 <span className={cn(EXAM_CARD_ACTION_LABEL_CLASS, "truncate")}>
-                                  {exampleJobPending?.status === "queued"
-                                    ? "排队中…"
-                                    : "生成中…"}
+                                  {exampleJobPending?.status === "queued" ? "排队中…" : "生成中…"}
                                 </span>
                               </>
                             ) : (
@@ -654,11 +670,7 @@ function Library() {
             </div>
           )}
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setExamplesExam(null)}
-            >
+            <Button type="button" variant="outline" onClick={() => setExamplesExam(null)}>
               取消
             </Button>
             <Button type="button" onClick={() => submitExamples()}>

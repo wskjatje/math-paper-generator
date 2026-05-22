@@ -1,6 +1,6 @@
 /**
  * 试卷库列表合并逻辑（云端 + 本地 + 内置演示卷），与存储偏好组合。
- * 读路径集中，便于将来替换为统一 ExamCatalogRepository。
+ * `auto` 且已配 Supabase：`仓库演示卷 ∪ 本地 data/local-exams ∪ 云端 exams`，同 id **云端覆盖**。
  */
 import { getSupabaseAdmin } from "@/lib/supabaseOptional.server";
 import {
@@ -16,8 +16,26 @@ import type { RowDataPacket } from "mysql2";
 import type { Exam } from "@/lib/types";
 import { libraryQuestionTypeSources } from "@/lib/examStorage/policy.server";
 
-function excludeStagingImports(exams: Exam[]): Exam[] {
-  return exams.filter((e) => e.import_review_status !== "staging");
+export type ExamListScope = "library" | "offline-imports";
+
+/** 试卷库 vs 线下导入列表的可见性策略（与 `source` / `import_review_status` 配合） */
+export function applyExamListScope(
+  exams: Exam[],
+  scope: ExamListScope,
+  includeStaging: boolean,
+): Exam[] {
+  if (scope === "offline-imports") {
+    return exams.filter((e) => {
+      if (e.source !== "imported") return false;
+      if (!includeStaging && e.import_review_status === "staging") return false;
+      return true;
+    });
+  }
+  return exams.filter((e) => {
+    if (e.source === "imported") return false;
+    if (!includeStaging && e.import_review_status === "staging") return false;
+    return true;
+  });
 }
 
 /** 按题目顺序聚合题型，同一题型首次出现时保留顺序 */
@@ -93,10 +111,20 @@ async function enrichExamsWithHasExamples(exams: Exam[]): Promise<Exam[]> {
 
 /** 设置页「试卷库列表」数据源：合并云端与本地并按偏好筛选 */
 export async function listExamsForLibrary(options?: {
-  /** true 时保留 import_review_status=staging（供导入页“待确认”标签） */
+  /**
+   * `library`（默认）：命题/演示卷，**不含** `source=imported`。
+   * `offline-imports`：仅线下导入卷（可含 staging）。
+   */
+  scope?: ExamListScope;
+  /** 仅 `scope=offline-imports` 时有效：false 则只列已确认卷 */
   includeStaging?: boolean;
 }): Promise<{ exams: Exam[] }> {
+  const scope = options?.scope ?? "library";
   const includeStaging = options?.includeStaging === true;
+
+  function scoped(exams: Exam[]): Exam[] {
+    return applyExamListScope(exams, scope, includeStaging);
+  }
   const pref = getExamStoragePreferenceFromRequest();
   const localsRaw = await listLocalExamRows();
   const db = getSupabaseAdmin();
@@ -110,31 +138,27 @@ export async function listExamsForLibrary(options?: {
     const byId = new Map<string, Exam>();
     for (const e of projectRows) byId.set(e.id, e);
     for (const e of locals) byId.set(e.id, e);
-    const merged = (
-      includeStaging ? [...byId.values()] : excludeStagingImports([...byId.values()])
-    ).sort(sortDesc);
+    const merged = scoped([...byId.values()]).sort(sortDesc);
     return { exams: await enrichExamsWithHasExamples(merged) };
   }
 
   if (pref === "local") {
     const locals = localsRaw.map((e) => ({ ...e, storage_source: "local" as const }));
-    const merged = (includeStaging ? [...locals] : excludeStagingImports([...locals])).sort(
-      sortDesc,
-    );
+    const merged = scoped([...locals]).sort(sortDesc);
     return { exams: await enrichExamsWithHasExamples(merged) };
   }
 
   if (!db) {
     if (await usesUnifiedMysqlDataPlane()) {
-      const mysqlRows = await listMysqlExamRows({ includeStaging });
+      const mysqlRows = await listMysqlExamRows({
+        includeStaging: scope === "offline-imports" && includeStaging,
+      });
       const mysql = mysqlRows.map((e) => ({ ...e, storage_source: "mysql" as const }));
-      const merged = (includeStaging ? mysql : excludeStagingImports(mysql)).sort(sortDesc);
+      const merged = scoped(mysql).sort(sortDesc);
       return { exams: await enrichExamsWithHasExamples(merged) };
     }
     const locals = localsRaw.map((e) => ({ ...e, storage_source: "local" as const }));
-    const merged = (includeStaging ? [...locals] : excludeStagingImports([...locals])).sort(
-      sortDesc,
-    );
+    const merged = scoped([...locals]).sort(sortDesc);
     return { exams: await enrichExamsWithHasExamples(merged) };
   }
 
@@ -182,19 +206,23 @@ export async function listExamsForLibrary(options?: {
   }));
 
   if (pref === "supabase") {
-    const merged = (
-      includeStaging ? [...remoteEnriched] : excludeStagingImports([...remoteEnriched])
-    ).sort(sortDesc);
+    const merged = scoped([...remoteEnriched]).sort(sortDesc);
     return { exams: await enrichExamsWithHasExamples(merged) };
   }
 
-  const remoteIds = new Set(remote.map((e) => e.id));
-  const localOnly = localsRaw
-    .filter((e) => !remoteIds.has(e.id))
-    .map((e) => ({ ...e, storage_source: "local" as const }));
-
-  const all = [...remoteEnriched, ...localOnly];
-  const merged = (includeStaging ? all : excludeStagingImports(all)).sort(sortDesc);
+  const projectRows = listProjectExamSummaries();
+  const byId = new Map<string, Exam>();
+  for (const e of projectRows) {
+    byId.set(e.id, { ...e, storage_source: "project" });
+  }
+  for (const e of localsRaw) {
+    byId.set(e.id, { ...e, storage_source: "local" });
+  }
+  for (const e of remoteEnriched) {
+    byId.set(e.id, e);
+  }
+  const all = [...byId.values()];
+  const merged = scoped(all).sort(sortDesc);
 
   return { exams: await enrichExamsWithHasExamples(merged) };
 }
@@ -214,7 +242,7 @@ export async function collectLibraryQuestionTypes(): Promise<Set<string>> {
     }
     const locals = await listLocalExamRows();
     for (const exam of locals) {
-      if (exam.import_review_status === "staging") continue;
+      if (exam.source === "imported" || exam.import_review_status === "staging") continue;
       const snap = await loadLocalExam(exam.id);
       if (!snap?.questions?.length) continue;
       for (const q of snap.questions) {
@@ -234,13 +262,15 @@ export async function collectLibraryQuestionTypes(): Promise<Set<string>> {
   if (includeCloud && db) {
     const { data: examRows, error: exErr } = await db
       .from("exams")
-      .select("id, import_review_status")
+      .select("id, import_review_status, source")
       .is("deleted_at", null);
     if (!exErr && examRows?.length) {
       const ids = examRows
-        .filter(
-          (r) => (r as { import_review_status?: string | null }).import_review_status !== "staging",
-        )
+        .filter((r) => {
+          const row = r as { import_review_status?: string | null; source?: string | null };
+          if (row.source === "imported") return false;
+          return row.import_review_status !== "staging";
+        })
         .map((r) => r.id as string);
       const { data: qRows, error: qErr } = await db
         .from("questions")
@@ -264,6 +294,7 @@ export async function collectLibraryQuestionTypes(): Promise<Set<string>> {
            FROM questions q
            INNER JOIN exams e ON e.id = q.exam_id
            WHERE e.deleted_at IS NULL
+             AND e.source <> 'imported'
              AND IFNULL(e.import_review_status, '') <> 'staging'
              AND q.type IS NOT NULL AND TRIM(q.type) <> ''`,
         );
@@ -280,7 +311,7 @@ export async function collectLibraryQuestionTypes(): Promise<Set<string>> {
   if (includeLocal) {
     const locals = await listLocalExamRows();
     for (const exam of locals) {
-      if (exam.import_review_status === "staging") continue;
+      if (exam.source === "imported" || exam.import_review_status === "staging") continue;
       const snap = await loadLocalExam(exam.id);
       if (!snap?.questions?.length) continue;
       for (const q of snap.questions) {

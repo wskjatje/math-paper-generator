@@ -1,0 +1,51 @@
+{
+  "exam": {
+    "id": "corpus-exam-degraded-01",
+    "title": "corpus",
+    "subtitle": null,
+    "subjects": ["数学"],
+    "difficulty": "intermediate",
+    "duration_min": 60,
+    "total_score": 100,
+    "source": "imported",
+    "is_featured": false,
+    "description": null,
+    "created_at": "2026-01-15T00:00:00.000Z",
+    "generation_duration_sec": null
+  },
+  "questions": [
+    {
+      "id": "corpus-q-degraded-a",
+      "exam_id": "corpus-exam-degraded-01",
+      "order_index": 0,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "题1",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 10,
+      "raster_figures": {
+        "version": 1,
+        "stem": ["https://corpus.test/only-a-图①.png"],
+        "by_option": {}
+      }
+    },
+    {
+      "id": "corpus-q-degraded-b",
+      "exam_id": "corpus-exam-degraded-01",
+      "order_index": 1,
+      "type": "short_answer",
+      "subject": "数学",
+      "content": "如图①",
+      "options": null,
+      "answer": "",
+      "solution_steps": [],
+      "knowledge_tags": [],
+      "points": 10,
+      "raster_figures": { "version": 1, "stem": [], "by_option": {} }
+    }
+  ],
+  "examples": []
+}

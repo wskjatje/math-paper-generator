@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AgentTaskResponse",
+  "type": "object",
+  "required": ["ok", "messages"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "task": { "type": "string" },
+    "messages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": { "type": "string", "enum": ["system", "user", "assistant", "tool"] },
+          "content": { "type": "string" }
+        }
+      }
+    },
+    "tool_calls": { "type": "array" },
+    "meta": { "type": "object" }
+  }
+}
