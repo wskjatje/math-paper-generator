@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-01T00:00:00.000Z",
+  "textbooks": [
+    {
+      "id": "pep-math-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）七年级上册",
+      "units": [
+        { "id": "u1", "label": "有理数" },
+        { "id": "u2", "label": "整式的加减" },
+        { "id": "u3", "label": "一元一次方程" },
+        { "id": "u4", "label": "几何图形初步" }
+      ]
+    }
+  ]
+}
