@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 
 import { EducationalAstNodeRenderer } from "@/components/education/EducationalAstNodeRenderer";
 import { EducationalPackingDebugLegend } from "@/components/education/EducationalPackingDebugLegend";
 import { EducationalSectionCompositor } from "@/components/education/EducationalSectionCompositor";
+import { PAPER_SURFACE_LAYOUT } from "@/config/examDomain";
 import {
   composeEducationalDocument,
   composedGroupsForSection,
@@ -20,7 +21,7 @@ type Props = {
   showForensic?: boolean;
   /** Composition runtime viewport（Web 默认 desktop_paper） */
   viewportProfile?: CompositionViewportProfileV1;
-  /** Train 3 stabilization：`?packing_debug=1` / DEV；非 telemetry */
+  /** Train 3 stabilization：仅 `?packing_debug=1`；非 telemetry */
   showPackingDebug?: boolean;
   onFigureDecodeFailed?: () => void;
 };
@@ -47,13 +48,18 @@ export function EducationalDocumentRenderer({
     ? ast.nodes
     : ast.nodes.filter((n) => n.type !== "forensic_banner");
 
+  const stackStyle = {
+    gap: `${PAPER_SURFACE_LAYOUT.eplBlockStackGapRem}rem`,
+  } satisfies CSSProperties;
+
   return (
     <div
       className={cn(
         "math-paper-render rounded-lg border border-border/80 bg-card px-4 py-4 shadow-sm",
-        "font-serif max-w-none space-y-3",
+        "font-serif max-w-none flex flex-col",
         className,
       )}
+      style={stackStyle}
       data-epl-runtime={ast.runtime}
       data-epl-schema={ast.version}
       data-epl-derived-from={ast.derived_from}

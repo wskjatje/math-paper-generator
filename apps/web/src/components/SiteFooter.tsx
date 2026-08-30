@@ -1,15 +1,9 @@
 export function SiteFooter() {
   return (
-    <footer className="no-print mt-24 border-t border-border/60 bg-parchment/40">
-      <div className="container mx-auto px-4 py-10 text-sm text-muted-foreground">
-        <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-          <div>
-            <div className="text-display text-foreground text-lg">知学 · Zhixue</div>
-            <p className="mt-1 max-w-md">
-              开源、可验证、可下载的竞赛与奥数试题档案库。所有题目均含分步推导。
-            </p>
-          </div>
-        </div>
+    <footer className="no-print shrink-0 border-t border-border/60 bg-background/90 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
+      <div className="mx-auto flex w-full max-w-[min(100%,1400px)] items-center gap-3 px-4 py-2 text-xs text-muted-foreground sm:px-6 lg:px-8">
+        <span className="font-medium text-foreground">知学 · Zhixue</span>
+        <span className="truncate">教师与学生在线学习系统</span>
       </div>
     </footer>
   );

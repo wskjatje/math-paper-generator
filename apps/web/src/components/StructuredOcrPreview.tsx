@@ -9,8 +9,7 @@ export function StructuredOcrPreview({ chunks }: { chunks: StructuredOcrChunk[] 
   return (
     <div className="space-y-2 rounded-md border border-border bg-muted/20 px-3 py-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-medium text-foreground">结构化 OCR 预览</span>
-        <span className="text-[11px] text-muted-foreground">版面 / 公式 / 几何标注后的 JSON</span>
+        <span className="text-xs font-medium text-foreground">结构化识图预览</span>
       </div>
       <div className="space-y-1.5">
         {chunks.map(({ filename, result }, idx) => {

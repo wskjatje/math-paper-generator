@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 296 192" width="296" height="192">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="296" height="192" fill="#fff"/>
+  <line x1="40" y1="40" x2="160" y2="40" stroke="#0f172a" stroke-width="2"/>
+  <line x1="160" y1="40" x2="160" y2="160" stroke="#0f172a" stroke-width="2"/>
+  <line x1="160" y1="160" x2="40" y2="160" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="160" x2="40" y2="40" stroke="#0f172a" stroke-width="2"/>
+  <line x1="184" y1="80" x2="264" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <line x1="264" y1="80" x2="264" y2="160" stroke="#0f172a" stroke-width="2"/>
+  <line x1="264" y1="160" x2="184" y2="160" stroke="#0f172a" stroke-width="2"/>
+  <line x1="184" y1="160" x2="184" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="40" cy="40" r="3.2" fill="#0f172a"/>
+  <circle cx="160" cy="40" r="3.2" fill="#0f172a"/>
+  <circle cx="160" cy="160" r="3.2" fill="#0f172a"/>
+  <circle cx="40" cy="160" r="3.2" fill="#0f172a"/>
+  <text x="82" y="32" font-size="13" font-family="serif" fill="#0f172a">12</text>
+  <text x="204" y="72" font-size="13" font-family="serif" fill="#0f172a">8</text>
+</svg>

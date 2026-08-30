@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="24 54 282 182" width="282" height="182">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="24" y="54" width="282" height="182" fill="#fff"/>
+  <polygon points="60,200 220,200 270,90 110,90" fill="none" stroke="#0f172a" stroke-width="2"/>
+  <line x1="60" y1="200" x2="220" y2="200" stroke="#0f172a" stroke-width="2"/>
+  <line x1="220" y1="200" x2="270" y2="90" stroke="#0f172a" stroke-width="2"/>
+  <line x1="270" y1="90" x2="110" y2="90" stroke="#0f172a" stroke-width="2"/>
+  <line x1="110" y1="90" x2="60" y2="200" stroke="#0f172a" stroke-width="2"/>
+  <line x1="60" y1="200" x2="270" y2="90" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="82.5" y1="150.5" x2="242.5" y2="150.5" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="132" y1="200" x2="182" y2="90" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <circle cx="60" cy="200" r="3.2" fill="#0f172a"/>
+  <text x="49" y="189" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">A</text>
+  <circle cx="220" cy="200" r="3.2" fill="#0f172a"/>
+  <text x="209" y="189" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">B</text>
+  <circle cx="270" cy="90" r="3.2" fill="#0f172a"/>
+  <text x="259" y="79" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">C</text>
+  <circle cx="110" cy="90" r="3.2" fill="#0f172a"/>
+  <text x="99" y="79" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">D</text>
+  <circle cx="154.5" cy="150.5" r="3.2" fill="#0f172a"/>
+  <text x="143.5" y="139.5" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">O</text>
+</svg>

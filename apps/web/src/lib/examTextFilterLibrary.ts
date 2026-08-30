@@ -30,6 +30,21 @@ export {
   sanitizeExamMathDisplay,
   stripExamUiNoiseForPlainExport,
   repairScientificNotationAndChemistryOcr,
+  repairMalformedMhchemCe,
+  expandMhchemCeToPlainKatex,
+  unwrapFormulaLikeTextCommands,
+  normalizeStoichiometryEscapedUnderscores,
+  mergeLetterParenInlineMath,
+  normalizeSpacedMathDelimiters,
+  unwrapOverEscapedMarkdown,
+  normalizeEmptyMarkdownFences,
+  demoteEmbeddedDisplayMath,
+  collapseStemExtraBlankLines,
+  joinOrphanMathLines,
+  tightenStemBlankLines,
+  normalizeLatexDelimitersToDollar,
+  normalizeMalformedMarkdownImages,
+  normalizeExplicitMultiplyDisplay,
 } from "@/lib/sanitizeExamMathDisplay";
 
 export { EXAM_MATH_BUILTIN_LIBRARY_RULES } from "@/lib/examMathRepairLibrary.shared";

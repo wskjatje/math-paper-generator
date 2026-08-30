@@ -1,5 +1,6 @@
 @import "tailwindcss" source(none);
-@source "../src";
+/* 相对本文件扫描 apps/web/src，避免误扫仓库根 leftover */
+@source ".";
 @import "tw-animate-css";
 @import "katex/dist/katex.min.css";
 
@@ -51,9 +52,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --font-serif: "Cormorant Garamond", "Source Han Serif SC", "Songti SC", Georgia, serif;
-  --font-sans: "Inter", "PingFang SC", "Hiragino Sans GB", system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  /* 优先本机中文字体，避免依赖外网 Google Fonts */
+  --font-serif: "Songti SC", "Source Han Serif SC", "Noto Serif SC", "STSong", Georgia, serif;
+  --font-sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
 
   --shadow-paper: 0 1px 2px oklch(0.2 0.04 250 / 0.06), 0 8px 24px -12px oklch(0.2 0.04 250 / 0.12);
   --shadow-elevated:
@@ -214,18 +216,49 @@
   filter: sepia(0.14) saturate(0.88) hue-rotate(12deg) brightness(1.14) contrast(1.04);
 }
 
-/* Print styles for PDF export（正式卷面：A4、边距、隐藏站内导航等已由 .no-print 处理） */
+
+/* 屏幕下隐藏打印页眉页脚占位 */
+.exam-print-chrome {
+  display: none;
+}
+
+  /* Print styles for PDF export（正式卷面：A4；页边距放在卷面内，@page 置 0 以尽量去掉浏览器页眉页脚占位） */
 @media print {
   @page {
     size: A4 portrait;
-    margin: 10mm 12mm;
+    /* 边距为 0：浏览器「页眉和页脚」若仍勾选会挤进内容区；导出流程会清空 document.title，并提示取消勾选 */
+    margin: 0;
   }
 
+  /*
+   * 关键：屏幕壳是 h-svh + overflow-hidden + main 内滚动。
+   * 打印若不解开，Chromium/WebKit 会按视口高度裁切，长卷只剩 1～2 页且题卡拦腰切断。
+   */
+  html,
   body {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
     background: white !important;
     background-image: none !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  .app-chrome-shell {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .app-chrome-main {
+    display: block !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    flex: none !important;
   }
 
   .no-print {
@@ -246,6 +279,10 @@
     color: #111 !important;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow: visible !important;
+    /* 承接原 @page 边距，避免零页边后贴纸边 */
+    padding: 10mm 12mm !important;
+    box-sizing: border-box !important;
   }
 
   /* 标准卷面打印模板：版心、题区间距（与「紧凑快照」类并存时，后者仍靠后覆盖） */
@@ -257,11 +294,6 @@
 
   .exam-print-root.exam-print-root--paper-cn .space-y-8 > * + * {
     margin-top: 0.75rem !important;
-  }
-
-  .exam-print-root.exam-print-root--paper-cn article.paper-card {
-    page-break-inside: avoid;
-    break-inside: avoid;
   }
 
   /* 导出试卷 PDF：隐藏页面下方的「同型例题」整块（由脚本设置 data-print-scope="paper"） */
@@ -337,6 +369,18 @@
 
   .exam-print-root article.paper-card {
     padding: 0.5rem 0.65rem !important;
+    /* 允许跨页；avoid 会在题卡高于剩余页高时留下大片空白并裁切题头 */
+    break-inside: auto !important;
+    page-break-inside: auto !important;
+  }
+
+  /*
+   * 屏幕阅读流用 break-inside: avoid 防「题干与图拆页」；
+   * 打印长卷若整簇高于一页，avoid 会导致空白+拦腰切断，故打印放宽。
+   */
+  .exam-print-root .math-paper-cognitive-group,
+  .exam-print-root .math-paper-question-cluster,
+  .exam-print-root .math-paper-subquestion-cluster {
     break-inside: auto !important;
     page-break-inside: auto !important;
   }
@@ -366,6 +410,31 @@
     row-gap: 0.2rem !important;
   }
 
+  /* 并排：选项左、图右；间距由 --exam-figure-choices-gap / inline style 控制 */
+  .exam-print-root .exam-figure-choices--beside {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: var(--exam-figure-choices-gap, 0.75rem) !important;
+  }
+
+  .exam-print-root .exam-figure-choices--beside > :first-child {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+  }
+
+  .exam-print-root .exam-figure-choices--beside > :last-child {
+    flex: 0 0 auto !important;
+    max-width: 46% !important;
+  }
+
+  .exam-print-root .exam-figure-choices--stacked {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--exam-figure-choices-gap, 0.5rem) !important;
+  }
+
   details {
     display: block !important;
   }
@@ -391,6 +460,94 @@
 
   .exam-print-root .katex-display {
     margin: 0.35em 0 !important;
+  }
+
+  .paper-tpl-zh-junior-math-2col .exam-choice-options {
+    column-count: 2;
+    column-gap: 1.5rem;
+  }
+
+  .paper-tpl-zh-junior-math .exam-section-header,
+  .paper-tpl-zh-junior-math-2col .exam-section-header {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .exam-section-header {
+    break-after: avoid;
+    page-break-after: avoid;
+    margin-bottom: 0.35rem;
+    border-bottom: none;
+  }
+
+  .exam-section-header.border-b {
+    border-bottom-style: solid;
+  }
+
+  .exam-paper-section {
+    break-inside: auto;
+  }
+
+  /* 打印页眉页脚（ExamPrintChrome + counter） */
+  .exam-print-chrome {
+    display: block;
+  }
+
+  .exam-print-chrome-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    padding: 4mm 12mm 2mm;
+    border-bottom: 0.3pt solid #ccc;
+    background: white;
+    font-size: 10px;
+    color: #333;
+    text-align: center;
+    z-index: 9999;
+  }
+
+  .exam-print-chrome-header-title {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .exam-print-chrome-header-sub {
+    margin-top: 1mm;
+    font-style: italic;
+    color: #555;
+  }
+
+  .exam-print-chrome-header-meta {
+    margin-top: 1mm;
+    font-size: 9px;
+    color: #666;
+  }
+
+  .exam-print-chrome-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 2mm 12mm 4mm;
+    border-top: 0.3pt solid #ccc;
+    background: white;
+    text-align: center;
+    font-size: 9px;
+    color: #444;
+    z-index: 9999;
+  }
+
+  .exam-print-chrome-footer::after {
+    content: "第 " counter(page) " 页（共 " counter(pages) " 页）";
+  }
+
+  .exam-print-root:has(.exam-print-chrome-header) {
+    padding-top: 18mm !important;
+  }
+
+  .exam-print-root:has(.exam-print-chrome-footer) {
+    padding-bottom: 14mm !important;
   }
 }
 
@@ -505,6 +662,63 @@
 /* KaTeX small tweak so display math has comfortable spacing */
 .katex-display {
   margin: 0.6em 0 !important;
+}
+
+/* 卷面：题号 + 题干 + 分值同一行流式排版（对齐纸质卷） */
+.exam-q-stem-flow {
+  display: block;
+  line-height: 1.8;
+}
+.exam-q-stem-flow > .exam-q-index,
+.exam-q-stem-flow > .exam-q-points {
+  display: inline;
+  vertical-align: baseline;
+}
+
+/* 卷面题干密度：间距来自 paperSurfaceLayout CSS 变量（MathContent 注入） */
+.exam-math-paper-body p {
+  margin-top: var(--exam-md-p-my, 0.3rem);
+  margin-bottom: var(--exam-md-p-my, 0.3rem);
+}
+.exam-math-paper-body .katex-display {
+  margin-top: var(--exam-md-display-my, 0.2rem) !important;
+  margin-bottom: var(--exam-md-display-my, 0.2rem) !important;
+}
+
+/* 标签段：仅正文缩进，无背景/竖条（变量来自 paperSurfaceLayout） */
+.exam-stem-labeled-section {
+  margin-top: var(--exam-labeled-block-gap, 0.25rem);
+}
+.exam-stem-labeled-section:first-child {
+  margin-top: 0;
+}
+.exam-stem-labeled-section__label {
+  font-weight: 600;
+}
+.exam-stem-labeled-section__label p {
+  margin-top: 0;
+  margin-bottom: var(--exam-labeled-label-gap, 0.05rem);
+}
+.exam-stem-labeled-section__body {
+  padding-left: var(--exam-labeled-indent, 1.5rem);
+  padding-right: var(--exam-labeled-pad-x, 0);
+  padding-top: var(--exam-labeled-pad-y, 0);
+  padding-bottom: var(--exam-labeled-pad-y, 0);
+  border: none;
+  background: transparent;
+}
+.exam-stem-labeled-section__body > .exam-math-paper-body {
+  margin: 0;
+}
+.exam-stem-labeled-section__body .exam-math-paper-body p {
+  margin-top: 0.1rem;
+  margin-bottom: 0.1rem;
+}
+.exam-stem-labeled-section__body .exam-math-paper-body p:first-child {
+  margin-top: 0;
+}
+.exam-stem-labeled-section__body .exam-math-paper-body p:last-child {
+  margin-bottom: 0;
 }
 
 /* EPL — Educational Typography Runtime (P2.3.1) */

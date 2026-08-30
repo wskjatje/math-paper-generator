@@ -43,6 +43,21 @@ describe("questionRendererPolicy.shared", () => {
     expect(shouldWithholdMcqAnswerForMissingRasterFigures(q)).toBe(false);
   });
 
+  it("已有 /figures/ 生成题图时不黄框、不藏答案（缺原卷扫描仍可另导入）", () => {
+    const q = baseMcq({
+      attachments: [
+        {
+          kind: "figure",
+          uri: "/figures/e1/q-1-abcd1234.svg",
+          alt: "按题干生成的题图",
+          role: "derived_diagram",
+        },
+      ],
+    });
+    expect(shouldShowMissingRasterCallout(q)).toBe(false);
+    expect(shouldWithholdMcqAnswerForMissingRasterFigures(q)).toBe(false);
+  });
+
   it("does not withhold for non-MCQ", () => {
     const q = baseMcq({ type: "fill_blank", options: null });
     expect(shouldWithholdMcqAnswerForMissingRasterFigures(q as Question)).toBe(false);

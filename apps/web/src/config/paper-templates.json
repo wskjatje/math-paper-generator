@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "defaultTemplateId": "zh-standard-single",
+  "templates": [
+    {
+      "id": "zh-standard-single",
+      "label": "标准单栏（默认）",
+      "printClassName": "paper-tpl-zh-single",
+      "columns": 1,
+      "showSectionHeaders": true,
+      "showPageFooter": false
+    },
+    {
+      "id": "zh-junior-math-exam",
+      "label": "中国初中数学卷（分大题 + 页脚）",
+      "printClassName": "paper-tpl-zh-junior-math",
+      "columns": 1,
+      "showSectionHeaders": true,
+      "showPageFooter": true,
+      "footerPattern": "第 {{page}} 页（共 {{pages}} 页）"
+    },
+    {
+      "id": "zh-junior-math-two-col",
+      "label": "中国初中数学卷（双栏选项）",
+      "printClassName": "paper-tpl-zh-junior-math-2col",
+      "columns": 2,
+      "showSectionHeaders": true,
+      "showPageFooter": true,
+      "footerPattern": "第 {{page}} 页（共 {{pages}} 页）"
+    }
+  ]
+}

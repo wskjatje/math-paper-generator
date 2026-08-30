@@ -14,13 +14,23 @@ import {
   generateExamplesForExam,
   generateExamplesForQuestionSet,
   listLocalInferenceModels,
+  persistGeneratedExamBundleToSupabase,
   probeAiRuntime,
-  probeSubmitExamToolCall,
+  recoverExamBundleFromStoredDraft,
+  recoverImportedParsedFromStoredDraft,
   runImportDocumentAiGeneration,
   runImportDocumentAiGenerationPerQuestion,
   syncChatContextToModel,
   type GenerationConfig,
 } from "@/lib/exam-generation.server";
+import {
+  deleteGenerationDraft,
+  hasGenerationDraft,
+  readGenerationDraft,
+  saveGenerationDraft,
+  type GenerationDraftPhase,
+} from "@/lib/generationDraft.server";
+import { IMPORT_DEFAULTS } from "@/config/examDomain";
 import { fillGeometryDiagramsForSnapshot } from "@/lib/geometryDiagramInference.server";
 import { applyExamRemediationPipelineToSnapshot } from "@/lib/examRemediationPipeline.server";
 import {
@@ -76,12 +86,7 @@ import {
 } from "@/lib/examStorage/mysqlExamStore.server";
 import { importExamSnapshotFromJsonString } from "@/lib/examImport.server";
 import { persistImportedBundle } from "@/lib/examStorage/persistImported.server";
-import {
-  fetchUtf8PlainTextFromHttpUrl,
-  loadMergedRemotePaperCatalog,
-  resolveCatalogEntryById,
-  resolvePlainTextForCatalogEntry,
-} from "@/lib/remotePaperCatalog.server";
+import { fetchUtf8PlainTextFromHttpUrl } from "@/lib/remotePaperCatalog.server";
 import { confirmStagingImportedExam } from "@/lib/examStorage/promoteImportReview.server";
 import {
   getWebSearchCapabilities,
@@ -112,7 +117,7 @@ import {
   type QuestionType,
 } from "@/lib/types";
 import {
-  competitionFocusOptions,
+  competitionFocusOptionsForGrade,
   EXAM_TRACK_ID_SET,
   EXAM_TRACK_ZOD_ENUM,
   isCompetitionUnrestricted,
@@ -123,6 +128,10 @@ import {
   type ExamTrackId,
 } from "@/lib/generateCatalog";
 import { mergePartialAiSettings, type AiSettingsForm } from "@/lib/aiSettingsStorage";
+import {
+  loadWorkspaceAiSettings,
+  saveWorkspaceAiSettings,
+} from "@/lib/aiSettingsStore.server";
 import type { Json } from "@/integrations/supabase/types";
 import { SESSION_EXAM_ID_PREFIX, type SessionExamSnapshot } from "@/lib/examSession";
 import { parseOfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
@@ -191,15 +200,18 @@ const SessionExamSnapshotSchema = z.object({
   offline_import_media: OfflineImportPersistedMediaSchema.optional().nullable(),
 });
 
-const AiRuntimeSchema = z.object({
-  mode: z.enum(["cloud", "local"]),
-  cloudModel: z.string().max(200).optional(),
-  localBaseUrl: z.string().max(500).optional(),
-  localModel: z.string().max(200).optional(),
-  localChatModel: z.string().max(200).optional(),
-  localSubjectModels: z.record(z.string().max(80), z.string().max(200)).optional(),
-  localApiKey: z.string().max(500).optional(),
-});
+/** passthrough：保留模型目录等扩展字段，避免 Zod 推断与 AiRuntimePayload 冲突 */
+const AiRuntimeSchema = z
+  .object({
+    mode: z.enum(["cloud", "local"]),
+    cloudModel: z.string().max(200).optional(),
+    localBaseUrl: z.string().max(500).optional(),
+    localModel: z.string().max(200).optional(),
+    localChatModel: z.string().max(200).optional(),
+    localSubjectModels: z.record(z.string().max(80), z.string().max(200)).optional(),
+    localApiKey: z.string().max(500).optional(),
+  })
+  .passthrough();
 
 const PAPER_KIND_IDS = [
   "regular_daily",
@@ -235,6 +247,8 @@ const GenerateSchema = z
     target_track_id: z.string().max(80).optional().nullable(),
     /** 校内同步：教材版本 / 教参说明（可选） */
     textbook_edition_hint: z.string().max(80).optional(),
+    /** 校内同步：教材目录单元 id（可选） */
+    textbook_unit_ids: z.array(z.string().min(1).max(120)).max(80).optional(),
     /** 校内同步：单元 / 章节 / 课时侧重（可选） */
     chapter_focus: z.string().max(800).optional(),
     /** 日常 / 单元 / 期末 / 校～省竞赛 / 奥赛等；入库标签「试卷场景」 */
@@ -248,6 +262,11 @@ const GenerateSchema = z
     competition_focus: z.array(z.string().max(80)).max(24).default([]),
     /** true：可与题库中已出现的题型重复；false：题型组成中不得包含题库已有题型 */
     allow_overlap_with_library_question_types: z.boolean().optional().default(true),
+    /** 队列任务 id；用于关联可恢复草稿，不参与模型提示。 */
+    generation_request_id: z
+      .string()
+      .regex(/^[a-zA-Z0-9._-]{8,160}$/)
+      .optional(),
     ai: AiRuntimeSchema.optional(),
   })
   .superRefine((data, ctx) => {
@@ -280,11 +299,11 @@ const GenerateSchema = z
           path: ["competition_focus"],
         });
       }
-      const bad = cf.find((id) => !isValidCompetitionFocus(data.subject, id));
+      const bad = cf.find((id) => !isValidCompetitionFocus(data.subject, id, data.grade));
       if (bad) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: `竞赛侧重「${bad}」与当前学科不匹配`,
+          message: `竞赛侧重「${bad}」与当前学科或年级参照不匹配`,
           path: ["competition_focus"],
         });
       }
@@ -323,19 +342,67 @@ const GenerateSchema = z
 
 const ProbeAiSchema = AiRuntimeSchema;
 
-const AiSettingsPersistSchema = z.object({
-  mode: z.enum(["cloud", "local"]),
-  cloudModel: z.string().max(200).optional(),
-  localBaseUrl: z.string().max(500).optional(),
-  localModel: z.string().max(200).optional(),
-  localChatModel: z.string().max(200).optional(),
-  localSubjectModels: z.record(z.string().max(80), z.string().max(200)).optional(),
-  localApiKey: z.string().max(500).optional(),
-});
+/** 设置页整表持久化：须保留模型目录 / 学科 / 用途映射（禁止 strip） */
+const AiSettingsPersistSchema = z
+  .object({
+    mode: z.enum(["cloud", "local"]),
+    cloudModel: z.string().max(200).optional(),
+    localBaseUrl: z.string().max(500).optional(),
+    localModel: z.string().max(200).optional(),
+    localChatModel: z.string().max(200).optional(),
+    localSubjectModels: z.record(z.string().max(80), z.string().max(200)).optional(),
+    localApiKey: z.string().max(500).optional(),
+    modelEntries: z.array(z.unknown()).optional(),
+    defaultModelEntryId: z.string().max(80).optional(),
+    subjectModelEntryIds: z.record(z.string().max(80), z.string().max(300)).optional(),
+    purposeModelEntryIds: z.record(z.string().max(80), z.string().max(300)).optional(),
+    tokenPricing: z.record(z.string().max(200), z.unknown()).optional(),
+  })
+  .passthrough();
 
 const ListLocalModelsSchema = z.object({
   localBaseUrl: z.string().min(1).max(500),
   localApiKey: z.string().max(500).optional(),
+});
+
+const FetchCloudModelsBillingSchema = z.object({
+  baseUrl: z.string().min(1).max(500),
+  apiKey: z.string().min(1).max(500),
+});
+
+const RecomputeAiUsageCostsSchema = z.object({
+  pricingByModel: z
+    .record(
+      z.string().max(200),
+      z.object({
+        inputPerM: z.number().finite().min(0),
+        outputPerM: z.number().finite().min(0),
+        currency: z.string().max(16).optional(),
+      }),
+    )
+    .default({}),
+});
+
+const GenerationDraftIdSchema = z.object({
+  draftId: z.string().regex(/^[a-zA-Z0-9._-]{8,160}$/),
+});
+
+const SourceDocumentIdSchema = z.object({
+  documentId: z.string().regex(/^[a-zA-Z0-9._-]{8,160}$/),
+});
+
+const ResolveImportFindingSchema = z.object({
+  documentId: z.string().regex(/^[a-zA-Z0-9._-]{8,160}$/),
+  findingId: z.string().min(8).max(120),
+  note: z.string().max(2000).optional(),
+  reviewer: z.string().max(120).optional(),
+});
+
+const LockImportFieldsSchema = z.object({
+  documentId: z.string().regex(/^[a-zA-Z0-9._-]{8,160}$/),
+  fieldPaths: z.array(z.string().min(1).max(120)).min(1).max(80),
+  reviewer: z.string().max(120).optional(),
+  note: z.string().max(2000).optional(),
 });
 
 const SyncChatContextSchema = z.object({
@@ -405,10 +472,51 @@ function peelImportChainFromParsedPayload(parsed: Record<string, unknown>): {
 }
 
 const EXAM_NOT_FOUND_MSG =
-  "未找到试卷。已按 云端 → 本地 data/local-exams → 仓库内置样例 查找；可访问 /library 或 /exam/demo。";
+  "未找到试卷。已按云端、本机题库与内置样例查找；可到试卷库查看，或打开演示卷。";
+
+/** 导入队列可选 jobId；仅 best-effort 写草稿，缺省时行为与直写完全一致。 */
+const ImportQueueJobIdSchema = z
+  .string()
+  .regex(/^[a-zA-Z0-9._-]{8,160}$/)
+  .optional();
+
+async function saveOfflineImportDraftBestEffort(input: {
+  jobId?: string;
+  phase: GenerationDraftPhase;
+  config: Record<string, unknown>;
+  parsed: Record<string, unknown>;
+  issues?: string[];
+}): Promise<void> {
+  const id = input.jobId?.trim();
+  if (!id) return;
+  try {
+    await saveGenerationDraft({
+      id,
+      phase: input.phase,
+      config: { kind: "offline_import", ...input.config },
+      parsed: input.parsed,
+      issues: input.issues,
+    });
+  } catch (error) {
+    console.warn(
+      "[offline-import-draft] 保存失败，不阻断导入:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+}
 
 const ImportOfflineDocumentSchema = z.object({
   text: z.string().min(30).max(500_000),
+  /** 已落盘的抽取 bundle id（data/imports/<id>），用于核对差异工作台 */
+  sourceDocumentId: z
+    .string()
+    .regex(/^[a-zA-Z0-9._-]{8,160}$/)
+    .optional(),
+  /**
+   * 导入队列任务 id。传入时在模型返回后写入可恢复草稿；抽屉直写勿传。
+   * 不改变 OCR / 逐题 AI / staging 主路径。
+   */
+  jobId: ImportQueueJobIdSchema,
   /**
    * 网关 `StructuredExamOcrDocument` 的 JSON 字符串；用于 layout-first 切段（与 `text` 同源卷面）。
    * 仅导入页在单段网关 OCR 成功时附带；服务端不信任其替代 `text` 正文。
@@ -525,6 +633,15 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
   } else {
     o.textbook_edition_hint = undefined;
   }
+  if (Array.isArray(o.textbook_unit_ids)) {
+    o.textbook_unit_ids = o.textbook_unit_ids
+      .map((id) => (typeof id === "string" ? id.trim() : ""))
+      .filter((id) => id.length > 0)
+      .slice(0, 80);
+    if (o.textbook_unit_ids.length === 0) o.textbook_unit_ids = undefined;
+  } else {
+    o.textbook_unit_ids = undefined;
+  }
   if (typeof o.chapter_focus === "string") {
     const s = o.chapter_focus.trim().slice(0, 800);
     o.chapter_focus = s.length ? s : undefined;
@@ -533,6 +650,7 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
   }
   if (!isSchoolSyncExamTrack(et)) {
     o.textbook_edition_hint = undefined;
+    o.textbook_unit_ids = undefined;
     o.chapter_focus = undefined;
   }
 
@@ -567,9 +685,9 @@ function normalizeGenerateExamRpcPayload(data: unknown): unknown {
     let cf = rawCf
       .filter((x): x is string => typeof x === "string")
       .map((x) => x.trim())
-      .filter((x) => x && isValidCompetitionFocus(subject, x));
+      .filter((x) => x && isValidCompetitionFocus(subject, x, grade));
     if (cf.length === 0) {
-      const first = competitionFocusOptions(subject)[0];
+      const first = competitionFocusOptionsForGrade(subject, grade)[0];
       if (first) cf = [first.id];
     }
     o.competition_focus = cf;
@@ -639,10 +757,14 @@ export const generateExam = createServerFn({ method: "POST" })
     }
 
     const { allow_overlap_with_library_question_types: _overlap, ...rest } = data;
-    const generationPayload: GenerationConfig = {
+    let generationPayload: GenerationConfig = {
       ...rest,
       target_track_id: rest.target_track_id ?? undefined,
     };
+    const { enrichGenerationConfigWithTextbookDirectory } = await import(
+      "@/lib/textbookDirectoryEnrich.server"
+    );
+    generationPayload = await enrichGenerationConfigWithTextbookDirectory(generationPayload);
 
     const pref = getExamStoragePreferenceFromRequest();
     const dbPersist = getSupabaseAdmin();
@@ -962,11 +1084,12 @@ export const generateListeningExampleAudioForExam = createServerFn({ method: "PO
     let questions: Question[] | null = null;
     let examples: Example[] | null = null;
     let examTitle = "";
+    let examSubjects: Exam["subjects"] = [];
 
     if (db) {
       const { data: examRow, error: exErr } = await db
         .from("exams")
-        .select("id, deleted_at, title")
+        .select("id, deleted_at, title, subjects")
         .eq("id", id)
         .maybeSingle();
       if (exErr) throw new Error(exErr.message);
@@ -975,6 +1098,7 @@ export const generateListeningExampleAudioForExam = createServerFn({ method: "PO
       }
       if (examRow) {
         examTitle = String(examRow.title ?? "");
+        examSubjects = (examRow.subjects as Exam["subjects"]) ?? [];
         const [{ data: qRows, error: qErr }, { data: exRows, error: exErr }] = await Promise.all([
           db.from("questions").select("*").eq("exam_id", id).order("order_index"),
           db.from("examples").select("*").eq("exam_id", id),
@@ -990,6 +1114,7 @@ export const generateListeningExampleAudioForExam = createServerFn({ method: "PO
       const ms = await loadMysqlExamSnapshot(id);
       if (ms && !ms.exam.deleted_at) {
         examTitle = ms.exam.title;
+        examSubjects = ms.exam.subjects ?? [];
         questions = ms.questions.map(deepRepairQuestionForDisplay);
         examples = ms.examples.map(deepRepairExampleForDisplay);
       }
@@ -1004,11 +1129,140 @@ export const generateListeningExampleAudioForExam = createServerFn({ method: "PO
         throw new Error(EXAM_NOT_FOUND_MSG);
       }
       examTitle = local.exam.title;
+      examSubjects = local.exam.subjects ?? [];
       questions = local.questions.map(deepRepairQuestionForDisplay);
       examples = local.examples.map(deepRepairExampleForDisplay);
     }
 
-    return maybeGenerateListeningExampleAudioForExam(id, questions, examples, examTitle);
+    return maybeGenerateListeningExampleAudioForExam(
+      id,
+      questions,
+      examples,
+      examTitle,
+      examSubjects,
+    );
+  });
+
+const GenerateQuestionFiguresSchema = z.object({
+  examId: z.string().min(1).max(500),
+  force: z.boolean().optional(),
+  preferAi: z.boolean().optional(),
+  /** 宽松接收设置页 payload，避免目录多字段导致整次请求 Zod 失败 */
+  ai: z.any().optional(),
+});
+
+/**
+ * 按题干生成/重生成题图（默认 preferAi，避免关键词模板错配）。
+ * 对照 stash：`generateExamQuestionFigures`；落盘顺序 cloud → mysql 可读 → local。
+ */
+export const generateExamQuestionFigures = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => GenerateQuestionFiguresSchema.parse(data))
+  .handler(async ({ data }) => {
+    const id = data.examId.trim();
+    if (id.startsWith(SESSION_EXAM_ID_PREFIX)) {
+      throw new Error("会话临时试卷无法生成题图，请先入库后再操作");
+    }
+    if (isProjectBundledRouteId(id)) {
+      throw new Error("仓库内置演示卷不支持生成题图");
+    }
+
+    const {
+      generateFiguresForExamQuestions,
+      generateFiguresForExamExamples,
+    } = await import("@/lib/figureGeneration.server");
+    const {
+      persistQuestionAttachmentsForExam,
+      persistExampleAttachmentsForExam,
+    } = await import("@/lib/examStorage/persistQuestionAttachments.server");
+
+    const db = getSupabaseAdmin();
+    let questions: Question[] | null = null;
+    let examples: Example[] = [];
+
+    if (db) {
+      const { data: examRow, error: exErr } = await db
+        .from("exams")
+        .select("id, deleted_at")
+        .eq("id", id)
+        .maybeSingle();
+      if (exErr) throw new Error(exErr.message);
+      if (examRow?.deleted_at) throw new Error(EXAM_NOT_FOUND_MSG);
+      if (examRow) {
+        const { data: qRows, error: qErr } = await db
+          .from("questions")
+          .select("*")
+          .eq("exam_id", id)
+          .order("order_index");
+        if (qErr) throw new Error(qErr.message);
+        questions = (qRows ?? []) as unknown as Question[];
+        const { data: exRows, error: exsErr } = await db
+          .from("examples")
+          .select("*")
+          .eq("exam_id", id);
+        if (exsErr) throw new Error(exsErr.message);
+        examples = (exRows ?? []) as unknown as Example[];
+      }
+    }
+
+    if (questions === null) {
+      const ms = await loadMysqlExamSnapshot(id);
+      if (ms && !ms.exam.deleted_at) {
+        questions = ms.questions as Question[];
+        examples = (ms.examples ?? []) as Example[];
+      }
+    }
+
+    if (questions === null) {
+      const local = await loadLocalExam(id);
+      if (!local) throw new Error(EXAM_NOT_FOUND_MSG);
+      if (local.exam.deleted_at) throw new Error(EXAM_NOT_FOUND_MSG);
+      questions = local.questions;
+      examples = local.examples ?? [];
+    }
+
+    const genOpts = {
+      force: data.force !== false,
+      preferAi: data.preferAi !== false,
+      ai: data.ai as AiRuntimePayload | undefined,
+    };
+    const { results, updated } = await generateFiguresForExamQuestions(id, questions, genOpts);
+
+    const exampleRun =
+      examples.length > 0
+        ? await generateFiguresForExamExamples(id, examples, updated, genOpts)
+        : { results: [], updated: examples, changed: false };
+
+    const allResults = [...results, ...exampleRun.results];
+    const generatedCount = allResults.filter((r) => r.generated).length;
+    const failed = allResults.filter((r) => !r.generated && !r.skipped);
+    if (generatedCount === 0 && failed.length > 0) {
+      const reasons = failed
+        .filter((r) => r.reason)
+        .slice(0, 3)
+        .map((r) => r.reason)
+        .join("；");
+      throw new Error(reasons || "未能生成与题干匹配的题图（已拒绝低置信瞎配）");
+    }
+
+    const persisted = await persistQuestionAttachmentsForExam(id, updated);
+    if (generatedCount > 0 && persisted === "none") {
+      throw new Error("题图已生成但未能写入题库，请到设置检查本地或云端存储连接");
+    }
+    if (exampleRun.changed) {
+      const examplePersisted = await persistExampleAttachmentsForExam(id, exampleRun.updated);
+      if (generatedCount > 0 && examplePersisted === "none") {
+        throw new Error(
+          "例题题图已生成但未能写入题库，请到设置检查本地或云端存储连接",
+        );
+      }
+    }
+    return {
+      ok: true as const,
+      generatedCount,
+      skippedCount: allResults.length - generatedCount,
+      persisted,
+      results: allResults,
+    };
   });
 
 export const getExamDetail = createServerFn({ method: "GET" })
@@ -1226,11 +1480,6 @@ export const probeAiConnection = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => ProbeAiSchema.parse(data))
   .handler(async ({ data }) => probeAiRuntime(data as AiRuntimePayload));
 
-/** 设置页：用与命题相同的 tools + tool_choice 验证 submit_exam（真实 tool_calls 探测） */
-export const probeSubmitExamToolCallFn = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => ProbeAiSchema.parse(data))
-  .handler(async ({ data }) => probeSubmitExamToolCall(data as AiRuntimePayload));
-
 /** 定时同步本机习惯与页面筛选快照到聊天模型（预热/上下文对齐） */
 export const syncChatContext = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => SyncChatContextSchema.parse(data))
@@ -1309,6 +1558,15 @@ export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
       structured,
       mode: "auto",
     });
+    const jobId = data.jobId?.trim() || undefined;
+    const draftConfig = {
+      grade: data.grade?.trim() || undefined,
+      subject: data.subject?.trim() || undefined,
+      difficulty: data.difficulty,
+      duration_min: data.duration_min,
+      sourceDocumentId: data.sourceDocumentId?.trim() || undefined,
+    };
+    let lastParsed: Record<string, unknown> | undefined;
     try {
       let figureAttachQuality: FigureAttachQualitySummaryV1 | null = null;
       const parentTopologyDetected = detectImportParentQuestionTopology(sourceForAnalysis);
@@ -1352,6 +1610,13 @@ export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
       parsed = reconFigures.payload;
       figureAttachQuality = reconFigures.figureAttachQuality;
       parsed = reconcileOptionFigureMarkdownIntoMcqOptions(sourceForAnalysis, parsed);
+      lastParsed = parsed as Record<string, unknown>;
+      await saveOfflineImportDraftBestEffort({
+        jobId,
+        phase: "model_returned",
+        config: draftConfig,
+        parsed: lastParsed,
+      });
       let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
         grade: data.grade?.trim() || undefined,
         subject: data.subject?.trim() || undefined,
@@ -1362,9 +1627,20 @@ export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
         offline_import_media: data.offline_import_media,
         sourcePlainText: sourceForAnalysis,
       });
+      const sourceDocumentId = data.sourceDocumentId?.trim() || undefined;
+      if (sourceDocumentId) {
+        bundle = {
+          ...bundle,
+          exam: {
+            ...bundle.exam,
+            source_document_id: sourceDocumentId,
+            extraction_id: sourceDocumentId,
+          },
+        };
+      }
       if (inferGeometryDiagrams) {
         /**
-         * 与 `importRemoteCatalogEntryAsStaging` / `importWebUrlAsStaging` 一致：`full` =
+         * 与 `importWebUrlAsStaging` / 文件导入 一致：`full` =
          * 规则命中优先，否则用当前设置中的模型推断坐标。此前此处误用 `rule_only`，绝大多数题干无法生成 diagram_schema。
          */
         bundle = await fillGeometryDiagramsForSnapshot(
@@ -1387,8 +1663,65 @@ export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
         textCanonicalizationTrace,
         parentQuestionTopology,
       });
+      if (sourceDocumentId) {
+        try {
+          const { compareSourceAndPublished } = await import("@/lib/importFaithfulness.shared");
+          const { countSourceFigures } = await import("@/lib/attachmentRoles.shared");
+          const { saveImportReviewState, readExtractionBundle, readImportReviewState } =
+            await import("@/lib/offlineImportArtifactStore.server");
+          const { assembleQuestionCandidates } = await import(
+            "@/lib/importQuestionAssemble.shared"
+          );
+          const { attachSourceFiguresOntoQuestions } = await import(
+            "@/lib/attachSourceFigures.shared"
+          );
+          const extraction = await readExtractionBundle(sourceDocumentId);
+          const candidates = extraction ? assembleQuestionCandidates(extraction) : [];
+          if (extraction && candidates.length > 0) {
+            attachSourceFiguresOntoQuestions(bundle.questions, candidates, extraction);
+          }
+          const prevReview = await readImportReviewState(sourceDocumentId);
+          const findings = bundle.questions.flatMap((q, i) => {
+            const src = candidates[i]?.sourceText ?? sourceForAnalysis;
+            return compareSourceAndPublished({
+              questionIndex: i + 1,
+              sourceText: src,
+              publishedText: q.content,
+              sourceFigureCount: candidates[i]?.figureBlockIds.length ?? 0,
+              publishedFigureCount: countSourceFigures(q.attachments),
+              regionIds: candidates[i] ? [candidates[i]!.regionId] : undefined,
+            });
+          });
+          const prevResolved = new Map(
+            (prevReview?.findings ?? [])
+              .filter((f) => f.resolved)
+              .map((f) => [`${f.code}:${f.questionIndex ?? 0}`, f] as const),
+          );
+          for (const f of findings) {
+            const key = `${f.code}:${f.questionIndex ?? 0}`;
+            const prev = prevResolved.get(key);
+            if (prev) {
+              f.resolved = true;
+              f.resolutionNote = prev.resolutionNote;
+            }
+          }
+          await saveImportReviewState(sourceDocumentId, {
+            status: findings.some((f) => f.severity === "blocker" && !f.resolved)
+              ? "needs_changes"
+              : "pending",
+            findings,
+            updatedAt: new Date().toISOString(),
+            lockedFieldPaths: prevReview?.lockedFieldPaths,
+            auditLog: prevReview?.auditLog,
+            reviewer: prevReview?.reviewer,
+          });
+        } catch (e) {
+          console.warn("[importOfflineExamFromDocument] faithfulness review:", e);
+        }
+      }
       const out = await persistImportedBundle(bundle);
       await recordImportLearningSuccess(ctxKey, sourceForAnalysis, bundle);
+      if (jobId) await deleteGenerationDraft(jobId).catch(() => {});
 
       if (isImportDualTrackGateEnabledFromEnv() && data.import_dual_track_ack === true) {
         const stub = buildImportLayoutAstStubV1({
@@ -1408,83 +1741,34 @@ export const importOfflineExamFromDocument = createServerFn({ method: "POST" })
 
       return out;
     } catch (e) {
-      await recordImportLearningFailure(ctxKey, e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (jobId && lastParsed) {
+        await saveOfflineImportDraftBestEffort({
+          jobId,
+          phase: "persistence_failed",
+          config: draftConfig,
+          parsed: lastParsed,
+          issues: [msg],
+        });
+      }
+      await recordImportLearningFailure(ctxKey, msg);
       throw e;
     }
   });
-
-const ImportRemoteCatalogEntrySchema = z.object({
-  catalogEntryId: z.string().min(1).max(200),
-  ai: AiRuntimeSchema.optional(),
-  infer_geometry_diagrams: z.boolean().optional(),
-});
 
 const ImportWebUrlStagingSchema = z.object({
   url: z.string().url().max(2000),
   gradeId: z.string().min(1).max(80),
   subjectId: z.string().min(1).max(80),
   paper_kind: z.enum(PAPER_KIND_IDS).optional(),
+  /** 导入队列任务 id；直连调用勿传 */
+  jobId: ImportQueueJobIdSchema,
   ai: AiRuntimeSchema.optional(),
   infer_geometry_diagrams: z.boolean().optional(),
+  duration_min: z.number().int().min(30).max(360).optional(),
+  total_score: z.number().int().min(1).max(1000).optional(),
+  difficulty: z.enum(["beginner", "intermediate", "competition", "advanced"]).optional(),
 });
-
-/**
- * 网上导入（目录清单）：抓取正文后 AI 整理，写入待确认 staging。
- * 需维护 data/remote-paper-catalog.json 或远程合并清单，见 docs/remote-paper-catalog.md。
- */
-export const importRemoteCatalogEntryAsStaging = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => ImportRemoteCatalogEntrySchema.parse(data))
-  .handler(async ({ data }) => {
-    const entry = await resolveCatalogEntryById(data.catalogEntryId.trim());
-    if (!entry) {
-      throw new Error(
-        "未在目录中找到该条目。请检查 data/remote-paper-catalog.json 或环境变量 MPG_REMOTE_IMPORT_CATALOG_URL。",
-      );
-    }
-    const text = await resolvePlainTextForCatalogEntry(entry);
-    if (text.length < 30) throw new Error("正文过短，无法整理为试卷。");
-    const ctxKey = buildImportContextKey(entry.gradeId, entry.subjectId);
-    try {
-      let parsed = await runImportDocumentAiGeneration(
-        text,
-        data.ai as AiRuntimePayload | undefined,
-        {
-          subjectId: entry.subjectId,
-        },
-      );
-      const peeled = peelImportChainFromParsedPayload(parsed as Record<string, unknown>);
-      parsed = canonicalizeImportedExamPayload(peeled.cleaned);
-      parsed = reconcileSubmitExamPayloadWithImportFigures(text, parsed).payload;
-      parsed = reconcileOptionFigureMarkdownIntoMcqOptions(text, parsed);
-      let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
-        grade: entry.gradeId,
-        subject: entry.subjectId,
-        duration_min: 90,
-        difficulty: "intermediate",
-        paper_kind: entry.paper_kind,
-        import_review_status: "staging",
-        sourcePlainText: text,
-      });
-      bundle.exam.title = entry.title.slice(0, 500);
-      if (data.infer_geometry_diagrams) {
-        bundle = await fillGeometryDiagramsForSnapshot(
-          bundle,
-          data.ai as AiRuntimePayload | undefined,
-        );
-      }
-      bundle = await applyExamRemediationPipelineToSnapshot(
-        bundle,
-        data.ai as AiRuntimePayload | undefined,
-      );
-      bundle = sanitizeImportedSnapshotForPersist(bundle, { importChain: peeled.chain });
-      const out = await persistImportedBundle(bundle);
-      await recordImportLearningSuccess(ctxKey, text, bundle);
-      return out;
-    } catch (e) {
-      await recordImportLearningFailure(ctxKey, e instanceof Error ? e.message : String(e));
-      throw e;
-    }
-  });
 
 /** 网上导入（检索 URL）：抓取纯文本后 AI 整理，写入待确认 staging */
 export const importWebUrlAsStaging = createServerFn({ method: "POST" })
@@ -1493,6 +1777,14 @@ export const importWebUrlAsStaging = createServerFn({ method: "POST" })
     const text = await fetchUtf8PlainTextFromHttpUrl(data.url);
     if (text.length < 30) throw new Error("正文过短，无法整理为试卷。");
     const ctxKey = buildImportContextKey(data.gradeId.trim(), data.subjectId.trim());
+    const jobId = data.jobId?.trim() || undefined;
+    const draftConfig = {
+      grade: data.gradeId.trim(),
+      subject: data.subjectId.trim(),
+      difficulty: data.difficulty ?? "intermediate",
+      duration_min: data.duration_min ?? IMPORT_DEFAULTS.duration_min,
+    };
+    let lastParsed: Record<string, unknown> | undefined;
     try {
       let parsed = await runImportDocumentAiGeneration(
         text,
@@ -1505,15 +1797,25 @@ export const importWebUrlAsStaging = createServerFn({ method: "POST" })
       parsed = canonicalizeImportedExamPayload(peeled.cleaned);
       parsed = reconcileSubmitExamPayloadWithImportFigures(text, parsed).payload;
       parsed = reconcileOptionFigureMarkdownIntoMcqOptions(text, parsed);
+      lastParsed = parsed as Record<string, unknown>;
+      await saveOfflineImportDraftBestEffort({
+        jobId,
+        phase: "model_returned",
+        config: draftConfig,
+        parsed: lastParsed,
+      });
       let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
         grade: data.gradeId.trim(),
         subject: data.subjectId.trim(),
-        duration_min: 90,
-        difficulty: "intermediate",
+        duration_min: data.duration_min ?? IMPORT_DEFAULTS.duration_min,
+        difficulty: data.difficulty ?? "intermediate",
         paper_kind: data.paper_kind,
         import_review_status: "staging",
         sourcePlainText: text,
       });
+      if (data.total_score != null) {
+        bundle.exam.total_score = data.total_score;
+      }
       if (data.infer_geometry_diagrams) {
         bundle = await fillGeometryDiagramsForSnapshot(
           bundle,
@@ -1527,34 +1829,22 @@ export const importWebUrlAsStaging = createServerFn({ method: "POST" })
       bundle = sanitizeImportedSnapshotForPersist(bundle, { importChain: peeled.chain });
       const out = await persistImportedBundle(bundle);
       await recordImportLearningSuccess(ctxKey, text, bundle);
+      if (jobId) await deleteGenerationDraft(jobId).catch(() => {});
       return out;
     } catch (e) {
-      await recordImportLearningFailure(ctxKey, e instanceof Error ? e.message : String(e));
+      const msg = e instanceof Error ? e.message : String(e);
+      if (jobId && lastParsed) {
+        await saveOfflineImportDraftBestEffort({
+          jobId,
+          phase: "persistence_failed",
+          config: draftConfig,
+          parsed: lastParsed,
+          issues: [msg],
+        });
+      }
+      await recordImportLearningFailure(ctxKey, msg);
       throw e;
     }
-  });
-
-const ListRemotePaperCatalogSchema = z.object({
-  year: z.number().int().optional(),
-  gradeId: z.string().max(80).optional(),
-  subjectId: z.string().max(80).optional(),
-  paperKind: z.string().max(40).optional(),
-});
-
-/** 合并本地 / 远程历年卷目录并按条件筛选（导入线下卷页「从网上导入」） */
-export const listRemotePaperCatalogEntries = createServerFn({ method: "POST" })
-  .inputValidator((data: unknown) => ListRemotePaperCatalogSchema.parse(data))
-  .handler(async ({ data }) => {
-    const all = await loadMergedRemotePaperCatalog();
-    let entries = all;
-    if (data.year !== undefined) entries = entries.filter((e) => e.year === data.year);
-    const g = data.gradeId?.trim();
-    if (g) entries = entries.filter((e) => e.gradeId === g);
-    const s = data.subjectId?.trim();
-    if (s) entries = entries.filter((e) => e.subjectId === s);
-    const pk = data.paperKind?.trim();
-    if (pk) entries = entries.filter((e) => e.paper_kind === pk);
-    return { entries };
   });
 
 const PromoteStagingSchema = z.object({
@@ -1593,8 +1883,13 @@ export const searchWebExternal = createServerFn({ method: "POST" })
     };
   });
 
-/** 从数据库读取已保存的模型偏好（需 Supabase + 已执行 ai_settings 迁移） */
+/** 从工作区权威存储读取模型偏好（MySQL/文件；兼容旧 Supabase） */
 export const fetchAiSettingsFromDb = createServerFn({ method: "GET" }).handler(async () => {
+  const fromWorkspace = await loadWorkspaceAiSettings();
+  if (fromWorkspace) {
+    return { ok: true as const, settings: fromWorkspace };
+  }
+
   const db = getSupabaseAdmin();
   if (!db) return { ok: false as const, reason: "no_supabase" as const };
 
@@ -1608,28 +1903,41 @@ export const fetchAiSettingsFromDb = createServerFn({ method: "GET" }).handler(a
   if (!data?.settings) return { ok: false as const, reason: "not_found" as const };
 
   const merged = mergePartialAiSettings(data.settings as unknown);
+  try {
+    await saveWorkspaceAiSettings(merged);
+  } catch {
+    /* ignore mirror */
+  }
   return { ok: true as const, settings: merged };
 });
 
-/** 将模型偏好写入数据库（服务端 service role；换浏览器后可通过「加载」同步） */
+/** 写入工作区权威存储（文件 + MySQL）；若有 Supabase 则同步一份 */
 export const saveAiSettingsToDb = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => AiSettingsPersistSchema.parse(data))
   .handler(async ({ data }) => {
+    const payload = mergePartialAiSettings(data as unknown);
+    const written = await saveWorkspaceAiSettings(payload);
+
     const db = getSupabaseAdmin();
-    if (!db) return { ok: false as const, reason: "no_supabase" as const };
+    if (db) {
+      const { error } = await db.from("ai_settings").upsert(
+        {
+          workspace_key: "default",
+          settings: payload as unknown as Json,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "workspace_key" },
+      );
+      if (error) throw new Error(error.message);
+      return { ok: true as const, file: written.file, mysql: written.mysql };
+    }
 
-    const payload = data as AiSettingsForm;
-    const { error } = await db.from("ai_settings").upsert(
-      {
-        workspace_key: "default",
-        settings: payload as unknown as Json,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "workspace_key" },
-    );
-
-    if (error) throw new Error(error.message);
-    return { ok: true as const };
+    return {
+      ok: written.file || written.mysql,
+      reason: written.file || written.mysql ? undefined : ("no_storage" as const),
+      file: written.file,
+      mysql: written.mysql,
+    };
   });
 
 const GenerationHabitPayloadSchema = z.object({
@@ -1793,6 +2101,68 @@ export const draftExamRemediationRuleWithAi = createServerFn({ method: "POST" })
     );
   });
 
+const ValidateExamQualitySchema = z.object({
+  examId: z.string().uuid(),
+});
+
+const RemediateExamQualitySchema = z.object({
+  examId: z.string().uuid(),
+  actions: z.array(z.string().min(1)).min(1).max(8),
+  questionIndexes: z.array(z.number().int().min(1).max(999)).optional(),
+  revalidate: z.boolean().optional(),
+  ai: AiRuntimeSchema.optional(),
+});
+
+/** 库内验证：跑语义闸门并落盘 quality_* */
+export const validateExamQuality = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => ValidateExamQualitySchema.parse(data))
+  .handler(async ({ data }) => {
+    const { validateAndPersistExamQuality } = await import("@/lib/examQualityPersist.server");
+    const res = await validateAndPersistExamQuality(data.examId);
+    return JSON.parse(
+      JSON.stringify({
+        report: res.report,
+        exam: res.exam,
+        suggestedActions: res.suggestedActions,
+        storage: res.storage,
+      }),
+    ) as {
+      report: import("@/lib/examQualityReport.shared").ExamQualityReportV1;
+      exam: Exam;
+      suggestedActions: string[];
+      storage: string;
+    };
+  });
+
+/** 库内处置：白名单动作后写回并可选再验；含 AI 修复问题题 */
+export const remediateExamQuality = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => RemediateExamQualitySchema.parse(data))
+  .handler(async ({ data }) => {
+    const { remediateAndPersistExamQuality } = await import("@/lib/examQualityPersist.server");
+    const res = await remediateAndPersistExamQuality({
+      examId: data.examId,
+      actions: data.actions,
+      questionIndexes: data.questionIndexes,
+      revalidate: data.revalidate,
+      ai: data.ai as AiRuntimePayload | undefined,
+    });
+    return JSON.parse(
+      JSON.stringify({
+        exam: res.exam,
+        applied: res.applied,
+        notes: res.notes,
+        report: res.report,
+        suggestedActions: res.suggestedActions,
+      }),
+    ) as {
+      exam: Exam;
+      applied: string[];
+      notes: string[];
+      report: import("@/lib/examQualityReport.shared").ExamQualityReportV1 | null;
+      suggestedActions: string[];
+    };
+  });
+
 /** 读取导入自主学习统计（workspace_settings.importLearning） */
 export const fetchImportLearningOverview = createServerFn({ method: "GET" }).handler(async () => {
   const profile = await loadStoredImportLearning();
@@ -1805,4 +2175,317 @@ export const setImportLearningAutonomousEnabled = createServerFn({ method: "POST
   .handler(async ({ data }) => {
     await setImportLearningEnabled(data.enabled);
     return { ok: true as const };
+  });
+
+/** 云模型目录：拉模型列表 + 账户币种 + 单价 */
+export const fetchCloudModelsWithBillingFn = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => FetchCloudModelsBillingSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { fetchCloudModelsWithBilling } = await import("@/lib/cloudBilling.server");
+    return fetchCloudModelsWithBilling(data.baseUrl.trim(), data.apiKey);
+  });
+
+/** 各云模型累计用量与估算金额 */
+export const getAiUsageSummaryFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { loadAiUsageSummary } = await import("@/lib/aiUsageStats.server");
+  return loadAiUsageSummary();
+});
+
+/** 按当前单价表重算用量金额并落盘 */
+export const recomputeAiUsageCostsFn = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => RecomputeAiUsageCostsSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { recomputeAndSaveAiUsageCosts } = await import("@/lib/aiUsageStats.server");
+    return recomputeAndSaveAiUsageCosts(data.pricingByModel);
+  });
+
+export const hasRecoverableGenerationDraft = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => GenerationDraftIdSchema.parse(data))
+  .handler(async ({ data }) => hasGenerationDraft(data.draftId));
+
+const PersistImportExtractSchema = z.object({
+  filename: z.string().min(1).max(500),
+  mimeType: z.string().max(200).optional(),
+  /** base64 文件字节 */
+  contentBase64: z.string().min(8).max(40_000_000),
+  clientPlainText: z.string().max(500_000).optional(),
+});
+
+/** 上传原文件 → 落盘 + Docling/降级抽取，返回 documentId 与 plainText */
+export const persistImportDocumentExtract = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => PersistImportExtractSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { extractAndPersistImportDocument } = await import(
+      "@/lib/offlineDocumentExtract.server"
+    );
+    const bytes = Buffer.from(data.contentBase64, "base64");
+    if (bytes.length < 16) throw new Error("文件内容过短");
+    if (bytes.length > 28_000_000) throw new Error("单文件过大（上限约 28MB）");
+    const result = await extractAndPersistImportDocument({
+      filename: data.filename,
+      mimeType: data.mimeType || "application/octet-stream",
+      bytes,
+      clientPlainText: data.clientPlainText,
+    });
+    return {
+      documentId: result.bundle.documentId,
+      quality: result.quality,
+      reused: result.reused,
+      plainText: result.bundle.plainText,
+      warnings: result.bundle.ocrRun.warnings,
+      pageCount: result.bundle.pages.length,
+      figureRegionCount: result.bundle.regions.filter((r) => r.regionType === "figure").length,
+    };
+  });
+
+/** 读取导入抽取 bundle 摘要（审核工作台） */
+export const getImportExtractionSummary = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => SourceDocumentIdSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { readExtractionBundle, readImportReviewState } = await import(
+      "@/lib/offlineImportArtifactStore.server"
+    );
+    const { assembleQuestionCandidates } = await import("@/lib/importQuestionAssemble.shared");
+    const bundle = await readExtractionBundle(data.documentId);
+    if (!bundle) throw new Error("未找到抽取结果");
+    const review = await readImportReviewState(data.documentId);
+    const candidates = assembleQuestionCandidates(bundle);
+    return {
+      documentId: bundle.documentId,
+      quality: bundle.quality,
+      sourceFilename: bundle.sourceFilename,
+      warnings: bundle.ocrRun.warnings,
+      pageCount: bundle.pages.length,
+      candidateCount: candidates.length,
+      assets: bundle.assets.map((a) => ({
+        id: a.id,
+        uri: a.uri,
+        role: a.role,
+        pageIndex: a.pageIndex,
+      })),
+      candidates: candidates.map((c) => ({
+        regionId: c.regionId,
+        pageIndex: c.pageIndex,
+        sourceTextPreview: c.sourceText.slice(0, 400),
+        figureCount: c.figureBlockIds.length,
+      })),
+      review,
+    };
+  });
+
+export const resolveImportReviewFinding = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => ResolveImportFindingSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { readImportReviewState, saveImportReviewState } = await import(
+      "@/lib/offlineImportArtifactStore.server"
+    );
+    const review = await readImportReviewState(data.documentId);
+    if (!review) throw new Error("尚无审核状态");
+    const finding = review.findings.find((f) => f.id === data.findingId);
+    if (!finding) throw new Error("未找到该差异项");
+    finding.resolved = true;
+    finding.resolutionNote = data.note?.trim() || "已确认";
+    const now = new Date().toISOString();
+    const unresolvedBlockers = review.findings.some((f) => f.severity === "blocker" && !f.resolved);
+    await saveImportReviewState(data.documentId, {
+      ...review,
+      status: unresolvedBlockers ? "needs_changes" : "in_review",
+      updatedAt: now,
+      reviewer: data.reviewer ?? review.reviewer,
+      auditLog: [
+        ...(review.auditLog ?? []),
+        {
+          at: now,
+          action: "resolve_finding" as const,
+          findingId: data.findingId,
+          note: finding.resolutionNote,
+          reviewer: data.reviewer,
+        },
+      ],
+    });
+    return { ok: true as const, status: unresolvedBlockers ? "needs_changes" : "in_review" };
+  });
+
+export const lockImportReviewFields = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) => LockImportFieldsSchema.parse(data))
+  .handler(async ({ data }) => {
+    const { readImportReviewState, saveImportReviewState } = await import(
+      "@/lib/offlineImportArtifactStore.server"
+    );
+    const review = (await readImportReviewState(data.documentId)) ?? {
+      status: "in_review" as const,
+      findings: [],
+      updatedAt: new Date().toISOString(),
+    };
+    const now = new Date().toISOString();
+    const locked = new Set([...(review.lockedFieldPaths ?? []), ...data.fieldPaths]);
+    await saveImportReviewState(data.documentId, {
+      ...review,
+      status: "in_review",
+      lockedFieldPaths: [...locked],
+      updatedAt: now,
+      reviewer: data.reviewer ?? review.reviewer,
+      auditLog: [
+        ...(review.auditLog ?? []),
+        {
+          at: now,
+          action: "lock_fields" as const,
+          fieldPaths: data.fieldPaths,
+          note: data.note,
+          reviewer: data.reviewer,
+        },
+      ],
+    });
+    return { ok: true as const, lockedFieldPaths: [...locked] };
+  });
+
+export const recoverGeneratedExamDraft = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    GenerationDraftIdSchema.extend({ ai: AiRuntimeSchema.optional() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const draft = await readGenerationDraft(data.draftId);
+    if (!draft) {
+      throw new Error("可恢复草稿不存在或已超过 24 小时；不能根据不完整日志重建试卷");
+    }
+
+    const bundle = await recoverExamBundleFromStoredDraft(draft, data.ai);
+    const pref = getExamStoragePreferenceFromRequest();
+    const order = generationPersistOrder(pref);
+    const failures: string[] = [];
+    const recoveryConfig = {
+      ...draft.config,
+      ai: data.ai,
+    } as GenerationConfig;
+
+    for (const target of order) {
+      if (target === "cloud") {
+        if (!getSupabaseAdmin()) continue;
+        try {
+          const examId = await persistGeneratedExamBundleToSupabase(recoveryConfig, bundle);
+          await deleteGenerationDraft(data.draftId);
+          return { examId, persisted: true as const, recovered: true as const };
+        } catch (error) {
+          failures.push(error instanceof Error ? error.message : String(error));
+          continue;
+        }
+      }
+
+      if (target === "mysql") {
+        if (!(await isMysqlExamPersistenceAvailable())) continue;
+        try {
+          await insertExamSnapshotToMysql({
+            exam: bundle.exam,
+            questions: bundle.questions,
+            examples: bundle.examples,
+          });
+          await deleteGenerationDraft(data.draftId);
+          return {
+            examId: bundle.examId,
+            persisted: true as const,
+            recovered: true as const,
+          };
+        } catch (error) {
+          failures.push(error instanceof Error ? error.message : String(error));
+          continue;
+        }
+      }
+
+      if (target === "local") {
+        if (!(await isLocalExamPersistenceAvailable())) continue;
+        try {
+          await saveLocalExamSnapshot({
+            exam: bundle.exam,
+            questions: bundle.questions,
+            examples: bundle.examples,
+          });
+          await deleteGenerationDraft(data.draftId);
+          return {
+            examId: bundle.examId,
+            persisted: true as const,
+            recovered: true as const,
+          };
+        } catch (error) {
+          failures.push(error instanceof Error ? error.message : String(error));
+          continue;
+        }
+      }
+
+      const sessionId = `${SESSION_EXAM_ID_PREFIX}${crypto.randomUUID()}`;
+      const snapshot: SessionExamSnapshot = {
+        exam: { ...bundle.exam, id: sessionId },
+        questions: bundle.questions.map((question) => ({
+          ...question,
+          exam_id: sessionId,
+        })),
+        examples: bundle.examples.map((example) => ({
+          ...example,
+          exam_id: sessionId,
+        })),
+      };
+      await saveGenerationScratch(sessionId, snapshot);
+      await deleteGenerationDraft(data.draftId);
+      return {
+        examId: sessionId,
+        persisted: false as const,
+        recovered: true as const,
+        persistenceWarnings: failures,
+      };
+    }
+
+    throw new Error(
+      failures.length
+        ? `已处理模型返回试卷，但所有保存位置均失败：${failures.slice(0, 3).join("；")}`
+        : "已处理模型返回试卷，但当前没有可用保存位置",
+    );
+  });
+
+/** 导入队列：用已落盘草稿直接入库（不重跑整卷模型） */
+export const recoverImportedExamDraft = createServerFn({ method: "POST" })
+  .inputValidator((data: unknown) =>
+    GenerationDraftIdSchema.extend({ ai: AiRuntimeSchema.optional() }).parse(data),
+  )
+  .handler(async ({ data }) => {
+    const draft = await readGenerationDraft(data.draftId);
+    if (!draft || draft.config.kind !== "offline_import") {
+      throw new Error("可恢复的导入结果不存在或已超过 24 小时");
+    }
+    const parsed = await recoverImportedParsedFromStoredDraft(draft, data.ai);
+    const config = draft.config;
+    let bundle = await buildImportedExamSnapshotFromAiParsed(parsed, {
+      grade: typeof config.grade === "string" ? config.grade : undefined,
+      subject: typeof config.subject === "string" ? config.subject : IMPORT_DEFAULTS.subject,
+      difficulty:
+        config.difficulty === "beginner" ||
+        config.difficulty === "intermediate" ||
+        config.difficulty === "competition" ||
+        config.difficulty === "advanced"
+          ? config.difficulty
+          : undefined,
+      duration_min: typeof config.duration_min === "number" ? config.duration_min : undefined,
+    });
+    if (typeof config.sourceDocumentId === "string" && config.sourceDocumentId.trim()) {
+      bundle = {
+        ...bundle,
+        exam: {
+          ...bundle.exam,
+          source_document_id: config.sourceDocumentId,
+          extraction_id: config.sourceDocumentId,
+        },
+      };
+    }
+    try {
+      const result = await persistImportedBundle(bundle);
+      await deleteGenerationDraft(data.draftId);
+      return { ...result, recovered: true as const };
+    } catch (error) {
+      await saveGenerationDraft({
+        id: draft.id,
+        phase: "persistence_failed",
+        config,
+        parsed,
+        issues: [error instanceof Error ? error.message : String(error)],
+      }).catch(() => {});
+      throw error;
+    }
   });

@@ -12,6 +12,9 @@ export type QueuedJobRef =
 /** 与 localStorage 键一致；用于 `storage` 事件在多标签间同步队列视图 */
 export const GENERATION_JOBS_STORAGE_KEY = "zhixue.generationJobs.v1" as const;
 
+/** 打开命题队列面板（教师错题巩固等） */
+export const PAPER_QUEUE_OPEN_EVENT = "zhixue-paper-queue-open" as const;
+
 const STORAGE_KEY = GENERATION_JOBS_STORAGE_KEY;
 const MAX_JOBS = 40;
 
@@ -180,6 +183,26 @@ export function clearCompletedExampleJobs(): void {
   saveRoot(root);
 }
 
+/** 仅清除失败记录，保留成功、已取消及进行中的任务。 */
+export function clearFailedPaperJobs(): number {
+  const root = loadRoot();
+  const before = root.paper.length;
+  root.paper = root.paper.filter((j) => j.status !== "failed");
+  const removed = before - root.paper.length;
+  if (removed > 0) saveRoot(root);
+  return removed;
+}
+
+/** 仅清除失败记录，保留成功、已取消及进行中的任务。 */
+export function clearFailedExampleJobs(): number {
+  const root = loadRoot();
+  const before = root.example.length;
+  root.example = root.example.filter((j) => j.status !== "failed");
+  const removed = before - root.example.length;
+  if (removed > 0) saveRoot(root);
+  return removed;
+}
+
 function runningJobAgeMs(job: { updatedAt: string }, nowMs: number): number {
   const t = Date.parse(job.updatedAt);
   if (Number.isNaN(t)) return Infinity;
@@ -297,4 +320,11 @@ export function consumePaperPrefillPayload(): PaperGenPayloadSnapshot | null {
     sessionStorage.removeItem(PAPER_PREFILL_STORAGE_KEY);
     return null;
   }
+}
+
+/** 写入命题预填并通知已打开的定制生成页立刻回填 */
+export function writePaperPrefillPayload(payload: Partial<PaperGenPayloadSnapshot>) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(PAPER_PREFILL_STORAGE_KEY, JSON.stringify(payload));
+  window.dispatchEvent(new Event(PAPER_PREFILL_APPLY_EVENT));
 }

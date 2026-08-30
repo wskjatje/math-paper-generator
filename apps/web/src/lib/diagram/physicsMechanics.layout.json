@@ -1,0 +1,13 @@
+{
+  "pointMarkerRadius": 3,
+  "labelHaloStroke": 3.5,
+  "edgeMinClearance": 12,
+  "labelPointMinClearance": 10,
+  "pointNameOffset": 14,
+  "labelOffsetMaxIter": 12,
+  "labelOffsetMaxWanderFromPreferred": 16,
+  "labelOffsetExpandWanderFactor": 2,
+  "labelOffsetHardMaxWander": 28,
+  "labelCandidateRadii": [0, 6, 10, 14, 18, 24, 28],
+  "labelCandidateAngleStepDeg": 30
+}

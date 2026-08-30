@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS exams (
   offline_import_media JSON NULL DEFAULT NULL COMMENT '线下导入原图URL与对照标注',
   import_parse_quality JSON NULL DEFAULT NULL COMMENT '导入解析质检v1 JSON（HITL）',
   figure_registry JSON NULL DEFAULT NULL COMMENT 'P7-1A 卷面图 registry（figure_id→raster_url）',
+  quality_status VARCHAR(32) NULL DEFAULT NULL COMMENT 'unknown|pass|fail|needs_review',
+  quality_report JSON NULL DEFAULT NULL COMMENT '语义质量报告 v1',
+  quality_checked_at DATETIME(3) NULL DEFAULT NULL,
+  quality_exclude_assign TINYINT(1) NOT NULL DEFAULT 0 COMMENT '1=布置作业不可选',
   PRIMARY KEY (id),
   KEY idx_exams_created (created_at DESC),
   KEY idx_exams_deleted_at (deleted_at),
@@ -48,6 +52,7 @@ CREATE TABLE IF NOT EXISTS questions (
   figure_dependency JSON NULL DEFAULT NULL COMMENT '卷面位图依赖 v1（requires_figure、figure_role、option_requires_figure）',
   visual_geometry_evidence JSON NULL DEFAULT NULL COMMENT '视觉几何证据 v1（OCR/diagram_links 等标记）',
   figure_refs JSON NULL DEFAULT NULL COMMENT 'P7-1A 题目对 registry 的图引用',
+  attachments JSON NULL DEFAULT NULL COMMENT '题图/插图 [{kind,uri,alt,role?}]',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_questions_exam (exam_id, order_index),
@@ -64,6 +69,7 @@ CREATE TABLE IF NOT EXISTS examples (
   answer MEDIUMTEXT NOT NULL,
   solution_steps JSON NOT NULL DEFAULT (CAST('[]' AS JSON)),
   difficulty VARCHAR(32) NOT NULL DEFAULT 'intermediate',
+  attachments JSON NULL DEFAULT NULL COMMENT '题图/插图（与 questions.attachments 同契约）',
   created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_examples_exam (exam_id),
@@ -262,6 +268,30 @@ CREATE TABLE IF NOT EXISTS exam_remediation_rules (
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_exam_remediation_lookup (workspace_key, enabled, priority DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 练习讲解包（PRD explain-video）：元数据与成片路径；二进制不进 BLOB
+CREATE TABLE IF NOT EXISTS explain_practice_packages (
+  id CHAR(36) NOT NULL,
+  workspace_key VARCHAR(64) NOT NULL DEFAULT 'default',
+  status VARCHAR(32) NOT NULL,
+  source_kind VARCHAR(32) NOT NULL,
+  type_spec_json JSON NULL,
+  item_json JSON NULL,
+  locked_at DATETIME(3) NULL,
+  locked_by VARCHAR(128) NULL,
+  band_id VARCHAR(32) NULL,
+  script_json JSON NULL,
+  asset_storage_key VARCHAR(512) NULL,
+  asset_checksum VARCHAR(128) NULL,
+  failure_code VARCHAR(64) NULL,
+  failure_message TEXT NULL,
+  created_by VARCHAR(128) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_explain_pkg_ws_updated (workspace_key, updated_at DESC),
+  KEY idx_explain_pkg_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 SET FOREIGN_KEY_CHECKS = 1;

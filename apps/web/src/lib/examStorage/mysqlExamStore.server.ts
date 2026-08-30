@@ -2,7 +2,6 @@
  * 本地 MySQL 试卷存储（与 sql/mysql/zhixue_schema.sql 对齐）。
  * 与 Supabase 并行：试卷落 MySQL 时仍可用 Supabase 做 Auth / 教育 OS。
  */
-import { createPool } from "mysql2/promise";
 import type { Pool, ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import type { Exam, Example, Question } from "@/lib/types";
 import type { SessionExamSnapshot } from "@/lib/examSession";
@@ -10,20 +9,28 @@ import { parseQuestionRasterFiguresV1 } from "@/lib/importRasterFigures.shared";
 import { parseQuestionFigureDependencyV1 } from "@/lib/questionFigureDependency.shared";
 import { safeParseGeometryDiagramSchema } from "@/lib/geometryDiagramSchema.shared";
 import { parseOfflineImportPersistedMedia } from "@/lib/offlineImportMedia.shared";
-import { loadMysqlConnection, type MysqlConnectionForm } from "@/lib/mysqlConnection.server";
 import { isSafeLocalExamId } from "@/lib/localExamStore.server";
 import { toMysqlDatetime3 } from "@/lib/examStorage/mysqlDatetime.shared";
 import { parseVisualGeometryEvidenceV1 } from "@/lib/visualGeometryEvidence.shared";
 import { parseFigureRefsV1, parseFigureRegistryV1 } from "@/lib/figureOwnership.shared";
+import {
+  isExamQualityStatus,
+  parseExamQualityReport,
+} from "@/lib/examQualityReport.shared";
+import {
+  getMysqlPool,
+  getMysqlPoolCacheKey,
+  invalidateMysqlPoolCache as invalidateSharedMysqlPoolCache,
+} from "@/lib/mysqlPool.server";
+
+export { getMysqlPool } from "@/lib/mysqlPool.server";
 
 /** mysql2 禁止绑定 `undefined`；可空列须显式传 JS `null` 才是 SQL NULL。 */
 function sqlNullable<T>(v: T | undefined | null): T | null {
   return v === undefined ? null : v;
 }
 
-let poolCache: { key: string; pool: Pool } | null = null;
-
-/** 与 poolCache.key 对齐：已有库未跑迁移时首轮 INSERT 前自动 ADD COLUMN */
+/** 与共用池 key 对齐：已有库未跑迁移时首轮 INSERT 前自动 ADD COLUMN */
 let ensuredExamsOfflineImportMediaColumnForPool: string | null = null;
 let ensuredExamsImportParseQualityColumnForPool: string | null = null;
 let ensuredQuestionsDiagramSchemaColumnForPool: string | null = null;
@@ -32,6 +39,9 @@ let ensuredQuestionsFigureDependencyColumnForPool: string | null = null;
 let ensuredQuestionsVisualGeometryEvidenceColumnForPool: string | null = null;
 let ensuredExamsFigureRegistryColumnForPool: string | null = null;
 let ensuredQuestionsFigureRefsColumnForPool: string | null = null;
+let ensuredQuestionsAttachmentsColumnForPool: string | null = null;
+let ensuredExamplesAttachmentsColumnForPool: string | null = null;
+let ensuredExamsQualityColumnsForPool: string | null = null;
 
 /** 修改 mysql-connection 或 Supabase 内 mysql 凭证后调用，避免连接池沿用旧密码 */
 export function invalidateMysqlPoolCache(): void {
@@ -43,16 +53,14 @@ export function invalidateMysqlPoolCache(): void {
   ensuredQuestionsVisualGeometryEvidenceColumnForPool = null;
   ensuredExamsFigureRegistryColumnForPool = null;
   ensuredQuestionsFigureRefsColumnForPool = null;
-  try {
-    void poolCache?.pool.end();
-  } catch {
-    /* ignore */
-  }
-  poolCache = null;
+  ensuredQuestionsAttachmentsColumnForPool = null;
+  ensuredExamplesAttachmentsColumnForPool = null;
+  ensuredExamsQualityColumnsForPool = null;
+  invalidateSharedMysqlPoolCache();
 }
 
 async function ensureExamsOfflineImportMediaColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredExamsOfflineImportMediaColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -78,7 +86,7 @@ async function ensureExamsOfflineImportMediaColumn(pool: Pool): Promise<void> {
 }
 
 async function ensureExamsImportParseQualityColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredExamsImportParseQualityColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -104,7 +112,7 @@ async function ensureExamsImportParseQualityColumn(pool: Pool): Promise<void> {
 }
 
 async function ensureQuestionsDiagramSchemaColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredQuestionsDiagramSchemaColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -130,7 +138,7 @@ async function ensureQuestionsDiagramSchemaColumn(pool: Pool): Promise<void> {
 }
 
 async function ensureQuestionsRasterFiguresColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredQuestionsRasterFiguresColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -156,7 +164,7 @@ async function ensureQuestionsRasterFiguresColumn(pool: Pool): Promise<void> {
 }
 
 async function ensureQuestionsFigureDependencyColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredQuestionsFigureDependencyColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -182,7 +190,7 @@ async function ensureQuestionsFigureDependencyColumn(pool: Pool): Promise<void> 
 }
 
 async function ensureQuestionsVisualGeometryEvidenceColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredQuestionsVisualGeometryEvidenceColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -208,7 +216,7 @@ async function ensureQuestionsVisualGeometryEvidenceColumn(pool: Pool): Promise<
 }
 
 async function ensureExamsFigureRegistryColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredExamsFigureRegistryColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -233,8 +241,33 @@ async function ensureExamsFigureRegistryColumn(pool: Pool): Promise<void> {
   if (k) ensuredExamsFigureRegistryColumnForPool = k;
 }
 
+async function ensureExamsQualityColumns(pool: Pool): Promise<void> {
+  const k = getMysqlPoolCacheKey() ?? "";
+  if (k && ensuredExamsQualityColumnsForPool === k) return;
+
+  const alters = [
+    `ALTER TABLE exams ADD COLUMN quality_status VARCHAR(32) NULL DEFAULT NULL
+       COMMENT 'unknown|pass|fail|needs_review' AFTER figure_registry`,
+    `ALTER TABLE exams ADD COLUMN quality_report JSON NULL DEFAULT NULL
+       COMMENT '语义质量报告 v1' AFTER quality_status`,
+    `ALTER TABLE exams ADD COLUMN quality_checked_at DATETIME(3) NULL DEFAULT NULL
+       AFTER quality_report`,
+    `ALTER TABLE exams ADD COLUMN quality_exclude_assign TINYINT(1) NOT NULL DEFAULT 0
+       COMMENT '1=布置作业不可选' AFTER quality_checked_at`,
+  ];
+  for (const q of alters) {
+    try {
+      await pool.query(q);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (!/Duplicate column name|Duplicate column/i.test(msg)) throw e;
+    }
+  }
+  if (k) ensuredExamsQualityColumnsForPool = k;
+}
+
 async function ensureQuestionsFigureRefsColumn(pool: Pool): Promise<void> {
-  const k = poolCache?.key ?? "";
+  const k = getMysqlPoolCacheKey() ?? "";
   if (k && ensuredQuestionsFigureRefsColumnForPool === k) return;
 
   const [rows] = await pool.query<RowDataPacket[]>(
@@ -259,30 +292,56 @@ async function ensureQuestionsFigureRefsColumn(pool: Pool): Promise<void> {
   if (k) ensuredQuestionsFigureRefsColumnForPool = k;
 }
 
-function poolKey(c: MysqlConnectionForm): string {
-  return `${c.host}:${c.port}:${c.user}:${c.database}:${c.password ? String(c.password.length) : "0"}`;
+async function ensureQuestionsAttachmentsColumn(pool: Pool): Promise<void> {
+  const k = getMysqlPoolCacheKey() ?? "";
+  if (k && ensuredQuestionsAttachmentsColumnForPool === k) return;
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'questions' AND COLUMN_NAME = 'attachments'`,
+  );
+  const c = Number((rows[0] as { c?: number })?.c ?? 0);
+  if (c > 0) {
+    if (k) ensuredQuestionsAttachmentsColumnForPool = k;
+    return;
+  }
+
+  try {
+    await pool.query(
+      `ALTER TABLE questions ADD COLUMN attachments JSON NULL DEFAULT NULL
+       COMMENT '题图/插图 [{kind,uri,alt,role?}]' AFTER figure_refs`,
+    );
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (!/Duplicate column name|Duplicate column/i.test(msg)) throw e;
+  }
+  if (k) ensuredQuestionsAttachmentsColumnForPool = k;
 }
 
-export async function getMysqlPool(): Promise<Pool | null> {
-  const c = await loadMysqlConnection();
-  if (!c) return null;
-  const k = poolKey(c);
-  if (poolCache?.key !== k) {
-    invalidateMysqlPoolCache();
-    poolCache = {
-      key: k,
-      pool: createPool({
-        host: c.host,
-        port: c.port,
-        user: c.user,
-        password: c.password,
-        database: c.database,
-        waitForConnections: true,
-        connectionLimit: 8,
-      }),
-    };
+async function ensureExamplesAttachmentsColumn(pool: Pool): Promise<void> {
+  const k = getMysqlPoolCacheKey() ?? "";
+  if (k && ensuredExamplesAttachmentsColumnForPool === k) return;
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) AS c FROM information_schema.COLUMNS
+     WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'examples' AND COLUMN_NAME = 'attachments'`,
+  );
+  const c = Number((rows[0] as { c?: number })?.c ?? 0);
+  if (c > 0) {
+    if (k) ensuredExamplesAttachmentsColumnForPool = k;
+    return;
   }
-  return poolCache.pool;
+
+  try {
+    await pool.query(
+      `ALTER TABLE examples ADD COLUMN attachments JSON NULL DEFAULT NULL
+       COMMENT '题图/插图（与 questions.attachments 同契约）' AFTER difficulty`,
+    );
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (!/Duplicate column name|Duplicate column/i.test(msg)) throw e;
+  }
+  if (k) ensuredExamplesAttachmentsColumnForPool = k;
 }
 
 export async function isMysqlExamPersistenceAvailable(): Promise<boolean> {
@@ -307,6 +366,21 @@ function parseJson<T>(v: unknown, fallback: T): T {
     }
   }
   return fallback;
+}
+
+function parseQuestionAttachments(raw: unknown): Question["attachments"] | undefined {
+  if (raw == null) return undefined;
+  const arr = parseJson<unknown>(raw, null);
+  if (!Array.isArray(arr)) return undefined;
+  const ok = arr.every(
+    (item) =>
+      item != null &&
+      typeof item === "object" &&
+      typeof (item as { kind?: unknown }).kind === "string" &&
+      typeof (item as { uri?: unknown }).uri === "string",
+  );
+  if (!ok) return undefined;
+  return arr as Question["attachments"];
 }
 
 function toIso(v: unknown): string {
@@ -362,6 +436,20 @@ function examRowToExam(row: RowDataPacket, question_types?: string[]): Exam {
         : null,
     import_parse_quality: parseImportParseQualityFromExamRow(row),
     ...(figure_registry != null && figure_registry.length > 0 ? { figure_registry } : {}),
+    quality_status: isExamQualityStatus(row.quality_status) ? row.quality_status : null,
+    quality_report: parseExamQualityReport(
+      typeof row.quality_report === "string"
+        ? (() => {
+            try {
+              return JSON.parse(row.quality_report);
+            } catch {
+              return null;
+            }
+          })()
+        : row.quality_report,
+    ),
+    quality_checked_at: row.quality_checked_at != null ? toIso(row.quality_checked_at) : null,
+    quality_exclude_assign: Boolean(row.quality_exclude_assign),
   };
 }
 
@@ -418,6 +506,8 @@ function questionRowToQuestion(row: RowDataPacket): Question {
     figure_refs = parseFigureRefsV1(rawFr);
   }
 
+  const attachments = parseQuestionAttachments(row.attachments);
+
   return {
     id: String(row.id),
     exam_id: String(row.exam_id),
@@ -436,11 +526,13 @@ function questionRowToQuestion(row: RowDataPacket): Question {
     ...(visual_geometry_evidence != null ? { visual_geometry_evidence } : {}),
     ...(figure_dependency != null ? { figure_dependency } : {}),
     ...(figure_refs != null && figure_refs.length > 0 ? { figure_refs } : {}),
+    ...(attachments != null && attachments.length > 0 ? { attachments } : {}),
   };
 }
 
 function exampleRowToExample(row: RowDataPacket): Example {
   const solution_steps = parseJson<Example["solution_steps"]>(row.solution_steps, []);
+  const attachments = parseQuestionAttachments(row.attachments);
   return {
     id: String(row.id),
     exam_id: String(row.exam_id),
@@ -451,6 +543,7 @@ function exampleRowToExample(row: RowDataPacket): Example {
     answer: String(row.answer),
     solution_steps,
     difficulty: String(row.difficulty ?? "intermediate"),
+    ...(attachments != null && attachments.length > 0 ? { attachments } : {}),
   };
 }
 
@@ -479,7 +572,10 @@ export async function insertExamSnapshotToMysql(
   await ensureQuestionsFigureDependencyColumn(pool);
   await ensureQuestionsVisualGeometryEvidenceColumn(pool);
   await ensureExamsFigureRegistryColumn(pool);
+  await ensureExamsQualityColumns(pool);
   await ensureQuestionsFigureRefsColumn(pool);
+  await ensureQuestionsAttachmentsColumn(pool);
+  await ensureExamplesAttachmentsColumn(pool);
 
   const status = bundle.exam.import_review_status;
   const importReview = status === "staging" || status === "confirmed" ? status : null;
@@ -498,13 +594,22 @@ export async function insertExamSnapshotToMysql(
       bundle.exam.figure_registry != null && bundle.exam.figure_registry.length > 0
         ? JSON.stringify(bundle.exam.figure_registry)
         : null;
+    const qualityReportJson =
+      bundle.exam.quality_report != null ? JSON.stringify(bundle.exam.quality_report) : null;
+    const qualityStatus = bundle.exam.quality_status ?? null;
+    const qualityCheckedAt =
+      bundle.exam.quality_checked_at != null
+        ? toMysqlDatetime3(bundle.exam.quality_checked_at)
+        : null;
+    const qualityExclude = bundle.exam.quality_exclude_assign ? 1 : 0;
 
     await conn.execute(
       `INSERT INTO exams (
         id, title, subtitle, subjects, difficulty, duration_min, total_score,
         source, is_featured, description, created_at, generation_duration_sec, deleted_at,
-        import_review_status, offline_import_media, import_parse_quality, figure_registry
-      ) VALUES (?, ?, ?, CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON))`,
+        import_review_status, offline_import_media, import_parse_quality, figure_registry,
+        quality_status, quality_report, quality_checked_at, quality_exclude_assign
+      ) VALUES (?, ?, ?, CAST(? AS JSON), ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), ?, ?)`,
       [
         bundle.exam.id,
         String(bundle.exam.title ?? ""),
@@ -522,6 +627,10 @@ export async function insertExamSnapshotToMysql(
         offlineMediaJson,
         importParseQualityJson,
         figureRegistryJson,
+        qualityStatus,
+        qualityReportJson,
+        qualityCheckedAt,
+        qualityExclude,
       ],
     );
 
@@ -543,6 +652,7 @@ export async function insertExamSnapshotToMysql(
         q.visual_geometry_evidence != null ? JSON.stringify(q.visual_geometry_evidence) : null;
       const figureRefsJson =
         q.figure_refs != null && q.figure_refs.length > 0 ? JSON.stringify(q.figure_refs) : null;
+      const attachmentsJson = q.attachments != null ? JSON.stringify(q.attachments) : null;
       const tail = [
         String(q.answer ?? ""),
         stepsJson(q.solution_steps),
@@ -553,31 +663,33 @@ export async function insertExamSnapshotToMysql(
         figureDepJson,
         visualGeoJson,
         figureRefsJson,
+        attachmentsJson,
       ];
       if (q.options == null) {
         await conn.execute(
           `INSERT INTO questions (
           id, exam_id, order_index, type, type_label, subject, content, options, answer,
-          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
+          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
           [...head, ...tail],
         );
       } else {
         await conn.execute(
           `INSERT INTO questions (
           id, exam_id, order_index, type, type_label, subject, content, options, answer,
-          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
+          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
           [...head, JSON.stringify(q.options), ...tail],
         );
       }
     }
 
     for (const ex of bundle.examples) {
+      const exAttachmentsJson = ex.attachments != null ? JSON.stringify(ex.attachments) : null;
       await conn.execute(
         `INSERT INTO examples (
-          id, exam_id, question_id, type, subject, content, answer, solution_steps, difficulty, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, NOW(3))`,
+          id, exam_id, question_id, type, subject, content, answer, solution_steps, difficulty, attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, CAST(? AS JSON), NOW(3))`,
         [
           ex.id,
           bundle.exam.id,
@@ -588,6 +700,7 @@ export async function insertExamSnapshotToMysql(
           String(ex.answer ?? ""),
           stepsJson(ex.solution_steps),
           String(ex.difficulty ?? "intermediate"),
+          exAttachmentsJson,
         ],
       );
     }
@@ -619,7 +732,10 @@ export async function replaceExamSnapshotInMysql(
   await ensureQuestionsFigureDependencyColumn(pool);
   await ensureQuestionsVisualGeometryEvidenceColumn(pool);
   await ensureExamsFigureRegistryColumn(pool);
+  await ensureExamsQualityColumns(pool);
   await ensureQuestionsFigureRefsColumn(pool);
+  await ensureQuestionsAttachmentsColumn(pool);
+  await ensureExamplesAttachmentsColumn(pool);
 
   const status = bundle.exam.import_review_status;
   const importReview = status === "staging" || status === "confirmed" ? status : null;
@@ -649,13 +765,17 @@ export async function replaceExamSnapshotInMysql(
       bundle.exam.figure_registry != null && bundle.exam.figure_registry.length > 0
         ? JSON.stringify(bundle.exam.figure_registry)
         : null;
+    const qualityReportJson =
+      bundle.exam.quality_report != null ? JSON.stringify(bundle.exam.quality_report) : null;
 
     await conn.execute(
       `UPDATE exams SET
         title = ?, subtitle = ?, subjects = CAST(? AS JSON), difficulty = ?, duration_min = ?,
         total_score = ?, source = ?, is_featured = ?, description = ?,
         import_review_status = ?, offline_import_media = CAST(? AS JSON),
-        import_parse_quality = CAST(? AS JSON), figure_registry = CAST(? AS JSON)
+        import_parse_quality = CAST(? AS JSON), figure_registry = CAST(? AS JSON),
+        quality_status = ?, quality_report = CAST(? AS JSON), quality_checked_at = ?,
+        quality_exclude_assign = ?
       WHERE id = ?`,
       [
         String(bundle.exam.title ?? ""),
@@ -671,6 +791,12 @@ export async function replaceExamSnapshotInMysql(
         offlineMediaJson,
         importParseQualityJson,
         figureRegistryJson,
+        bundle.exam.quality_status ?? null,
+        qualityReportJson,
+        bundle.exam.quality_checked_at != null
+          ? toMysqlDatetime3(bundle.exam.quality_checked_at)
+          : null,
+        bundle.exam.quality_exclude_assign ? 1 : 0,
         bundle.exam.id,
       ],
     );
@@ -693,6 +819,7 @@ export async function replaceExamSnapshotInMysql(
         q.visual_geometry_evidence != null ? JSON.stringify(q.visual_geometry_evidence) : null;
       const figureRefsJson =
         q.figure_refs != null && q.figure_refs.length > 0 ? JSON.stringify(q.figure_refs) : null;
+      const attachmentsJson = q.attachments != null ? JSON.stringify(q.attachments) : null;
       const tail = [
         String(q.answer ?? ""),
         stepsJson(q.solution_steps),
@@ -703,31 +830,33 @@ export async function replaceExamSnapshotInMysql(
         figureDepJson,
         visualGeoJson,
         figureRefsJson,
+        attachmentsJson,
       ];
       if (q.options == null) {
         await conn.execute(
           `INSERT INTO questions (
           id, exam_id, order_index, type, type_label, subject, content, options, answer,
-          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
+          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
           [...head, ...tail],
         );
       } else {
         await conn.execute(
           `INSERT INTO questions (
           id, exam_id, order_index, type, type_label, subject, content, options, answer,
-          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
+          solution_steps, knowledge_tags, points, diagram_schema, raster_figures, figure_dependency, visual_geometry_evidence, figure_refs, attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), ?, CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), CAST(? AS JSON), NOW(3))`,
           [...head, JSON.stringify(q.options), ...tail],
         );
       }
     }
 
     for (const ex of bundle.examples) {
+      const exAttachmentsJson = ex.attachments != null ? JSON.stringify(ex.attachments) : null;
       await conn.execute(
         `INSERT INTO examples (
-          id, exam_id, question_id, type, subject, content, answer, solution_steps, difficulty, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, NOW(3))`,
+          id, exam_id, question_id, type, subject, content, answer, solution_steps, difficulty, attachments, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS JSON), ?, CAST(? AS JSON), NOW(3))`,
         [
           ex.id,
           bundle.exam.id,
@@ -738,6 +867,7 @@ export async function replaceExamSnapshotInMysql(
           String(ex.answer ?? ""),
           stepsJson(ex.solution_steps),
           String(ex.difficulty ?? "intermediate"),
+          exAttachmentsJson,
         ],
       );
     }
@@ -944,6 +1074,60 @@ export async function updateMysqlExamQuestionsDiagramSchemas(
   }
 }
 
+/** 批量更新题目 attachments（生成题图等）；幂等按题写入 */
+export async function updateMysqlQuestionAttachments(
+  examId: string,
+  questions: Question[],
+): Promise<void> {
+  const pool = await getMysqlPool();
+  if (!pool) throw new Error("未配置 MySQL");
+  await ensureQuestionsAttachmentsColumn(pool);
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const q of questions) {
+      await conn.execute(
+        `UPDATE questions SET attachments = CAST(? AS JSON), content = ? WHERE exam_id = ? AND id = ?`,
+        [JSON.stringify(q.attachments ?? []), String(q.content ?? ""), examId, q.id],
+      );
+    }
+    await conn.commit();
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
+/** 批量更新例题 attachments（生成题图等）；幂等按题写入 */
+export async function updateMysqlExampleAttachments(
+  examId: string,
+  examples: Example[],
+): Promise<void> {
+  const pool = await getMysqlPool();
+  if (!pool) throw new Error("未配置 MySQL");
+  await ensureExamplesAttachmentsColumn(pool);
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    for (const ex of examples) {
+      await conn.execute(
+        `UPDATE examples SET attachments = CAST(? AS JSON) WHERE exam_id = ? AND id = ?`,
+        [JSON.stringify(ex.attachments ?? []), examId, ex.id],
+      );
+    }
+    await conn.commit();
+  } catch (e) {
+    await conn.rollback();
+    throw e;
+  } finally {
+    conn.release();
+  }
+}
+
 export async function updateMysqlExamGenerationMeta(
   examId: string,
   patch: { created_at?: string; generation_duration_sec?: number },
@@ -959,6 +1143,48 @@ export async function updateMysqlExamGenerationMeta(
   if (patch.generation_duration_sec !== undefined) {
     sets.push("generation_duration_sec = ?");
     vals.push(patch.generation_duration_sec);
+  }
+  if (!sets.length) return;
+  vals.push(examId);
+  await pool.execute(`UPDATE exams SET ${sets.join(", ")} WHERE id = ?`, vals);
+}
+
+export async function updateMysqlExamQualityFields(
+  examId: string,
+  patch: {
+    quality_status?: Exam["quality_status"];
+    quality_report?: Exam["quality_report"];
+    quality_checked_at?: string | null;
+    quality_exclude_assign?: boolean | null;
+    subjects?: string[];
+  },
+): Promise<void> {
+  const pool = await getMysqlPool();
+  if (!pool) return;
+  await ensureExamsQualityColumns(pool);
+  const sets: string[] = [];
+  const vals: unknown[] = [];
+  if (patch.quality_status !== undefined) {
+    sets.push("quality_status = ?");
+    vals.push(patch.quality_status ?? null);
+  }
+  if (patch.quality_report !== undefined) {
+    sets.push("quality_report = CAST(? AS JSON)");
+    vals.push(patch.quality_report != null ? JSON.stringify(patch.quality_report) : null);
+  }
+  if (patch.quality_checked_at !== undefined) {
+    sets.push("quality_checked_at = ?");
+    vals.push(
+      patch.quality_checked_at != null ? toMysqlDatetime3(patch.quality_checked_at) : null,
+    );
+  }
+  if (patch.quality_exclude_assign !== undefined) {
+    sets.push("quality_exclude_assign = ?");
+    vals.push(patch.quality_exclude_assign ? 1 : 0);
+  }
+  if (patch.subjects !== undefined) {
+    sets.push("subjects = CAST(? AS JSON)");
+    vals.push(JSON.stringify(patch.subjects));
   }
   if (!sets.length) return;
   vals.push(examId);

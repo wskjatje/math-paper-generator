@@ -58,3 +58,45 @@ export function stripTrailingInlineMcqEchoAfterPredicate(stem: string): string {
 export function cleanMcqStemInlineOptionResidue(stem: string): string {
   return stripTrailingInlineMcqEchoAfterPredicate(stripTrailingParenLetterRunFromStem(stem));
 }
+
+/**
+ * 题干内联/块级 A. / B． 选项区（至少 4 个不同字母）→ 拆 stem + options。
+ * 与生成/入库侧 extractMcqOptionsInline 同规则，供卷面展示去重。
+ */
+export function extractLetterDotOptionsBlock(
+  content: string,
+): { stem: string; options: string[] } | undefined {
+  const s = fixByTypoInOptionRun(String(content ?? "")).replace(/\r\n/g, "\n");
+  const re = /(?:^|[\n\s])([A-Za-z])([.．、。:：)）])\s*/g;
+  const hits: { start: number; endLabel: number; L: string }[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(s)) !== null) {
+    const L = m[1]!.toUpperCase();
+    if (!/^[A-Z]$/.test(L)) continue;
+    hits.push({ start: m.index, endLabel: m.index + m[0].length, L });
+  }
+  if (hits.length < 4) return undefined;
+  const options: string[] = [];
+  const used = new Set<string>();
+  for (let h = 0; h < hits.length; h++) {
+    const L = hits[h]!.L;
+    if (used.has(L)) continue;
+    used.add(L);
+    const t0 = hits[h]!.endLabel;
+    const t1 = h + 1 < hits.length ? hits[h + 1]!.start : s.length;
+    const text = s.slice(t0, t1).trim().replace(/\s+/g, " ");
+    options.push(`${L}. ${text}`);
+    if (options.length >= 8) break;
+  }
+  if (options.length < 4) return undefined;
+  const stem = hits[0] ? s.slice(0, hits[0]!.start).trim() : "";
+  return { stem: stem || s, options };
+}
+
+/** 结构化 options 已存在时，剥离题干末尾 A.…D. 块，避免与选项列表重复展示。 */
+export function stripTrailingLetterDotOptionsBlock(stem: string): string {
+  const extracted = extractLetterDotOptionsBlock(stem);
+  if (!extracted || extracted.options.length < 4) return stem;
+  const stripped = extracted.stem.trim();
+  return stripped.length > 0 ? stripped : stem;
+}

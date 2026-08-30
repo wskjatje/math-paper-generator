@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "kind": "zhixue-demo-pack",
+  "exportedAt": "2026-07-25T02:29:57.857Z",
+  "includes": {
+    "classroomAssignments": true,
+    "localExams": false,
+    "migrationsBundle": true
+  },
+  "migrationFileCount": 20
+}

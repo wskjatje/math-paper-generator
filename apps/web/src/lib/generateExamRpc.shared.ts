@@ -169,7 +169,7 @@ export async function finalizeGenerateExamClientResult(
 
   if (!persisted && !snapshot) {
     throw new Error(
-      "未收到试卷内容快照。请重试；若使用无盘只读环境，请配置云端或允许写入 data/generation-scratch。",
+      "未收到试卷内容快照。请重试；若环境不可写，请配置云端或本机可写存储。",
     );
   }
 

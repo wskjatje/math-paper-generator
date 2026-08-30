@@ -1,4 +1,6 @@
 .venv/
+tools/crawl4ai-textbook/.venv/
+data/grade-fills/crawl4ai-out/
 __pycache__/
 *.py[cod]
 .Python
@@ -48,6 +50,21 @@ data/generation-scratch/*.json
 # 设置页保存的本机 MySQL 连接（含密码）
 data/mysql-connection.json
 data/mysql-password-master.key
+data/ai-settings.json
+
+# 本地运行时 pid / 生成媒体（勿提交）
+.listening-tts.pid
+public/audio/**
+!public/audio/.gitkeep
+public/explain/**
+!public/explain/.gitkeep
+apps/web/public/audio/**
+!apps/web/public/audio/.gitkeep
+apps/web/public/explain/**
+!apps/web/public/explain/.gitkeep
+
+# Claude Code 本地聊天截图
+.claudecode/
 
 # 网上导入队列（无 Supabase/MySQL 时的服务端回退文件）
 data/remote-import-jobs.json

@@ -1,6 +1,8 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { EducationalCognitiveGroupRenderer } from "@/components/education/EducationalCognitiveGroupRenderer";
+import { PAPER_SURFACE_LAYOUT } from "@/config/examDomain";
 import type { SectionNodeV1 } from "@/lib/educationalAst.shared";
 import type { ComposedGroupPositionV1 } from "@/lib/educationalCompositionRuntime.shared";
 import type { CognitivePackingRuntimeV1 } from "@/lib/cognitivePackingRuntime.shared";
@@ -31,7 +33,12 @@ export function EducationalSectionCompositor({
 
   return (
     <section
-      className="math-paper-section-composite mt-4 first:mt-0"
+      className="math-paper-section-composite first:mt-0"
+      style={
+        {
+          marginTop: `${PAPER_SURFACE_LAYOUT.questionClusterMarginRem}rem`,
+        } satisfies CSSProperties
+      }
       data-section={section.label}
     >
       {preamble ? (

@@ -38,28 +38,35 @@ export async function insertImportedExamSnapshotToSupabase(
       ? (JSON.parse(JSON.stringify(bundle.exam.import_parse_quality)) as Json)
       : null;
 
+  const insertRow: Record<string, unknown> = {
+    title: bundle.exam.title,
+    subtitle: bundle.exam.subtitle,
+    description: bundle.exam.description,
+    subjects: bundle.exam.subjects,
+    difficulty: bundle.exam.difficulty,
+    duration_min: bundle.exam.duration_min,
+    total_score: bundle.exam.total_score,
+    source: "imported",
+    is_featured: false,
+    created_at: bundle.exam.created_at,
+    generation_duration_sec: null,
+    import_review_status: status === "staging" || status === "confirmed" ? status : null,
+    offline_import_media: offlineMedia,
+    import_parse_quality: importParseQuality,
+    figure_registry:
+      bundle.exam.figure_registry != null && bundle.exam.figure_registry.length > 0
+        ? (JSON.parse(JSON.stringify(bundle.exam.figure_registry)) as Json)
+        : null,
+  };
+  const sourceDocId = bundle.exam.source_document_id?.trim();
+  if (sourceDocId) {
+    insertRow.source_document_id = sourceDocId;
+    insertRow.extraction_id = bundle.exam.extraction_id?.trim() || sourceDocId;
+  }
+
   const { data: examRow, error: examErr } = await db
     .from("exams")
-    .insert({
-      title: bundle.exam.title,
-      subtitle: bundle.exam.subtitle,
-      description: bundle.exam.description,
-      subjects: bundle.exam.subjects,
-      difficulty: bundle.exam.difficulty,
-      duration_min: bundle.exam.duration_min,
-      total_score: bundle.exam.total_score,
-      source: "imported",
-      is_featured: false,
-      created_at: bundle.exam.created_at,
-      generation_duration_sec: null,
-      import_review_status: status === "staging" || status === "confirmed" ? status : null,
-      offline_import_media: offlineMedia,
-      import_parse_quality: importParseQuality,
-      figure_registry:
-        bundle.exam.figure_registry != null && bundle.exam.figure_registry.length > 0
-          ? (JSON.parse(JSON.stringify(bundle.exam.figure_registry)) as Json)
-          : null,
-    })
+    .insert(insertRow as never)
     .select()
     .single();
 

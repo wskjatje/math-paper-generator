@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 8 176 176" width="176" height="176">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="8" y="8" width="176" height="176" fill="#fff"/>
+  <rect x="40" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="124" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="40" y="68" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="68" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="68" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="124" y="68" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="40" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="124" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="40" y="124" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="124" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="124" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="124" y="124" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <circle cx="40" cy="152" r="3.2" fill="#0f172a"/>
+  <text x="51" y="141" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">起</text>
+  <circle cx="152" cy="40" r="3.2" fill="#0f172a"/>
+  <text x="163" y="29" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">终</text>
+  <circle cx="96" cy="96" r="3.2" fill="#0f172a"/>
+  <text x="107" y="85" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">障</text>
+</svg>

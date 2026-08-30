@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 -26 325 222" width="650" height="444">
+  <defs>
+    <marker id="pm-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+    <marker id="pm-force" markerWidth="9" markerHeight="9" refX="7" refY="3.5" orient="auto">
+      <path d="M0,0 L7,3.5 L0,7 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="4" y="-26" width="325" height="222" fill="#fff"/>
+  <polygon points="50,50 110,50 110,150 50,150" fill="#bfdbfe" fill-opacity="0.55" stroke="#60a5fa" stroke-width="1.4"/>
+  <polygon points="110,80 170,80 170,150 110,150" fill="#bfdbfe" fill-opacity="0.55" stroke="#60a5fa" stroke-width="1.4"/>
+  <polygon points="170,50 230,50 230,150 170,150" fill="#bfdbfe" fill-opacity="0.55" stroke="#60a5fa" stroke-width="1.4"/>
+  <line x1="50" y1="20" x2="50" y2="150" stroke="#0f172a" stroke-width="2"/>
+  <line x1="50" y1="150" x2="110" y2="150" stroke="#0f172a" stroke-width="2"/>
+  <line x1="110" y1="150" x2="110" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <line x1="110" y1="80" x2="170" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <line x1="170" y1="80" x2="170" y2="150" stroke="#0f172a" stroke-width="2"/>
+  <line x1="170" y1="150" x2="230" y2="150" stroke="#0f172a" stroke-width="2"/>
+  <line x1="230" y1="150" x2="230" y2="20" stroke="#0f172a" stroke-width="2"/>
+  <line x1="50" y1="50" x2="110" y2="50" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="170" y1="50" x2="230" y2="50" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <text x="111.6479949438421" y="65.76793147570385" font-size="15" font-family="serif" fill="#0f172a" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill" text-anchor="start" dominant-baseline="auto">0.2 m</text>
+  <text x="246" y="84.8729184035969" font-size="15" font-family="serif" fill="#0f172a" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill" text-anchor="start" dominant-baseline="auto">0.1 m</text>
+  <circle cx="80" cy="70" r="3" fill="#0f172a"/>
+  <text x="94" y="56" font-size="16" font-family="serif" fill="#0f172a" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill" text-anchor="middle" dominant-baseline="middle">A</text>
+  <circle cx="200" cy="60" r="3" fill="#0f172a"/>
+  <text x="214" y="46" font-size="16" font-family="serif" fill="#0f172a" stroke="#ffffff" stroke-width="3.5" paint-order="stroke fill" text-anchor="middle" dominant-baseline="middle">B</text>
+</svg>

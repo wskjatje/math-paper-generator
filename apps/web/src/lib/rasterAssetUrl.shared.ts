@@ -51,6 +51,44 @@ export function isResolvableRasterAssetUrl(url: string): boolean {
   return false;
 }
 
+/**
+ * AI 命题常编造无 batch 目录的假路径（如 `/import-figures/3.png`）。
+ * 真实线下导入为 `/import-figures/<uuid>/…`。假链不可加载，也不应挡住「生成题图」。
+ */
+export function isPhantomImportFigureUrl(url: string): boolean {
+  const u = String(url ?? "").trim();
+  if (!u) return false;
+  const pathOnly = u.replace(/^https?:\/\/[^/]+/i, "");
+  const m = /\/import-figures\/([^/?#]+)/i.exec(pathOnly);
+  if (!m) return false;
+  const seg = m[1]!;
+  // UUID batch → 真实导入落盘
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg)) {
+    return false;
+  }
+  return true;
+}
+
+/** 题干 Markdown 是否含假 import-figures 图链 */
+export function contentHasPhantomImportFigureMarkdown(content: string): boolean {
+  const re = /!\[[^\]]*\]\(\s*([^)]+?)\s*\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(String(content ?? ""))) != null) {
+    if (isPhantomImportFigureUrl(m[1] ?? "")) return true;
+  }
+  return false;
+}
+
+/** 剥离假 import-figures 图链（生成题图成功后或卷面展示时），保留真实 batch 图 */
+export function stripPhantomImportFigureMarkdown(content: string): string {
+  let out = String(content ?? "").replace(/!\[[^\]]*\]\(\s*([^)]+?)\s*\)/g, (full, url: string) =>
+    isPhantomImportFigureUrl(url) ? "" : full,
+  );
+  out = out.replace(/[ \t]{2,}/g, " ");
+  out = out.replace(/\s+([。．.，,；;））\]】])/g, "$1");
+  return out.trimEnd();
+}
+
 /** 从 Markdown 提取 **可解析** 的 `![](url)`（去重保序） */
 export function extractResolvableRasterUrlsFromMarkdown(text: string): string[] {
   const normalized = String(text ?? "").replace(/\r\n/g, "\n");

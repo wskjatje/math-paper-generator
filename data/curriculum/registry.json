@@ -1,0 +1,12 @@
+{
+  "activeVersionId": "v1",
+  "versions": [
+    {
+      "id": "v1",
+      "status": "active",
+      "createdAt": "2026-08-01T00:00:00.000Z",
+      "activatedAt": "2026-08-01T00:00:00.000Z",
+      "label": "bootstrap"
+    }
+  ]
+}

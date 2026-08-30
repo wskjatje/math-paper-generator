@@ -5,15 +5,8 @@ import {
   DEFAULT_AI_SETTINGS,
   loadAiSettings,
   saveAiSettings,
-  toAiRuntimePayload,
   type AiSettingsForm,
 } from "@/lib/aiSettingsStorage";
-import {
-  DEFAULT_WEB_SEARCH_SETTINGS,
-  loadWebSearchSettings,
-  saveWebSearchSettings,
-  type WebSearchSettingsForm,
-} from "@/lib/webSearchSettingsStorage";
 import {
   DEFAULT_GATEWAY_SETTINGS,
   loadGatewaySettings,
@@ -24,18 +17,15 @@ import {
   fetchWorkspaceIntegrationSettings,
   saveWorkspaceIntegrationSettings,
 } from "@/lib/workspaceSettings.functions.server";
-import { DEFAULT_CLOUD_MODEL } from "@/lib/aiRuntime.shared";
 import {
-  probeAiConnection,
-  probeSubmitExamToolCallFn,
   fetchAiSettingsFromDb,
   saveAiSettingsToDb,
-  listLocalModels,
   fetchImportLearningOverview,
   setImportLearningAutonomousEnabled,
 } from "@/lib/exam.functions.server";
 import type { StoredImportLearning } from "@/lib/importLearning.shared";
 import { toast } from "sonner";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 import {
   Loader2,
   Save,
@@ -49,13 +39,17 @@ import {
   Cloud,
   Server,
   SlidersHorizontal,
-  ChevronDown,
   RefreshCw,
   Download,
-  Globe,
   Camera,
+  BookOpen,
+  BrainCircuit,
 } from "lucide-react";
 import { FormPanel } from "@/components/layout/FormPanel";
+import { PageShell } from "@/components/layout/PageShell";
+import { AiModelCatalogPanel } from "@/components/settings/AiModelCatalogPanel";
+import { CoursewareDirectorySection } from "@/components/settings/CoursewareDirectorySection";
+import { GenerationLearningPanel } from "@/components/settings/GenerationLearningPanel";
 import {
   Dialog,
   DialogContent,
@@ -90,13 +84,11 @@ import {
 import { useGenerationHabitsCloudSync } from "@/hooks/useGenerationHabitsCloudSync";
 import {
   loadGenerationHabits,
-  readHabitsLocalMeta,
   resetGenerationHabits,
   setAutonomousLearningEnabled,
   type StoredGenerationHabit,
 } from "@/lib/generationHabits";
 import { GENERATION_ERROR_CATEGORY_LABELS } from "@/lib/generationQuality.shared";
-import { CURRICULUM_SUBJECT_OPTIONS } from "@/lib/generateCatalog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -105,170 +97,74 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 const CONTROL =
   "w-full rounded-lg border border-input bg-background px-3 py-2.5 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
-/** 本地设置页输入/下拉统一底色（避免原生 select 与相邻 input 观感不一致） */
+/** 本地设置页输入统一底色（与原生控件观感一致） */
 const LOCAL_FIELD_CONTROL = cn(CONTROL, "bg-background text-foreground antialiased");
-
-const LOAD_MODELS_BTN =
-  "inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-border bg-card px-3 py-2.5 text-sm hover:bg-accent disabled:pointer-events-none disabled:opacity-50";
-
-/** 学科命题模型弹窗：下拉选择「手动输入」时的哨兵值（不作为真实模型 id 储存） */
-const SUBJECT_MODEL_SELECT_OTHER = "__mpg_subject_other__";
-
-/** 选了「其他」尚未输入时的占位；应用设置时会剔除，不落库 */
-const SUBJECT_MODEL_OTHER_EMPTY = "\u00a0";
-
-function subjectModelSelectValue(
-  draftVal: string | undefined,
-  loaded: string[],
-): "" | typeof SUBJECT_MODEL_SELECT_OTHER | string {
-  const raw = draftVal ?? "";
-  if (raw === SUBJECT_MODEL_OTHER_EMPTY) return SUBJECT_MODEL_SELECT_OTHER;
-  const v = raw.trim();
-  if (!v) return "";
-  if (loaded.includes(v)) return v;
-  return SUBJECT_MODEL_SELECT_OTHER;
-}
-
-function normalizeSubjectModelsDraft(draft: Record<string, string>): Record<string, string> {
-  const next = { ...draft };
-  for (const k of Object.keys(next)) {
-    const v = next[k];
-    if (v === SUBJECT_MODEL_OTHER_EMPTY || !(v ?? "").trim()) delete next[k];
-  }
-  return next;
-}
 
 /** 一句话说明当前命题/导入默认落在何处（与 examStorage/policy、persistImported 模块行为一致） */
 function currentExamPersistenceSummary(
   pref: ExamStoragePreference,
   o: DataSettingsOverview,
 ): { headline: string; sub?: string } {
-  const localLabel = "本地（data/local-exams）";
+  const localLabel = "本机目录";
   const sb = o.supabaseConfigured;
   const lw = o.localWritable;
 
   if (pref === "local") {
     if (lw) return { headline: localLabel };
     return {
-      headline: "本地目录不可写，仅本次会话能存卷",
-      sub: "请检查目录权限或改用「自动」。",
+      headline: "本机目录不可写",
+      sub: "请检查权限或改用「自动」。",
     };
   }
 
   if (pref === "supabase") {
-    if (sb) {
-      return {
-        headline: "云端",
-        sub: o.supabaseUrlHost ? `主机 ${o.supabaseUrlHost}` : undefined,
-      };
-    }
-    if (o.mysqlReachable) {
-      return {
-        headline: "本地 MySQL（未配云端时的实际存储）",
-        sub: "当前选项为「仅云端列表」但服务端未配置 Supabase；试卷与教育 OS 已自动走同一 MySQL。",
-      };
-    }
-    if (lw) {
-      return {
-        headline: `${localLabel}（云端未配置，已回退）`,
-      };
-    }
+    if (sb) return { headline: "云端" };
+    if (o.mysqlReachable) return { headline: "本机数据库" };
+    if (lw) return { headline: localLabel };
     return {
-      headline: "未配云端且本地不可写，仅本次会话能存",
-      sub: "请配置云端或让本地目录可写。",
+      headline: "存储不可用",
+      sub: "请配置云端或本机目录。",
     };
   }
 
   if (pref === "builtin") {
-    if (lw) {
-      return {
-        headline: `${localLabel}（新建优先写本地）`,
-      };
-    }
-    if (sb) {
-      return {
-        headline: "云端（本地不可写时）",
-        sub: o.supabaseUrlHost ? `主机 ${o.supabaseUrlHost}` : undefined,
-      };
-    }
-    return {
-      headline: "未配云端且本地不可写，仅本次会话能存",
-    };
+    if (lw) return { headline: localLabel };
+    if (sb) return { headline: "云端" };
+    return { headline: "存储不可用" };
   }
 
   // auto
-  if (sb) {
-    return {
-      headline: "云端（自动，优先写云端）",
-      sub: o.supabaseUrlHost ? `主机 ${o.supabaseUrlHost}` : undefined,
-    };
-  }
-  if (o.mysqlReachable) {
-    return {
-      headline: "本地 MySQL（自动，当前未配云端）",
-      sub: "试卷与教育 OS 一体写入 zhixue；配置 Supabase 后将优先云端。",
-    };
-  }
-  if (lw) {
-    return {
-      headline: `${localLabel}（自动，当前未配云端）`,
-    };
-  }
+  if (sb) return { headline: "云端" };
+  if (o.mysqlReachable) return { headline: "本机数据库" };
+  if (lw) return { headline: localLabel };
   return {
-    headline: "未配云端且本地不可写，仅本次会话能存",
-    sub: "请配置云端或让本地目录可写。",
+    headline: "存储不可用",
+    sub: "请配置云端或本机目录。",
   };
-}
-
-/** 用户常把 Lovable/网关 API Key 误填进「云端模型 ID」；模型名一般形如 google/… 或带 / */
-function looksLikeApiKeyMistake(s: string): boolean {
-  const t = s.trim();
-  if (!t) return false;
-  if (/^sk[-_]/i.test(t)) return true;
-  if (t.length >= 32 && !t.includes("/") && /^[a-f0-9-]+$/i.test(t)) return true;
-  return false;
 }
 
 export const Route = createFileRoute("/settings")({
   component: SettingsPage,
   head: () => ({
-    meta: [
-      { title: "设置 — 知学 Zhixue" },
-      {
-        name: "description",
-        content: "模型推理配置与云端 / 本机数据库连接。",
-      },
-    ],
+    meta: [{ title: "设置 — 知学 Zhixue" }],
   }),
 });
 
 function SettingsPage() {
   const [settingsTab, setSettingsTab] = useState("ai");
-  const probeFn = useServerFn(probeAiConnection);
-  const probeToolFn = useServerFn(probeSubmitExamToolCallFn);
   const fetchDbFn = useServerFn(fetchAiSettingsFromDb);
   const saveDbFn = useServerFn(saveAiSettingsToDb);
   const fetchWsFn = useServerFn(fetchWorkspaceIntegrationSettings);
   const saveWsFn = useServerFn(saveWorkspaceIntegrationSettings);
-  const loadModelsFn = useServerFn(listLocalModels);
   const [form, setForm] = useState<AiSettingsForm>(() => ({ ...DEFAULT_AI_SETTINGS }));
-  const [webSearchForm, setWebSearchForm] = useState<WebSearchSettingsForm>(() => ({
-    ...DEFAULT_WEB_SEARCH_SETTINGS,
-  }));
   const [gatewayForm, setGatewayForm] = useState<GatewaySettingsForm>(() => ({
     ...DEFAULT_GATEWAY_SETTINGS,
   }));
   const [mounted, setMounted] = useState(false);
-  const [testing, setTesting] = useState(false);
-  const [toolTesting, setToolTesting] = useState(false);
-  const [loadedModels, setLoadedModels] = useState<string[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
-  const [subjectModelsDialogOpen, setSubjectModelsDialogOpen] = useState(false);
-  const [subjectModelsDraft, setSubjectModelsDraft] = useState<Record<string, string>>({});
+  const [savingGateway, setSavingGateway] = useState(false);
 
   useEffect(() => {
     setForm(loadAiSettings());
-    setWebSearchForm(loadWebSearchSettings());
     setGatewayForm(loadGatewaySettings());
     setMounted(true);
   }, []);
@@ -279,11 +175,9 @@ function SettingsPage() {
       try {
         const ws = await fetchWsFn();
         setGatewayForm({ ...DEFAULT_GATEWAY_SETTINGS, ...(ws.settings.gateway ?? {}) });
-        setWebSearchForm({ ...DEFAULT_WEB_SEARCH_SETTINGS, ...(ws.settings.webSearch ?? {}) });
       } catch (e) {
         console.warn("[settings] fetchWorkspaceIntegrationSettings:", e);
         setGatewayForm(loadGatewaySettings());
-        setWebSearchForm(loadWebSearchSettings());
       }
       try {
         const res = await fetchDbFn();
@@ -297,605 +191,127 @@ function SettingsPage() {
     })();
   }, [mounted, fetchWsFn, fetchDbFn]);
 
-  const update = <K extends keyof AiSettingsForm>(key: K, value: AiSettingsForm[K]) => {
-    setForm((f) => ({ ...f, [key]: value }));
-  };
-
-  const updateWebSearch = <K extends keyof WebSearchSettingsForm>(
-    key: K,
-    value: WebSearchSettingsForm[K],
-  ) => {
-    setWebSearchForm((f) => ({ ...f, [key]: value }));
-  };
-
-  const handleSave = async () => {
+  const handleSaveGateway = async () => {
+    setSavingGateway(true);
     try {
-      await saveWsFn({
-        data: {
-          gateway: { baseUrl: gatewayForm.baseUrl },
-          webSearch: {
-            tavilyApiKey: webSearchForm.tavilyApiKey,
-            braveApiKey: webSearchForm.braveApiKey,
-            provider: webSearchForm.provider,
+      try {
+        await saveWsFn({
+          data: {
+            gateway: { baseUrl: gatewayForm.baseUrl },
           },
-        },
-      });
-    } catch (e) {
-      saveWebSearchSettings(webSearchForm);
-      saveGatewaySettings(gatewayForm);
-      toast.warning(
-        e instanceof Error
-          ? `${e.message}（网关与检索已降级写入本机浏览器）`
-          : "集成配置已降级写入本机浏览器",
-      );
-    }
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("mpg-web-search-settings-changed"));
-    }
-    saveAiSettings(form);
-    try {
-      const res = await saveDbFn({ data: form });
-      if (res.ok) {
-        toast.success("已保存：模型偏好与集成配置已写入数据库（换浏览器后会自动加载）");
-      } else if (res.reason === "no_supabase") {
-        toast.success("模型偏好已保存到本机；服务端未配置 Supabase 时无法云端同步");
+        });
+        saveGatewaySettings(gatewayForm);
+        toast.success("网关设置已保存。");
+      } catch (e) {
+        saveGatewaySettings(gatewayForm);
+        toast.warning(
+          e instanceof Error
+            ? `${e.message}（网关配置已降级写入本机浏览器）`
+            : "网关配置已降级写入本机浏览器",
+        );
       }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "写入数据库失败");
-    }
-  };
-
-  const handleTest = async () => {
-    setTesting(true);
-    try {
-      const payload = toAiRuntimePayload(form);
-      const res = await probeFn({ data: payload });
-      if (res.ok) {
-        toast.success(res.message);
-      } else {
-        toast.error(res.message);
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "探测失败");
     } finally {
-      setTesting(false);
-    }
-  };
-
-  const handleLoadModels = async () => {
-    const url = form.localBaseUrl?.trim();
-    if (!url) {
-      toast.error("请先填写本地接口根 URL");
-      return;
-    }
-    setLoadingModels(true);
-    try {
-      const res = await loadModelsFn({
-        data: {
-          localBaseUrl: url,
-          localApiKey: form.localApiKey?.trim() || undefined,
-        },
-      });
-      setLoadedModels(res.models);
-      toast.success(
-        `已加载 ${res.models.length} 个模型（${res.source === "ollama" ? "Ollama" : "OpenAI 兼容"}）`,
-      );
-      setForm((f) => {
-        const next = { ...f };
-        if (res.models.length > 0) {
-          const cur = next.localModel?.trim() ?? "";
-          if (!cur || !res.models.includes(cur)) {
-            next.localModel = res.models[0];
-          }
-        }
-        return next;
-      });
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "加载模型列表失败");
-    } finally {
-      setLoadingModels(false);
-    }
-  };
-
-  const subjectOverrideCount = Object.keys(form.localSubjectModels ?? {}).filter((k) =>
-    (form.localSubjectModels?.[k] ?? "").trim(),
-  ).length;
-
-  const openSubjectModelsDialog = () => {
-    setSubjectModelsDraft({ ...(form.localSubjectModels ?? {}) });
-    setSubjectModelsDialogOpen(true);
-  };
-
-  const applySubjectModelsDialog = () => {
-    const cleaned = normalizeSubjectModelsDraft(subjectModelsDraft);
-    setForm((f) => ({ ...f, localSubjectModels: cleaned }));
-    setSubjectModelsDraft(cleaned);
-    setSubjectModelsDialogOpen(false);
-    toast.success("学科命题模型已应用；若需持久化请点击「保存设置」");
-  };
-
-  const handleTestSubmitExamTool = async () => {
-    setToolTesting(true);
-    try {
-      const payload = toAiRuntimePayload(form);
-      const res = await probeToolFn({ data: payload });
-      if (res.ok) {
-        toast.success(res.message);
-      } else {
-        toast.error(res.message);
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "submit_exam 探测失败");
-    } finally {
-      setToolTesting(false);
+      setSavingGateway(false);
     }
   };
 
   if (!mounted) {
     return (
-      <div className="container mx-auto max-w-3xl px-4 py-12">
-        <p className="text-sm text-muted-foreground">加载中…</p>
-      </div>
+      <PageShell size="full">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          加载中…
+        </p>
+      </PageShell>
     );
   }
 
-  const cloudMode = form.mode === "cloud";
-  const cloudModelLooksLikeKey = looksLikeApiKeyMistake(form.cloudModel ?? "");
-
   return (
-    <div className="container mx-auto max-w-3xl px-4 py-12">
-      <div className="mb-8">
-        <h1 className="text-display text-4xl md:text-5xl">设置</h1>
-      </div>
-
-      <Tabs value={settingsTab} onValueChange={setSettingsTab} className="w-full">
-        <TabsList className="mb-4 flex h-auto w-fit gap-1 rounded-md bg-muted/50 p-1">
-          <TabsTrigger value="ai" className="gap-1.5 rounded-sm">
-            <PlugZap className="h-3.5 w-3.5" />
-            模型与接口
+    <PageShell size="full" className="space-y-5">
+      {/* 顶栏已有「设置」，正文直接进页签，避免重复大标题 */}
+      <Tabs value={settingsTab} onValueChange={setSettingsTab} className="w-full space-y-5">
+        <TabsList variant="portal">
+          <TabsTrigger variant="portal" value="ai">
+            <PlugZap className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            模型
           </TabsTrigger>
-          <TabsTrigger value="data" className="gap-1.5 rounded-sm">
-            <Database className="h-3.5 w-3.5" />
-            本地与数据库
+          <TabsTrigger variant="portal" value="prefs">
+            <SlidersHorizontal className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            偏好
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="learning">
+            <BrainCircuit className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            改进
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="curriculum">
+            <BookOpen className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            课件
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="ai" className="mt-0">
-          <FormPanel className="space-y-6">
-            <Field label="推理后端">
-              <div className="flex flex-wrap gap-2">
-                <ModeBtn active={cloudMode} onClick={() => update("mode", "cloud")}>
-                  云端（Lovable Gateway）
-                </ModeBtn>
-                <ModeBtn active={!cloudMode} onClick={() => update("mode", "local")}>
-                  本地（OpenAI 兼容）
-                </ModeBtn>
-              </div>
+        <TabsContent value="ai" className="mt-0 space-y-4">
+          <AiModelCatalogPanel
+            form={form}
+            onPersist={async (next) => {
+              setForm(next);
+              saveAiSettings(next);
+              try {
+                const res = await saveDbFn({ data: next });
+                if (res.ok) toast.success("模型目录已保存");
+                else toast.error("未能写入工作区存储，请检查配库后重试");
+              } catch (e) {
+                toast.error(toUserFacingErrorMessage(e, "保存失败"));
+              }
+            }}
+          />
+
+          <div className="space-y-4 rounded-lg border border-border/60 bg-muted/15 px-4 py-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Camera className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              <span className="text-sm font-semibold text-foreground">图片识图网关</span>
+            </div>
+            <Field label="网关根 URL（可选）">
+              <input
+                value={gatewayForm.baseUrl}
+                onChange={(e) => setGatewayForm((g) => ({ ...g, baseUrl: e.target.value }))}
+                placeholder="http://127.0.0.1:8090"
+                autoComplete="off"
+                spellCheck={false}
+                className={LOCAL_FIELD_CONTROL}
+                aria-label="API 网关根地址，用于线下导入图片识图"
+              />
             </Field>
-
-            {cloudMode ? (
-              <>
-                {!cloudModelLooksLikeKey && (
-                  <p className="text-xs text-muted-foreground">
-                    密钥在服务端 <code className="rounded bg-muted px-1 text-[11px]">.env</code>
-                    （参考 <code className="rounded bg-muted px-1 text-[11px]">.env.example</code>
-                    ）；此处仅模型 ID，可留空。
-                  </p>
-                )}
-                <Field label="云端模型 ID（可选）">
-                  <input
-                    value={form.cloudModel ?? ""}
-                    onChange={(e) => update("cloudModel", e.target.value)}
-                    placeholder={DEFAULT_CLOUD_MODEL}
-                    autoComplete="off"
-                    aria-invalid={cloudModelLooksLikeKey}
-                    className={cn(
-                      CONTROL,
-                      cloudModelLooksLikeKey &&
-                        "border-destructive focus-visible:ring-destructive/30",
-                    )}
-                  />
-                </Field>
-                {cloudModelLooksLikeKey && (
-                  <p className="text-sm text-destructive" role="alert">
-                    勿填密钥于此；密钥进 .env，本框填模型 ID（通常含{" "}
-                    <code className="text-xs">/</code>）。
-                  </p>
-                )}
-              </>
-            ) : (
-              <>
-                <Field label="本地接口根 URL" hint="如 http://127.0.0.1:11434；第三方勿以 /v1 结尾">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <input
-                        value={form.localBaseUrl ?? ""}
-                        onChange={(e) => update("localBaseUrl", e.target.value)}
-                        placeholder="http://127.0.0.1:11434"
-                        className={cn(LOCAL_FIELD_CONTROL, "min-w-0 flex-1 !w-auto")}
-                      />
-                      <button
-                        type="button"
-                        disabled={loadingModels || !form.localBaseUrl?.trim()}
-                        onClick={() => void handleLoadModels()}
-                        className={LOAD_MODELS_BTN}
-                      >
-                        {loadingModels ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <PlugZap className="h-4 w-4" />
-                        )}
-                        加载模型列表
-                      </button>
-                    </div>
-                    {loadedModels.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        已载入 {loadedModels.length} 个
-                      </p>
-                    )}
-                  </div>
-                </Field>
-                <Field label="本地默认模型">
-                  <div className="space-y-1.5">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {loadedModels.length > 0 ? (
-                        <div className="relative min-w-0 flex-1">
-                          <select
-                            className={cn(
-                              LOCAL_FIELD_CONTROL,
-                              "w-full appearance-none cursor-pointer pr-9",
-                            )}
-                            value={
-                              loadedModels.includes((form.localModel ?? "").trim())
-                                ? (form.localModel ?? "").trim()
-                                : (loadedModels[0] ?? "")
-                            }
-                            onChange={(e) => update("localModel", e.target.value)}
-                            aria-label="选择本地默认模型"
-                          >
-                            {loadedModels.map((m) => (
-                              <option key={m} value={m}>
-                                {m}
-                              </option>
-                            ))}
-                          </select>
-                          <ChevronDown
-                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                            aria-hidden
-                          />
-                        </div>
-                      ) : (
-                        <input
-                          value={form.localModel ?? ""}
-                          onChange={(e) => update("localModel", e.target.value)}
-                          placeholder="例如 llama3.2:latest、gemma2:27b"
-                          className={cn(LOCAL_FIELD_CONTROL, "min-w-0 flex-1 !w-auto")}
-                          autoComplete="off"
-                          spellCheck={false}
-                        />
-                      )}
-                      <button
-                        type="button"
-                        onClick={openSubjectModelsDialog}
-                        className={LOAD_MODELS_BTN}
-                        aria-label="打开学科命题模型设置"
-                      >
-                        <SlidersHorizontal className="h-4 w-4 shrink-0" aria-hidden />
-                        设置学科命题模型
-                      </button>
-                    </div>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      测试连接、「测试
-                      submit_exam」与命题共用；未在右侧弹窗单独填写的学科，命题时亦使用此处所选模型。
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {subjectOverrideCount > 0
-                        ? `已单独指定 ${subjectOverrideCount} 门学科的命题模型`
-                        : "尚未单独指定学科命题模型"}
-                    </p>
-                  </div>
-                </Field>
-                <Dialog open={subjectModelsDialogOpen} onOpenChange={setSubjectModelsDialogOpen}>
-                  <DialogContent className="max-w-lg max-h-[85vh] flex flex-col gap-0 p-0 overflow-hidden">
-                    <DialogHeader className="px-6 pt-6 pb-2 shrink-0 border-b border-border/60">
-                      <DialogTitle>设置学科命题模型</DialogTitle>
-                      <DialogDescription className="text-left leading-relaxed">
-                        与命题页「学科」一致；未填写的学科将使用主界面「本地默认模型」。
-                        {loadedModels.length
-                          ? " 已加载列表时可在此下栏选择；也可选「其他」后手动输入模型名。"
-                          : " 先点击主界面「加载模型列表」可在此用下栏快速选择；未加载时仅支持手动输入。"}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4 space-y-3">
-                      {CURRICULUM_SUBJECT_OPTIONS.map((s) => {
-                        const sel = subjectModelSelectValue(subjectModelsDraft[s.id], loadedModels);
-                        const showManual =
-                          loadedModels.length > 0 && sel === SUBJECT_MODEL_SELECT_OTHER;
-                        return (
-                          <div
-                            key={s.id}
-                            className="flex flex-col gap-1.5 sm:flex-row sm:items-start sm:gap-3"
-                          >
-                            <span className="shrink-0 text-sm text-muted-foreground sm:w-[8.5rem] pt-2 sm:pt-2.5">
-                              {s.label}
-                            </span>
-                            <div className="flex min-w-0 flex-1 flex-col gap-2">
-                              {loadedModels.length > 0 ? (
-                                <>
-                                  <div className="relative w-full">
-                                    <select
-                                      className={cn(
-                                        LOCAL_FIELD_CONTROL,
-                                        "w-full appearance-none cursor-pointer pr-9 font-mono text-[13px]",
-                                      )}
-                                      value={sel}
-                                      onChange={(e) => {
-                                        const val = e.target.value;
-                                        setSubjectModelsDraft((prev) => {
-                                          const next = { ...prev };
-                                          if (val === "") {
-                                            delete next[s.id];
-                                          } else if (val === SUBJECT_MODEL_SELECT_OTHER) {
-                                            const raw = prev[s.id] ?? "";
-                                            const cur = raw.trim();
-                                            if (
-                                              raw === SUBJECT_MODEL_OTHER_EMPTY ||
-                                              !cur ||
-                                              loadedModels.includes(cur)
-                                            ) {
-                                              next[s.id] = SUBJECT_MODEL_OTHER_EMPTY;
-                                            }
-                                          } else {
-                                            next[s.id] = val;
-                                          }
-                                          return next;
-                                        });
-                                      }}
-                                      aria-label={`${s.label} 命题模型`}
-                                    >
-                                      <option value="">
-                                        使用本地默认模型（
-                                        {(form.localModel ?? "").trim() || "未设置"}）
-                                      </option>
-                                      {loadedModels.map((m) => (
-                                        <option key={m} value={m}>
-                                          {m}
-                                        </option>
-                                      ))}
-                                      <option value={SUBJECT_MODEL_SELECT_OTHER}>
-                                        其他（手动输入）…
-                                      </option>
-                                    </select>
-                                    <ChevronDown
-                                      className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                                      aria-hidden
-                                    />
-                                  </div>
-                                  {showManual ? (
-                                    <input
-                                      value={
-                                        subjectModelsDraft[s.id] === SUBJECT_MODEL_OTHER_EMPTY
-                                          ? ""
-                                          : (subjectModelsDraft[s.id] ?? "")
-                                      }
-                                      onChange={(e) => {
-                                        const v = e.target.value;
-                                        setSubjectModelsDraft((prev) => {
-                                          const next = { ...prev };
-                                          if (!v.trim()) delete next[s.id];
-                                          else next[s.id] = v.trim();
-                                          return next;
-                                        });
-                                      }}
-                                      placeholder="输入自定义模型名（如未在列表中）"
-                                      className={cn(CONTROL, "font-mono text-[13px]")}
-                                      autoComplete="off"
-                                      spellCheck={false}
-                                    />
-                                  ) : null}
-                                </>
-                              ) : (
-                                <input
-                                  value={subjectModelsDraft[s.id] ?? ""}
-                                  onChange={(e) => {
-                                    const v = e.target.value;
-                                    setSubjectModelsDraft((prev) => {
-                                      const next = { ...prev };
-                                      if (!v.trim()) delete next[s.id];
-                                      else next[s.id] = v.trim();
-                                      return next;
-                                    });
-                                  }}
-                                  placeholder={`默认：${(form.localModel ?? "").trim() || "未填写主模型"}`}
-                                  className={cn(CONTROL, "font-mono text-[13px]")}
-                                  autoComplete="off"
-                                  spellCheck={false}
-                                />
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-2 border-t border-border/60 px-6 py-4 shrink-0 bg-muted/20">
-                      <button
-                        type="button"
-                        className="rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent"
-                        onClick={() => setSubjectModelsDialogOpen(false)}
-                      >
-                        取消
-                      </button>
-                      <button
-                        type="button"
-                        className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95"
-                        onClick={applySubjectModelsDialog}
-                      >
-                        应用
-                      </button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Field label="本地 API Key（可选）">
-                  <input
-                    type="password"
-                    value={form.localApiKey ?? ""}
-                    onChange={(e) => update("localApiKey", e.target.value)}
-                    placeholder="留空表示无需鉴权"
-                    autoComplete="off"
-                    className={LOCAL_FIELD_CONTROL}
-                  />
-                </Field>
-              </>
-            )}
-
-            <div className="mt-4 space-y-4 rounded-lg border border-border/60 bg-muted/15 px-4 py-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Globe className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="text-sm font-semibold text-foreground">
-                  外网检索 API（线下导入）
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                用于「导入线下试卷」页的网页搜索；密钥保存在本机浏览器，检索由服务端代发至 Tavily /
-                Brave（可与部署环境里的同名变量叠加，此处填写优先）。
-              </p>
-              <Field label="Tavily API Key（可选）">
-                <input
-                  type="password"
-                  value={webSearchForm.tavilyApiKey}
-                  onChange={(e) => updateWebSearch("tavilyApiKey", e.target.value)}
-                  placeholder="未填时可依赖服务端 MPG_TAVILY_API_KEY"
-                  autoComplete="off"
-                  className={LOCAL_FIELD_CONTROL}
-                />
-              </Field>
-              <Field label="Brave Search API Key（可选）">
-                <input
-                  type="password"
-                  value={webSearchForm.braveApiKey}
-                  onChange={(e) => updateWebSearch("braveApiKey", e.target.value)}
-                  placeholder="未填时可依赖服务端 MPG_BRAVE_SEARCH_API_KEY"
-                  autoComplete="off"
-                  className={LOCAL_FIELD_CONTROL}
-                />
-              </Field>
-              <Field
-                label="检索提供方"
-                hint="自动：在已有密钥前提下优先 Tavily。与服务端 MPG_WEB_SEARCH_PROVIDER 类似；此处选择会随请求一并下发。"
-              >
-                <select
-                  className={cn(LOCAL_FIELD_CONTROL, "cursor-pointer")}
-                  value={webSearchForm.provider}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === "auto" || v === "tavily" || v === "brave")
-                      updateWebSearch("provider", v);
-                  }}
-                  aria-label="外网检索优先提供方"
-                >
-                  <option value="auto">自动（优先 Tavily）</option>
-                  <option value="tavily">仅 Tavily</option>
-                  <option value="brave">仅 Brave</option>
-                </select>
-              </Field>
-            </div>
-
-            <div className="mt-4 space-y-4 rounded-lg border border-border/60 bg-muted/15 px-4 py-4">
-              <div className="flex flex-wrap items-center gap-2">
-                <Camera className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="text-sm font-semibold text-foreground">
-                  API 网关 · 图片 OCR（线下导入）
-                </span>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                导入线下试卷时，图片会优先由服务端请求此处填写的网关{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">/api/v1/ocr/image</code>
-                ；留空则仅用服务器环境变量{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">MPG_GATEWAY_URL</code>
-                。须先执行{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">npm run docker:api:detach</code>
-                （<code className="rounded bg-muted px-1 text-[11px]">dev:host</code> 会自动执行；
-                <code className="rounded bg-muted px-1 text-[11px]">dev:clean</code> 不会）。直连 Docker
-                网关推荐{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">http://127.0.0.1:8090</code>
-                ；若用 Vite 代理（<code className="rounded bg-muted px-1 text-[11px]">dev:host</code>
-                ）可填{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">http://127.0.0.1:8080</code>。
-              </p>
-              <Field label="网关根 URL（可选）">
-                <input
-                  value={gatewayForm.baseUrl}
-                  onChange={(e) => setGatewayForm((g) => ({ ...g, baseUrl: e.target.value }))}
-                  placeholder="http://127.0.0.1:8090"
-                  autoComplete="off"
-                  spellCheck={false}
-                  className={LOCAL_FIELD_CONTROL}
-                  aria-label="API 网关根 URL，用于线下导入图片 OCR"
-                />
-              </Field>
-            </div>
-
-            <div
-              className="flex flex-wrap gap-3 pt-2"
-              title="本地请求经开发服务器转发；远程部署时不可用本机 127.0.0.1"
-            >
+            <div className="flex flex-wrap gap-3 pt-1">
               <button
                 type="button"
-                disabled={cloudMode && cloudModelLooksLikeKey}
-                onClick={handleSave}
-                title={
-                  cloudMode && cloudModelLooksLikeKey
-                    ? "请先修正云端模型 ID（勿填 API 密钥）"
-                    : undefined
-                }
+                disabled={savingGateway}
+                onClick={() => void handleSaveGateway()}
                 className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-95 disabled:pointer-events-none disabled:opacity-50"
               >
-                <Save className="h-4 w-4" />
-                保存设置
-              </button>
-              <button
-                type="button"
-                disabled={testing || (cloudMode && cloudModelLooksLikeKey)}
-                onClick={handleTest}
-                title={
-                  cloudMode && cloudModelLooksLikeKey ? "请先修正云端模型 ID" : "检测接口是否可达"
-                }
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
-              >
-                {testing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                {savingGateway ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <PlugZap className="h-4 w-4" />
+                  <Save className="h-4 w-4" aria-hidden />
                 )}
-                测试连接
-              </button>
-              <button
-                type="button"
-                disabled={toolTesting || testing || (cloudMode && cloudModelLooksLikeKey)}
-                onClick={() => void handleTestSubmitExamTool()}
-                title={
-                  cloudMode && cloudModelLooksLikeKey
-                    ? "请先修正云端模型 ID"
-                    : "验证函数调用（命题需要）；可能产生费用"
-                }
-                className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm hover:bg-accent disabled:opacity-50"
-              >
-                {toolTesting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <PlugZap className="h-4 w-4" />
-                )}
-                测试 submit_exam
+                保存网关
               </button>
             </div>
-          </FormPanel>
+          </div>
         </TabsContent>
 
-        <TabsContent value="data" className="mt-0">
+        <TabsContent value="prefs" className="mt-0">
           <DataStorageTab />
         </TabsContent>
+
+        <TabsContent value="learning" className="mt-0">
+          <GenerationLearningPanel />
+        </TabsContent>
+
+        <TabsContent value="curriculum" className="mt-0 space-y-5">
+          <CoursewareDirectorySection />
+        </TabsContent>
       </Tabs>
-    </div>
+    </PageShell>
   );
 }
 
@@ -975,7 +391,7 @@ function DataStorageTab() {
       }
     } catch (e) {
       console.warn("[DataStorageTab]", e);
-      toast.error(e instanceof Error ? e.message : "加载失败");
+      toast.error(toUserFacingErrorMessage(e, "加载失败"));
     } finally {
       setLoading(false);
     }
@@ -1028,7 +444,7 @@ function DataStorageTab() {
       setSqlFileNames(res.fileNames);
       toast.success(`已加载合并 SQL（${res.fileNames.length} 个文件）`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "读取迁移失败");
+      toast.error(toUserFacingErrorMessage(e, "读取迁移失败"));
     }
   };
 
@@ -1041,13 +457,13 @@ function DataStorageTab() {
         setBundledSql(res.sql);
         setSqlFileNames(res.fileNames);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "读取迁移失败");
+        toast.error(toUserFacingErrorMessage(e, "读取迁移失败"));
         return;
       }
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已复制到剪贴板，请到 Supabase SQL Editor 粘贴执行");
+      toast.success("已复制到剪贴板，请到云端控制台的 SQL 编辑器粘贴执行");
     } catch {
       toast.error("复制失败，请手动全选下方文本");
     }
@@ -1059,7 +475,7 @@ function DataStorageTab() {
       const res = await runMigrateFn();
       toast.success(`迁移完成：${res.applied.join(" → ")}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "执行失败");
+      toast.error(toUserFacingErrorMessage(e, "执行失败"));
     } finally {
       setMigrateRunning(false);
     }
@@ -1077,10 +493,10 @@ function DataStorageTab() {
     setMysqlBusy("save");
     try {
       await saveMysqlFn({ data: mysqlConnPayload() });
-      toast.success("MySQL 连接已保存（本地文件 + 若已配置 Supabase 则同步至 workspace_settings）");
+      toast.success("本机数据库连接已保存");
       void refreshAll();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "保存失败");
+      toast.error(toUserFacingErrorMessage(e, "保存失败"));
     } finally {
       setMysqlBusy(null);
     }
@@ -1092,7 +508,7 @@ function DataStorageTab() {
       await testMysqlFn({ data: mysqlConnPayload() });
       toast.success("已连接到数据库");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "连接失败");
+      toast.error(toUserFacingErrorMessage(e, "连接失败"));
     } finally {
       setMysqlBusy(null);
     }
@@ -1104,7 +520,7 @@ function DataStorageTab() {
       await createMysqlDbFn({ data: mysqlConnPayload() });
       toast.success(`已确保数据库「${mysqlDatabase.trim()}」存在`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "创建失败");
+      toast.error(toUserFacingErrorMessage(e, "创建失败"));
     } finally {
       setMysqlBusy(null);
     }
@@ -1120,7 +536,7 @@ function DataStorageTab() {
       });
       toast.success("建表完成，已写入默认配置");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "执行失败");
+      toast.error(toUserFacingErrorMessage(e, "执行失败"));
     } finally {
       setMysqlBusy(null);
     }
@@ -1133,7 +549,7 @@ function DataStorageTab() {
       setMysqlBundledSql(res.sql);
       toast.success(`已加载 ${res.path}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "读取失败");
+      toast.error(toUserFacingErrorMessage(e, "读取失败"));
     } finally {
       setMysqlBusy(null);
     }
@@ -1147,13 +563,13 @@ function DataStorageTab() {
         text = res.sql;
         setMysqlBundledSql(res.sql);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "读取失败");
+        toast.error(toUserFacingErrorMessage(e, "读取失败"));
         return;
       }
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("已复制 MySQL 建表 SQL");
+      toast.success("已复制建表 SQL");
     } catch {
       toast.error("复制失败");
     }
@@ -1172,7 +588,7 @@ function DataStorageTab() {
         toast.success("当前已是最新版本");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "检查更新失败");
+      toast.error(toUserFacingErrorMessage(e, "检查更新失败"));
     } finally {
       setUpdateChecking(false);
     }
@@ -1190,10 +606,7 @@ function DataStorageTab() {
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field
-          label="主机"
-          hint="经 Docker 网关（:8090）访问时填 host.docker.internal；本机直连 Vite（:8080）可填 127.0.0.1"
-        >
+        <Field label="主机">
           <Input
             value={mysqlHost}
             onChange={(e) => setMysqlHost(e.target.value)}
@@ -1353,216 +766,179 @@ function DataStorageTab() {
     overview !== null ? currentExamPersistenceSummary(storagePref, overview) : null;
 
   return (
-    <div className="space-y-8">
-      <p className="text-sm text-muted-foreground">
+    <div className="space-y-5">
+      <p className="text-sm">
         <Link to="/remediation-rules" className="text-primary underline-offset-4 hover:underline">
-          试卷修复管线规则
+          试卷修复管线
         </Link>
-        （多套卷共用，存 MySQL）：管理规则、对已入库试卷重跑、Agent 起草草案。
       </p>
-      <FormPanel className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">导入自主学习</h2>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          每次导入成功或失败后更新统计；下一次 AI
-          整卷导入时在提示词前注入「自主学习·导入」补强（附图保留、选择题拆分、解析步数等）。数据写入
-          workspace_settings。
-        </p>
-        <label className="flex cursor-pointer items-start gap-3 text-sm">
-          <Checkbox
-            checked={importLearningProfile?.autonomousLearningEnabled !== false}
-            disabled={importLearningProfile == null || importLearningSaving}
-            onCheckedChange={(v) => {
-              void (async () => {
-                const next = v === true;
-                setImportLearningSaving(true);
-                try {
-                  await setImportLearningFn({ data: { enabled: next } });
-                  const r = await fetchImportLearningFn();
-                  if (r.ok && r.profile)
-                    setImportLearningProfile(r.profile as StoredImportLearning);
-                  toast.success(next ? "已启用导入自主学习" : "已关闭导入自主学习");
-                } catch (e) {
-                  toast.error(e instanceof Error ? e.message : String(e));
-                } finally {
-                  setImportLearningSaving(false);
-                }
-              })();
-            }}
-            className="mt-0.5"
-          />
-          <span>
-            <span className="font-medium text-foreground">启用导入自主学习补强</span>
-            <span className="block text-xs text-muted-foreground">
-              关闭后保留累计数据，仅不向模型注入补强文案。
-            </span>
-          </span>
-        </label>
-        {importLearningProfile ? (
-          <p className="text-xs text-muted-foreground">
-            累计成功 {importLearningProfile.successCount} · 失败 {importLearningProfile.failCount} ·
-            当前语境连续成功 {importLearningProfile.consecutiveSuccesses}
-          </p>
-        ) : (
-          <p className="text-xs text-muted-foreground">加载统计中或未连接数据库…</p>
-        )}
-      </FormPanel>
-      <FormPanel className="space-y-4">
-        <h2 className="text-base font-semibold text-foreground">系统更新</h2>
-        <p className="text-xs text-muted-foreground">
-          当前版本：
-          <code className="rounded bg-muted px-1 text-[11px]">
-            v{updateInfo?.currentVersion ?? "—"}
-          </code>
-          {updateInfo?.checkedAtIso ? (
-            <>
-              {" · "}最近检查：{new Date(updateInfo.checkedAtIso).toLocaleString()}
-            </>
-          ) : null}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={updateChecking}
-            onClick={() => void handleCheckUpdate()}
-            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
-          >
-            {updateChecking ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
-            检查更新
-          </button>
-          {updateInfo?.hasUpdate && updateInfo.releaseUrl ? (
-            <a
-              href={updateInfo.releaseUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-95"
-            >
-              <Download className="h-4 w-4" />
-              前往下载最新版
-            </a>
-          ) : null}
-        </div>
-        {updateInfo ? (
-          <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-foreground">
-            {updateInfo.latestVersion == null ? (
-              <p className="text-muted-foreground">
-                未能获取远端版本信息（请检查网络或稍后重试）。
-              </p>
-            ) : updateInfo.hasUpdate ? (
-              <p>
-                检测到新版本：<strong>v{updateInfo.latestVersion}</strong>
-                {updateInfo.releaseName ? `（${updateInfo.releaseName}）` : ""}。
-              </p>
-            ) : (
-              <p>
-                已是最新版本（当前 v{updateInfo.currentVersion}，远端 v{updateInfo.latestVersion}
-                ）。
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            点击“检查更新”后将从 GitHub Release 获取最新版本。
-          </p>
-        )}
-      </FormPanel>
 
-      <FormPanel className="space-y-3">
-        <h2 className="text-base font-semibold text-foreground">本机命题习惯</h2>
-        {overview && !loading ? (
-          <p className="text-xs text-muted-foreground">
-            {overview.supabaseConfigured
-              ? (() => {
-                  const m = readHabitsLocalMeta();
-                  return m?.lastPushOkAt
-                    ? `云端习惯已写入 · ${new Date(m.lastPushOkAt).toLocaleString()}`
-                    : "云端可同步：统计在变更后自动上传（失败摘要不入云）";
-                })()
-              : "未配 Supabase 时习惯仅本机；配置后自动备份统计到云端。"}
-          </p>
-        ) : null}
-        <div
-          className="flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2.5"
-          title="启停与累计仍存本机；已配 Supabase 时与云端按时间合并"
-        >
-          <input
-            id="mpg-autonomous-learning"
-            type="checkbox"
-            className="h-4 w-4 rounded border-input"
-            checked={habitSnap.autonomousLearningEnabled !== false}
-            onChange={(e) => {
-              setAutonomousLearningEnabled(e.target.checked);
-              setHabitSnap(loadGenerationHabits());
-              toast.success(
-                e.target.checked ? "已开启自主学习优化" : "已关闭自主学习（不再注入习惯补强）",
-              );
-            }}
-          />
-          <Label
-            htmlFor="mpg-autonomous-learning"
-            className="cursor-pointer text-sm text-foreground"
-          >
-            启用命题自主学习优化
-          </Label>
+      <FormPanel title="学习与更新">
+        <div className="space-y-3">
+          <h3 className="text-sm font-medium text-foreground">导入自主学习</h3>
+          <label className="flex cursor-pointer items-start gap-3 text-sm">
+            <Checkbox
+              checked={importLearningProfile?.autonomousLearningEnabled !== false}
+              disabled={importLearningProfile == null || importLearningSaving}
+              onCheckedChange={(v) => {
+                void (async () => {
+                  const next = v === true;
+                  setImportLearningSaving(true);
+                  try {
+                    await setImportLearningFn({ data: { enabled: next } });
+                    const r = await fetchImportLearningFn();
+                    if (r.ok && r.profile)
+                      setImportLearningProfile(r.profile as StoredImportLearning);
+                    toast.success(next ? "已启用导入自主学习" : "已关闭导入自主学习");
+                  } catch (e) {
+                    toast.error(toUserFacingErrorMessage(e, "保存失败"));
+                  } finally {
+                    setImportLearningSaving(false);
+                  }
+                })();
+              }}
+              className="mt-0.5"
+            />
+            <span className="font-medium text-foreground">启用导入自主学习补强</span>
+          </label>
+          {importLearningProfile ? (
+            <p className="text-xs text-muted-foreground">
+              累计成功 {importLearningProfile.successCount} · 失败 {importLearningProfile.failCount}{" "}
+              · 当前语境连续成功 {importLearningProfile.consecutiveSuccesses}
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">暂无统计</p>
+          )}
         </div>
-        <div className="rounded-md border border-border/60 bg-muted/25 px-3 py-2 text-sm space-y-1.5">
-          <p>
-            <span className="text-muted-foreground">成功命题：</span>
-            {habitSnap.successCount} 次 · <span className="text-muted-foreground">失败：</span>
-            {habitSnap.failCount} 次
-            {habitSnap.autonomousLearningEnabled !== false ? (
+
+        <div className="space-y-3 border-t border-border/50 pt-5">
+          <h3 className="text-sm font-medium text-foreground">系统更新</h3>
+          <p className="text-xs text-muted-foreground">
+            当前版本：
+            <code className="rounded bg-muted px-1 text-[11px]">
+              v{updateInfo?.currentVersion ?? "—"}
+            </code>
+            {updateInfo?.checkedAtIso ? (
               <>
-                {" "}
-                · <span className="text-muted-foreground">当前场景连续成功：</span>
-                {habitSnap.consecutiveSuccesses ?? 0} 次
+                {" · "}最近检查：{new Date(updateInfo.checkedAtIso).toLocaleString()}
               </>
             ) : null}
           </p>
-          {habitSnap.preferred.grade ? (
-            <p className="text-xs text-muted-foreground">
-              最近偏好：{habitSnap.preferred.grade} / {habitSnap.preferred.subject} /{" "}
-              {habitSnap.preferred.paper_kind} / {habitSnap.preferred.difficulty}
-            </p>
-          ) : null}
-          {Object.keys(habitSnap.errorCategoryCounts).length > 0 ? (
-            <ul className="text-xs text-muted-foreground list-disc pl-4 space-y-0.5">
-              {Object.entries(habitSnap.errorCategoryCounts).map(([k, n]) =>
-                n ? (
-                  <li key={k}>
-                    {GENERATION_ERROR_CATEGORY_LABELS[
-                      k as keyof typeof GENERATION_ERROR_CATEGORY_LABELS
-                    ] ?? k}
-                    ：{n}
-                  </li>
-                ) : null,
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={updateChecking}
+              onClick={() => void handleCheckUpdate()}
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent disabled:opacity-50"
+            >
+              {updateChecking ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
               )}
-            </ul>
-          ) : (
-            <p className="text-xs text-muted-foreground">暂无失败类型记录。</p>
-          )}
+              检查更新
+            </button>
+            {updateInfo?.hasUpdate && updateInfo.releaseUrl ? (
+              <a
+                href={updateInfo.releaseUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground hover:opacity-95"
+              >
+                <Download className="h-4 w-4" />
+                前往下载最新版
+              </a>
+            ) : null}
+          </div>
+          {updateInfo ? (
+            <div className="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm text-foreground">
+              {updateInfo.latestVersion == null ? (
+                <p className="text-muted-foreground">未能获取远端版本，请稍后再试。</p>
+              ) : updateInfo.hasUpdate ? (
+                <p>
+                  检测到新版本：v{updateInfo.latestVersion}
+                  {updateInfo.releaseName ? `（${updateInfo.releaseName}）` : ""}。
+                </p>
+              ) : (
+                <p>
+                  已是最新版本（当前 v{updateInfo.currentVersion}，远端 v{updateInfo.latestVersion}
+                  ）。
+                </p>
+              )}
+            </div>
+          ) : null}
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
-          onClick={() => {
-            resetGenerationHabits();
-            setHabitSnap(loadGenerationHabits());
-            toast.success("已清空；若已配云端将同步为空统计（失败摘要本就仅存本机）");
-          }}
-        >
-          <Eraser className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
-          清空习惯统计
-        </button>
+
+        <div className="space-y-3 border-t border-border/50 pt-5">
+          <h3 className="text-sm font-medium text-foreground">本机使用偏好</h3>
+          <div className="flex flex-wrap items-center gap-3 rounded-md border border-border/60 bg-muted/30 px-3 py-2.5">
+            <input
+              id="mpg-autonomous-learning"
+              type="checkbox"
+              className="h-4 w-4 rounded border-input"
+              checked={habitSnap.autonomousLearningEnabled !== false}
+              onChange={(e) => {
+                setAutonomousLearningEnabled(e.target.checked);
+                setHabitSnap(loadGenerationHabits());
+                toast.success(e.target.checked ? "已开启" : "已关闭");
+              }}
+            />
+            <Label
+              htmlFor="mpg-autonomous-learning"
+              className="cursor-pointer text-sm text-foreground"
+            >
+              命题时参考本机使用偏好
+            </Label>
+          </div>
+          <div className="space-y-1.5 rounded-md border border-border/60 bg-muted/25 px-3 py-2 text-sm">
+            <p>
+              <span className="text-muted-foreground">成功命题：</span>
+              {habitSnap.successCount} 次 · <span className="text-muted-foreground">失败：</span>
+              {habitSnap.failCount} 次
+              {habitSnap.autonomousLearningEnabled !== false ? (
+                <>
+                  {" "}
+                  · 连续成功 {habitSnap.consecutiveSuccesses ?? 0} 次
+                </>
+              ) : null}
+            </p>
+            {habitSnap.preferred.grade ? (
+              <p className="text-xs text-muted-foreground">
+                最近偏好：{habitSnap.preferred.grade} / {habitSnap.preferred.subject} /{" "}
+                {habitSnap.preferred.paper_kind} / {habitSnap.preferred.difficulty}
+              </p>
+            ) : null}
+            {Object.keys(habitSnap.errorCategoryCounts).length > 0 ? (
+              <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                {Object.entries(habitSnap.errorCategoryCounts).map(([k, n]) =>
+                  n ? (
+                    <li key={k}>
+                      {GENERATION_ERROR_CATEGORY_LABELS[
+                        k as keyof typeof GENERATION_ERROR_CATEGORY_LABELS
+                      ] ?? k}
+                      ：{n}
+                    </li>
+                  ) : null,
+                )}
+              </ul>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-3 py-2 text-sm hover:bg-accent"
+            onClick={() => {
+              resetGenerationHabits();
+              setHabitSnap(loadGenerationHabits());
+              toast.success("已清空习惯统计");
+            }}
+          >
+            <Eraser className="h-4 w-4 shrink-0" strokeWidth={2} aria-hidden />
+            清空习惯统计
+          </button>
+        </div>
       </FormPanel>
 
-      <FormPanel className="space-y-4">
-        <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-          <Database className="h-4 w-4" />
-          数据库概览
-        </h2>
+      <FormPanel title="试卷保存">
         {loading || !overview ? (
           <p className="text-sm text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" /> 加载中…
@@ -1570,8 +946,8 @@ function DataStorageTab() {
         ) : (
           <div className="space-y-5">
             {persistenceSummary ? (
-              <div className="rounded-lg border border-emerald-500/35 bg-emerald-500/[0.07] px-4 py-3 dark:bg-emerald-500/[0.05]">
-                <div className="text-xs font-medium text-foreground">当前试卷保存位置</div>
+              <div className="rounded-lg border border-border/60 bg-muted/30 px-4 py-3">
+                <div className="text-xs font-medium text-muted-foreground">保存位置</div>
                 <p className="mt-1.5 text-sm font-semibold text-foreground leading-snug">
                   {persistenceSummary.headline}
                 </p>
@@ -1594,24 +970,18 @@ function DataStorageTab() {
                     <RadioGroupItem value="auto" id="exam-store-auto" className="mt-0.5" />
                     <Label
                       htmlFor="exam-store-auto"
-                      className="cursor-pointer font-normal leading-snug"
+                      className="cursor-pointer font-normal leading-snug text-foreground"
                     >
-                      <span className="text-foreground">自动</span>
-                      <span className="block text-xs text-muted-foreground">
-                        云端+本地，能写则入库
-                      </span>
+                      自动
                     </Label>
                   </div>
                   <div className="flex items-start gap-2">
                     <RadioGroupItem value="builtin" id="exam-store-builtin" className="mt-0.5" />
                     <Label
                       htmlFor="exam-store-builtin"
-                      className="cursor-pointer font-normal leading-snug"
+                      className="cursor-pointer font-normal leading-snug text-foreground"
                     >
-                      <span className="text-foreground">项目内置 + 本地卷</span>
-                      <span className="block text-xs text-muted-foreground">
-                        演示+本地，新建先本地
-                      </span>
+                      项目内置 + 本地卷
                     </Label>
                   </div>
                   <div className="flex items-start gap-2">
@@ -1648,38 +1018,18 @@ function DataStorageTab() {
                     className="inline-flex items-center justify-center gap-2 rounded-md border border-border bg-card px-3 py-2.5 text-sm font-medium text-foreground shadow-sm hover:bg-accent"
                   >
                     <Server className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    本机与 MySQL
+                    本机数据库
                   </button>
                 </div>
               </div>
             </div>
 
             <p className="text-[11px] text-muted-foreground">
-              云端{" "}
-              <span
-                className={
-                  overview.supabaseConfigured ? "text-emerald-700 dark:text-emerald-400" : ""
-                }
-              >
-                {overview.supabaseConfigured ? "已连" : "未配"}
-              </span>
-              {overview.supabaseUrlHost ? (
-                <>
-                  {" "}
-                  <code className="rounded bg-muted px-1 text-[10px]">
-                    {overview.supabaseUrlHost}
-                  </code>
-                </>
-              ) : null}
+              云端 {overview.supabaseConfigured ? "已连" : "未配"}
               {" · "}
-              直连{" "}
-              <span
-                className={
-                  overview.databaseUrlConfigured ? "text-emerald-700 dark:text-emerald-400" : ""
-                }
-              >
-                {overview.databaseUrlConfigured ? "已配" : "未配"}
-              </span>
+              本机库 {overview.mysqlReachable ? "已连" : "未连"}
+              {" · "}
+              建表直连 {overview.databaseUrlConfigured ? "已配" : "未配"}
             </p>
           </div>
         )}
@@ -1689,20 +1039,10 @@ function DataStorageTab() {
         <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>云端配置</DialogTitle>
-            <DialogDescription>
-              密钥只在 .env；下方加载 SQL 后在 Supabase SQL 窗执行，再配环境变量。
-            </DialogDescription>
+            <DialogDescription className="sr-only">云端配置</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            <p className="text-xs text-muted-foreground">
-              <code className="rounded bg-muted px-1 text-[11px]">.env</code>：{" "}
-              <code className="rounded bg-muted px-1 text-[11px]">SUPABASE_URL</code> +{" "}
-              <code className="rounded bg-muted px-1 text-[11px]">SUPABASE_SERVICE_ROLE_KEY</code>
-              ，改后重启。也可配{" "}
-              <code className="rounded bg-muted px-1 text-[11px]">DATABASE_URL</code> 做迁移。
-            </p>
-
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
@@ -1740,12 +1080,6 @@ function DataStorageTab() {
 
             <div className="rounded-lg border border-border/80 bg-card/50 px-4 py-3 space-y-3">
               <p className="text-sm font-medium text-foreground">本页执行迁移</p>
-              <p className="text-xs text-muted-foreground">
-                需 <code className="rounded bg-muted px-1 text-[11px]">DATABASE_URL</code> 与{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">
-                  ALLOW_UI_DB_MIGRATIONS=true
-                </code>
-              </p>
               <button
                 type="button"
                 disabled={
@@ -1763,11 +1097,6 @@ function DataStorageTab() {
                 )}
                 执行迁移
               </button>
-              {overview && !overview.canRunUiMigration && (
-                <p className="text-xs text-amber-800 dark:text-amber-200/90">
-                  条件未满足，按钮不可用
-                </p>
-              )}
             </div>
           </div>
         </DialogContent>
@@ -1778,39 +1107,14 @@ function DataStorageTab() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-left">
               <Database className="h-4 w-4 shrink-0" />
-              本机 MySQL
+              本机数据库
             </DialogTitle>
-            <DialogDescription>本机 MySQL，用于建库/建表（与试卷本地目录不同）。</DialogDescription>
+            <DialogDescription className="sr-only">本机数据库</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">{mysqlSettingsContent}</div>
         </DialogContent>
       </Dialog>
     </div>
-  );
-}
-
-function ModeBtn({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-md border px-4 py-2 text-sm transition-colors " +
-        (active
-          ? "bg-primary text-primary-foreground border-primary"
-          : "border-border bg-card hover:bg-accent")
-      }
-    >
-      {children}
-    </button>
   );
 }
 

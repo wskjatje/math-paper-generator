@@ -1,8 +1,10 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { MathContent } from "@/components/MathContent";
 import { EducationalFigureBlock } from "@/components/education/EducationalFigureBlock";
 import { EducationalSegmentList } from "@/components/education/EducationalSegmentList";
+import { PAPER_SURFACE_LAYOUT } from "@/config/examDomain";
 import type { EducationalAstNodeV1 } from "@/lib/educationalAst.shared";
 import {
   packingHintForFigure,
@@ -14,11 +16,14 @@ import { compositionClassNames } from "@/lib/educationalCompositionConstraint.sh
 import { segmentPlainText } from "@/lib/educationalAstMathSegments.shared";
 import { cn } from "@/lib/utils";
 
-function depthIndentClass(depth: 0 | 1 | 2, type: EducationalAstNodeV1["type"]): string {
-  if (type === "figure") return "";
-  if (depth === 1) return "";
-  if (depth === 2) return "pl-6 sm:pl-8";
-  return "";
+/** 小问统一左缩进：读 paperSurfaceLayout.subquestionIndentRem，禁止 depth/cluster 叠 Tailwind pl-* */
+function subquestionIndentStyle(
+  type: EducationalAstNodeV1["type"],
+): CSSProperties | undefined {
+  if (type !== "subquestion") return undefined;
+  const rem = PAPER_SURFACE_LAYOUT.subquestionIndentRem;
+  if (!(rem > 0)) return undefined;
+  return { paddingLeft: `${rem}rem` };
 }
 
 type NodeRowProps = {
@@ -68,12 +73,7 @@ export function EducationalAstNodeRenderer({
 
     case "math_block":
       return (
-        <div
-          className={cn(
-            "math-paper-render-math-block my-2 rounded-md bg-muted/30 px-3 py-2",
-            depthIndentClass(node.depth, node.type),
-          )}
-        >
+        <div className="math-paper-render-math-block my-2 rounded-md bg-muted/30 px-3 py-2">
           <MathContent onFigureDecodeFailed={onFigureDecodeFailed}>{node.latex}</MathContent>
         </div>
       );
@@ -84,11 +84,7 @@ export function EducationalAstNodeRenderer({
       if (!hasBody && !hasChildren) return null;
       return (
         <section
-          className={cn(
-            "math-paper-render-section-group",
-            !nested && "mt-4 first:mt-0",
-            depthIndentClass(node.depth, node.type),
-          )}
+          className={cn("math-paper-render-section-group", !nested && "mt-4 first:mt-0")}
         >
           {hasBody ? (
             <div className="math-paper-render-section text-[15px] font-medium leading-[1.8] tracking-[0.01em]">
@@ -102,9 +98,14 @@ export function EducationalAstNodeRenderer({
           {hasChildren ? (
             <div
               className={cn(
-                "math-paper-render-section-children mt-2.5 space-y-3.5",
+                "math-paper-render-section-children mt-2 flex flex-col",
                 "border-l-2 border-primary/20 pl-4 sm:pl-5",
               )}
+              style={
+                {
+                  gap: `${PAPER_SURFACE_LAYOUT.eplBlockStackGapRem}rem`,
+                } satisfies CSSProperties
+              }
             >
               {node.children.map((child) => (
                 <EducationalAstNodeRenderer
@@ -128,8 +129,8 @@ export function EducationalAstNodeRenderer({
           className={cn(
             "math-paper-render-subquestion clear-both text-[14.5px] leading-[1.8] tracking-[0.01em]",
             compositionClassNames(node.layoutHints),
-            depthIndentClass(node.depth, node.type),
           )}
+          style={subquestionIndentStyle(node.type)}
           data-cognitive-group={node.layoutHints?.cognitiveGroupId}
         >
           <EducationalSegmentList
@@ -144,8 +145,18 @@ export function EducationalAstNodeRenderer({
     case "question_stem": {
       const hasBody = node.segments.some((s) => segmentPlainText(s).trim());
       if (!hasBody) return null;
+      const gapRem = PAPER_SURFACE_LAYOUT.stemToSubquestionGapRem;
       return (
-        <div className="math-paper-render-stem mb-3 border-b border-border/50 pb-3 text-[15px] leading-[1.85] tracking-[0.01em]">
+        <div
+          className={cn(
+            "math-paper-render-stem text-[15px] leading-[1.85] tracking-[0.01em]",
+            PAPER_SURFACE_LAYOUT.stemShowBottomBorder && "border-b border-border/50",
+          )}
+          style={{
+            marginBottom: `${gapRem}rem`,
+            paddingBottom: PAPER_SURFACE_LAYOUT.stemShowBottomBorder ? `${gapRem}rem` : 0,
+          }}
+        >
           <EducationalSegmentList
             segments={node.segments}
             onFigureDecodeFailed={onFigureDecodeFailed}
@@ -171,12 +182,7 @@ export function EducationalAstNodeRenderer({
       const hasBody = node.segments.some((s) => segmentPlainText(s).trim());
       if (!hasBody) return null;
       return (
-        <div
-          className={cn(
-            "math-paper-render-paragraph text-[15px] leading-[1.8]",
-            depthIndentClass(node.depth, node.type),
-          )}
-        >
+        <div className="math-paper-render-paragraph text-[15px] leading-[1.8]">
           <EducationalSegmentList
             segments={node.segments}
             onFigureDecodeFailed={onFigureDecodeFailed}

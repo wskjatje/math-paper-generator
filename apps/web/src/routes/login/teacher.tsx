@@ -1,0 +1,6 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { AccountLoginForm } from "@/components/auth/AccountLoginForm";
+
+export const Route = createFileRoute("/login/teacher")({
+  component: () => <AccountLoginForm preferPortal="teacher" />,
+});

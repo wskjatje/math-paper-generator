@@ -1,0 +1,4220 @@
+{
+  "version": 1,
+  "updatedAt": "2026-08-07T06:00:48.993Z",
+  "note": "空壳模板：units 必须由教研填入真实教材单元名后才能同步为「已同步」。禁止「第一单元」类占位。生成自课标枚举，勿手改 id。",
+  "source": "shell-template",
+  "textbooks": [
+    {
+      "id": "pep-chinese-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g1-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g1-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g1-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g1-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（苏教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g1-s1",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（教科版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g1-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）小学一年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g1-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g1-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g1-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g1-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（苏教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g1-s2",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（教科版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g1-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）小学一年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g2-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g2-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g2-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g2-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（苏教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g2-s1",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（教科版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g2-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）小学二年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g2-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g2-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g2-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g2-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（苏教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g2-s2",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（教科版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g2-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）小学二年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g3-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g3-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g3-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g3-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（苏教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g3-s1",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（教科版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g3-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）小学三年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g3-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g3-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g3-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g3-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（苏教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g3-s2",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（教科版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g3-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）小学三年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g4-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g4-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g4-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g4-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g4-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g4-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g4-s1",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（苏教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g4-s1",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（教科版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g4-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g4",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）小学四年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g4-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g4-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g4-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g4-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g4-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g4-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g4-s2",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（苏教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g4-s2",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（教科版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g4-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g4",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）小学四年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g5-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g5-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g5-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g5-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g5-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g5-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g5-s1",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（苏教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g5-s1",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（教科版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g5-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g5",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）小学五年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g5-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g5-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g5-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g5-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g5-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g5-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g5-s2",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（苏教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g5-s2",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（教科版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g5-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g5",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）小学五年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g6-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g6-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g6-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g6-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g6-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g6-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g6-s1",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（苏教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g6-s1",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·科学（教科版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g6-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g6",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）小学六年级上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-pri_g6-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-pri_g6-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-pri_g6-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-pri_g6-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-pri_g6-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-pri_g6-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-science-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "jsph-science-pri_g6-s2",
+      "editionId": "jsph",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（苏教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "kexue-science-pri_g6-s2",
+      "editionId": "kexue",
+      "subjectId": "science",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·科学（教科版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-pri_g6-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "pri_g6",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）小学六年级下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-jhs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-jhs_g1-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）初一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-jhs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-jhs_g1-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）初一上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-jhs_g1-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）初一上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-jhs_g1-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-jhs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（苏教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-jhs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（苏教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-jhs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（苏教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-history-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·历史（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·地理（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·思想政治（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-it-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·信息技术（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-jhs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）初一上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-jhs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-jhs_g1-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）初一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-jhs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-jhs_g1-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）初一下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-jhs_g1-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）初一下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-jhs_g1-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-jhs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（苏教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-jhs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（苏教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-jhs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（苏教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-history-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·历史（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·地理（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·思想政治（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-it-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·信息技术（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-jhs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "jhs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）初一下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-jhs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-jhs_g2-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）初二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-jhs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-jhs_g2-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）初二上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-jhs_g2-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）初二上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-jhs_g2-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-jhs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（苏教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-jhs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（苏教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-jhs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（苏教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-history-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·历史（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·地理（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·思想政治（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-it-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·信息技术（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-jhs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）初二上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-jhs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-jhs_g2-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）初二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-jhs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-jhs_g2-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）初二下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-jhs_g2-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）初二下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-jhs_g2-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-jhs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（苏教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-jhs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（苏教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-jhs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（苏教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-history-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·历史（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·地理（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·思想政治（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-it-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·信息技术（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-jhs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "jhs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）初二下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-jhs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-jhs_g3-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）初三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-jhs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-jhs_g3-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）初三上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-jhs_g3-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）初三上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-jhs_g3-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-jhs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（苏教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-jhs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（苏教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-jhs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（苏教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-history-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·历史（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·地理（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·思想政治（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-it-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·信息技术（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-jhs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）初三上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-jhs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-jhs_g3-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）初三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-jhs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-jhs_g3-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）初三下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-jhs_g3-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）初三下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-jhs_g3-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-jhs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（苏教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-jhs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（苏教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-jhs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（苏教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-history-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·历史（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·地理（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·思想政治（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-it-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·信息技术（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-jhs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "jhs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）初三下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-hs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-hs_g1-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）高一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-hs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-hs_g1-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）高一上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-hs_g1-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）高一上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-hs_g1-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-hs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（苏教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-hs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（苏教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-hs_g1-s1",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（苏教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-history-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·历史（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·地理（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·思想政治（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-it-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·信息技术（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-hs_g1-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "hs_g1",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）高一上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-hs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-hs_g1-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）高一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-hs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-hs_g1-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）高一下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-hs_g1-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）高一下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-hs_g1-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-hs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（苏教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-hs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（苏教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-hs_g1-s2",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（苏教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-history-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·历史（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·地理（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·思想政治（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-it-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·信息技术（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-hs_g1-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "hs_g1",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）高一下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-hs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-hs_g2-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）高二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-hs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-hs_g2-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）高二上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-hs_g2-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）高二上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-hs_g2-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-hs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（苏教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-hs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（苏教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-hs_g2-s1",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（苏教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-history-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·历史（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·地理（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·思想政治（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-it-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·信息技术（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-hs_g2-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "hs_g2",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）高二上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-hs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-hs_g2-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）高二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-hs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-hs_g2-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）高二下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-hs_g2-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）高二下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-hs_g2-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-hs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（苏教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-hs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（苏教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-hs_g2-s2",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（苏教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-history-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·历史（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·地理（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·思想政治（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-it-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·信息技术（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-hs_g2-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "hs_g2",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）高二下册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-hs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·语文（苏教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-math-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-hs_g3-s1",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（北师大版）高三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-hs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·数学（苏教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-english-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-hs_g3-s1",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（北师大版）高三上册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-hs_g3-s1",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（外研版）高三上册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-hs_g3-s1",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·英语（译林版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·道德与法治（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-hs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·物理（苏教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-hs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·化学（苏教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-hs_g3-s1",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·生物（苏教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-history-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·历史（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·地理（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·思想政治（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-it-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·信息技术（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·体育与健康（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-music-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·音乐（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-art-hs_g3-s1",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "hs_g3",
+      "semester": "s1",
+      "title": "义务教育教科书·美术（人教版）高三上册",
+      "units": []
+    },
+    {
+      "id": "pep-chinese-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chinese-hs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "chinese",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·语文（苏教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-math-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "bnup-math-hs_g3-s2",
+      "editionId": "bnup",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（北师大版）高三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-math-hs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "math",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·数学（苏教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-english-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "bnup-english-hs_g3-s2",
+      "editionId": "bnup",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（北师大版）高三下册",
+      "units": []
+    },
+    {
+      "id": "waiyan-english-hs_g3-s2",
+      "editionId": "waiyan",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（外研版）高三下册",
+      "units": []
+    },
+    {
+      "id": "yilin-english-hs_g3-s2",
+      "editionId": "yilin",
+      "subjectId": "english",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·英语（译林版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-morality-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "morality",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·道德与法治（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-physics-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-physics-hs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "physics",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·物理（苏教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-chemistry-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-chemistry-hs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "chemistry",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·化学（苏教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-biology-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "jsph-biology-hs_g3-s2",
+      "editionId": "jsph",
+      "subjectId": "biology",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·生物（苏教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-history-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "history",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·历史（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-geography-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "geography",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·地理（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-politics-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "politics",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·思想政治（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-it-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "it",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·信息技术（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-pe-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "pe",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·体育与健康（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-music-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "music",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·音乐（人教版）高三下册",
+      "units": []
+    },
+    {
+      "id": "pep-art-hs_g3-s2",
+      "editionId": "pep",
+      "subjectId": "art",
+      "gradeBaseId": "hs_g3",
+      "semester": "s2",
+      "title": "义务教育教科书·美术（人教版）高三下册",
+      "units": []
+    }
+  ]
+}

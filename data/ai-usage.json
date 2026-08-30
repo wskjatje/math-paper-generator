@@ -1,0 +1,32 @@
+{
+  "updatedAt": "2026-08-27T00:34:39.671Z",
+  "byModel": {
+    "models/gemini-3.5-flash": {
+      "model": "models/gemini-3.5-flash",
+      "promptTokens": 125680,
+      "completionTokens": 146406,
+      "calls": 34,
+      "estimatedCost": 1.5061740000000001,
+      "currency": "USD",
+      "lastAt": "2026-07-20T00:28:33.908Z"
+    },
+    "models/gemini-3-flash-preview": {
+      "model": "models/gemini-3-flash-preview",
+      "promptTokens": 4293,
+      "completionTokens": 4119,
+      "calls": 1,
+      "estimatedCost": 0.014503499999999999,
+      "currency": "USD",
+      "lastAt": "2026-07-20T00:03:32.314Z"
+    },
+    "models/gemini-3.1-flash-image": {
+      "model": "models/gemini-3.1-flash-image",
+      "promptTokens": 8687,
+      "completionTokens": 34362,
+      "calls": 2,
+      "estimatedCost": 0.10742949999999998,
+      "currency": "USD",
+      "lastAt": "2026-07-22T05:11:35.388Z"
+    }
+  }
+}

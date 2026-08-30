@@ -1,0 +1,104 @@
+{
+  "syncedAt": "2026-08-01T06:32:12.671Z",
+  "defaultTagPath": "e7bbb2de-0590-11ed-9c79-92fc3b3249d5/6a74973a-0772-11ed-ac74-092ab92074e6/44bee8bc-54e6-11ed-9c34-850ba61fa9f4/e7bbd296-0590-11ed-9c79-92fc3b3249d5",
+  "items": [
+    {
+      "contentId": "bdc00134-465d-454b-a541-dcd0cec4d86e",
+      "title": "（根据2022年版课程标准修订）义务教育教科书·道德与法治一年级上册",
+      "tagPath": "f5261ccc-b7a5-42f4-b015-610dcec58c60/ac92c18a-58c8-41da-86a5-f44afe3a90f7/e7bbb2de-0590-11ed-9c79-92fc3b3249d5/6a74973a-0772-11ed-ac74-092ab92074e6/44bee8bc-54e6-11ed-9c34-850ba61fa9f4/e7bbd296-0590-11ed-9c79-92fc3b3249d5/ff8080814371757b014390f883db0453",
+      "tags": [
+        {
+          "id": "ac92c18a-58c8-41da-86a5-f44afe3a90f7",
+          "name": "电子教材",
+          "dimensionId": "5036342742"
+        },
+        {
+          "id": "2cbuPWM3oXGSBI80OFKOSa",
+          "name": "教材",
+          "dimensionId": "tagView"
+        },
+        {
+          "id": "44bee8bc-54e6-11ed-9c34-850ba61fa9f4",
+          "name": "统编版",
+          "dimensionId": "zxxbb"
+        },
+        {
+          "id": "ff8080814371757b014390f883db0453",
+          "name": "上册",
+          "dimensionId": "zxxcc"
+        },
+        {
+          "id": "e7bbd296-0590-11ed-9c79-92fc3b3249d5",
+          "name": "一年级",
+          "dimensionId": "zxxnj"
+        },
+        {
+          "id": "e7bbb2de-0590-11ed-9c79-92fc3b3249d5",
+          "name": "小学",
+          "dimensionId": "zxxxd"
+        },
+        {
+          "id": "6a74973a-0772-11ed-ac74-092ab92074e6",
+          "name": "道德与法治",
+          "dimensionId": "zxxxk"
+        }
+      ],
+      "detailUrl": "https://basic.smartedu.cn/tchMaterial/detail?contentType=assets_document&contentId=bdc00134-465d-454b-a541-dcd0cec4d86e&catalogType=tchMaterial&subCatalog=tchMaterial",
+      "mapped": {
+        "subjectId": "morality",
+        "editionId": "pep",
+        "gradeBaseId": "pri_g1",
+        "semester": "s1"
+      }
+    },
+    {
+      "contentId": "1e04e52e-41df-4689-b12a-f3b7315a4243",
+      "title": "（根据2022年版课程标准修订）义务教育教科书·道德与法治一年级下册",
+      "tagPath": "f5261ccc-b7a5-42f4-b015-610dcec58c60/ac92c18a-58c8-41da-86a5-f44afe3a90f7/e7bbb2de-0590-11ed-9c79-92fc3b3249d5/6a74973a-0772-11ed-ac74-092ab92074e6/44bee8bc-54e6-11ed-9c34-850ba61fa9f4/e7bbd296-0590-11ed-9c79-92fc3b3249d5/ff8080814371757b014390fcdce504bd",
+      "tags": [
+        {
+          "id": "ac92c18a-58c8-41da-86a5-f44afe3a90f7",
+          "name": "电子教材",
+          "dimensionId": "5036342742"
+        },
+        {
+          "id": "2cbuPWM3oXGSBI80OFKOSa",
+          "name": "教材",
+          "dimensionId": "tagView"
+        },
+        {
+          "id": "44bee8bc-54e6-11ed-9c34-850ba61fa9f4",
+          "name": "统编版",
+          "dimensionId": "zxxbb"
+        },
+        {
+          "id": "ff8080814371757b014390fcdce504bd",
+          "name": "下册",
+          "dimensionId": "zxxcc"
+        },
+        {
+          "id": "e7bbd296-0590-11ed-9c79-92fc3b3249d5",
+          "name": "一年级",
+          "dimensionId": "zxxnj"
+        },
+        {
+          "id": "e7bbb2de-0590-11ed-9c79-92fc3b3249d5",
+          "name": "小学",
+          "dimensionId": "zxxxd"
+        },
+        {
+          "id": "6a74973a-0772-11ed-ac74-092ab92074e6",
+          "name": "道德与法治",
+          "dimensionId": "zxxxk"
+        }
+      ],
+      "detailUrl": "https://basic.smartedu.cn/tchMaterial/detail?contentType=assets_document&contentId=1e04e52e-41df-4689-b12a-f3b7315a4243&catalogType=tchMaterial&subCatalog=tchMaterial",
+      "mapped": {
+        "subjectId": "morality",
+        "editionId": "pep",
+        "gradeBaseId": "pri_g1",
+        "semester": "s2"
+      }
+    }
+  ]
+}

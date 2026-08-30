@@ -1,0 +1,10 @@
+# 本机听力声纹克隆旁路（Chatterbox）。版本随安装脚本解析；勿在此臆造未验证的北京语速。
+fastapi>=0.115.0,<1
+uvicorn[standard]>=0.30.0,<1
+numpy>=1.26.0,<3
+soundfile>=0.12.1,<1
+torch
+torchaudio
+chatterbox-tts
+# perth → pkg_resources；setuptools 82+ 可能不含，显式锁定兼容层
+setuptools>=70,<82

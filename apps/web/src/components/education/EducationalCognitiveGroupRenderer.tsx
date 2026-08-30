@@ -1,6 +1,8 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { EducationalAstNodeRenderer } from "@/components/education/EducationalAstNodeRenderer";
+import { PAPER_SURFACE_LAYOUT } from "@/config/examDomain";
 import type { FigureNodeV1, SubquestionNodeV1 } from "@/lib/educationalAst.shared";
 import type { SectionNodeV1 } from "@/lib/educationalAst.shared";
 import type { CognitiveGroupV1 } from "@/lib/educationalCognitiveGroup.shared";
@@ -112,14 +114,25 @@ export function EducationalCognitiveGroupRenderer({
   }
 
   if (group.role === "question_with_figure") {
+    const qMy = PAPER_SURFACE_LAYOUT.questionClusterMarginRem;
+    const clusterStyle = (
+      packing?.classNames.includes("my-")
+        ? { paddingTop: `${qMy}rem`, paddingBottom: `${qMy}rem` }
+        : {
+            marginTop: `${qMy}rem`,
+            marginBottom: `${qMy}rem`,
+            paddingTop: `${qMy}rem`,
+            paddingBottom: `${qMy}rem`,
+          }
+    ) satisfies CSSProperties;
     return (
       <div
         className={cn(
           "math-paper-question-cluster",
           "rounded-md border border-border/40 bg-card/50 px-3 sm:px-4",
-          !packing?.classNames.includes("my-") && "my-3 py-3",
           hintClass,
         )}
+        style={clusterStyle}
         data-cognitive-group={group.id}
         data-cognitive-role={group.role}
         data-reading-flow={group.readingFlow}
@@ -180,14 +193,23 @@ export function EducationalCognitiveGroupRenderer({
   if (group.role === "subquestion_cluster" || group.role === "standalone_figure") {
     const member = group.members[0];
     if (!member) return null;
+    const myRem =
+      group.role === "subquestion_cluster"
+        ? PAPER_SURFACE_LAYOUT.subquestionClusterMarginRem
+        : PAPER_SURFACE_LAYOUT.figureBlockCompactMarginRem;
+    const clusterStyle = {
+      marginTop: `${myRem}rem`,
+      marginBottom: `${myRem}rem`,
+    } satisfies CSSProperties;
     return (
       <div
         className={cn(
           group.role === "subquestion_cluster"
-            ? "math-paper-subquestion-cluster my-2.5 pl-4 sm:pl-5"
-            : "math-paper-figure-cluster my-2",
+            ? "math-paper-subquestion-cluster"
+            : "math-paper-figure-cluster",
           hintClass,
         )}
+        style={clusterStyle}
         data-cognitive-group={group.id}
         data-cognitive-role={group.role}
         data-attention-priority={sem.attentionPriority}

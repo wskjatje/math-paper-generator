@@ -27,6 +27,12 @@ export const EXAM_MATH_BUILTIN_LIBRARY_RULES: ExamMathRepairRuleEntry[] = [
   { id: "en-comma-ratio", re: /,\s*\\text\{Ratio\}/g, replace: ",\\text{比值}" },
   { id: "en-paren-true", re: /\(\s*True\s*\)/gi, replace: "（成立）" },
   { id: "en-trailing-true-paren", re: /\bTrue\s*\)/gi, replace: "成立）" },
+  { id: "en-bare-formula", re: /\bformula\b/gi, replace: "公式" },
+  { id: "en-known-value", re: /\bknown\s+value\b/gi, replace: "已知值" },
+  // —— 展示残片（\\newline 由 examDisplayHygiene.repairNewlineCommands 定界感知处理，勿在此无脑改成真换行） ——
+  { id: "debris-ihinspace", re: /\\?ihinspace\b/g, replace: " " },
+  // 仅数字夹 eg：91eq2；禁止字母+eq（会毁掉 \geq/\leq）
+  { id: "debris-digit-eq", re: /(\d)\s*eq\s*(?=\d)/g, replace: "$1 \\neq " },
   // —— 数论 / 同余 ——
   { id: "pmod-fix", re: /\bp\bmod\b/g, replace: "\\pmod" },
   { id: "lcm-fn", re: /\blcm\s*\(/gi, replace: "\\operatorname{lcm}(" },

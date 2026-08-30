@@ -1,0 +1,81 @@
+{
+  "$schema_comment": "题图 Pack 注册表。active=已接入流水线；planned=数学达标后再启用。见 docs/diagram-system.md",
+  "version": 1,
+  "policy": {
+    "primary_subject_first": "math",
+    "unlock_other_packs_when": "math.geometry 与 math.function 标定合计机判约 90% 且误配可控（见 examples/v1/diagram-calibration/）",
+    "no_unsupervised_pack_invention": true,
+    "scaffold_command": "npm run diagram:scaffold-next"
+  },
+  "packs": [
+    {
+      "id": "math.geometry",
+      "subject": "数学",
+      "status": "active",
+      "module": "src/lib/diagram/mathGeometry.shared.ts",
+      "notes": "平面几何、网格涂色等；标定 examples/v1/diagram-calibration/math-geometry/；轴对称等扩展未实现"
+    },
+    {
+      "id": "math.function",
+      "subject": "数学",
+      "status": "active",
+      "module": "src/lib/diagram/mathFunction.shared.ts",
+      "notes": "M2+M3：axes+sampled_curve+tangent+integral_region；PRD docs/prd-math-function-m2.md、docs/prd-math-function-m3.md；标定 examples/v1/diagram-calibration/math-function/"
+    },
+    {
+      "id": "physics.circuit",
+      "subject": "物理",
+      "status": "planned",
+      "notes": "电路图"
+    },
+    {
+      "id": "physics.mechanics",
+      "subject": "物理",
+      "status": "active",
+      "module": "src/lib/diagram/physicsMechanics.shared.ts",
+      "notes": "浮力/滑轮/连通器/斜面/杠杆等示意；PRD docs/prd-physics-mechanics.md；标定 examples/v1/diagram-calibration/physics-mechanics/"
+    },
+    {
+      "id": "physics.optics",
+      "subject": "物理",
+      "status": "planned",
+      "notes": "光路"
+    },
+    {
+      "id": "chemistry.apparatus",
+      "subject": "化学",
+      "status": "planned",
+      "notes": "仪器装置"
+    },
+    {
+      "id": "chemistry.particle",
+      "subject": "化学",
+      "status": "planned",
+      "notes": "粒子 / 微观模型"
+    },
+    {
+      "id": "biology.structure",
+      "subject": "生物",
+      "status": "planned",
+      "notes": "结构示意"
+    },
+    {
+      "id": "geography.map",
+      "subject": "地理",
+      "status": "planned",
+      "notes": "地图 / 等值线示意"
+    },
+    {
+      "id": "chinese.illustration",
+      "subject": "语文",
+      "status": "planned",
+      "notes": "仅题干明确要求配图时"
+    },
+    {
+      "id": "english.diagram",
+      "subject": "英语",
+      "status": "planned",
+      "notes": "图表类阅读配图"
+    }
+  ]
+}

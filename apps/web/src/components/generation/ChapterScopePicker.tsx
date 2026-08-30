@@ -108,9 +108,6 @@ export function ChapterScopePicker({
         <DialogContent className="max-h-[85vh] gap-0 overflow-hidden p-0 sm:max-w-lg">
           <DialogHeader className="border-b px-4 pb-3 pt-4">
             <DialogTitle>章节范围（可多选）</DialogTitle>
-            <p className="text-left text-xs font-normal text-muted-foreground">
-              按当前年级学段筛选目录；搜索支持关键字过滤。未覆盖的内容写在下方「补充说明」。
-            </p>
           </DialogHeader>
           <div className="flex max-h-[min(420px,50vh)] flex-col px-2 pb-2 pt-1">
             <Command className="rounded-none border-0 bg-transparent shadow-none">
@@ -121,7 +118,7 @@ export function ChapterScopePicker({
               <CommandList className="max-h-[min(340px,42vh)] overflow-y-auto">
                 <CommandEmpty>
                   {entries.length === 0
-                    ? "当前年级与学科下暂无内置章节目录（可直接用补充说明填写）"
+                    ? "暂无章节目录。"
                     : "无匹配项"}
                 </CommandEmpty>
                 {[...grouped.entries()].map(([groupName, items]) => (

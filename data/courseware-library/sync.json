@@ -1,0 +1,7 @@
+{
+  "autoSync": true,
+  "catalogUrl": "https://basic.smartedu.cn/tchMaterial/detail?contentType=assets_document&contentId=bdc00134-465d-454b-a541-dcd0cec4d86e&catalogType=tchMaterial&subCatalog=tchMaterial",
+  "intervalMinutes": 30,
+  "lastSyncAt": "2026-08-01T07:31:06.745Z",
+  "lastSyncSummary": "PDF 同步已禁用（跳过清单 0）；教材目录请用 textbook-directory"
+}

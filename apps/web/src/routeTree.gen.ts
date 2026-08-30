@@ -9,17 +9,43 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TeacherRouteImport } from './routes/teacher'
+import { Route as StudentRouteImport } from './routes/student'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as RemediationRulesRouteImport } from './routes/remediation-rules'
+import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as OfflineImportsRouteImport } from './routes/offline-imports'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as GenerateRouteImport } from './routes/generate'
+import { Route as ExplainPracticeRouteImport } from './routes/explain-practice'
 import { Route as EducationOsRouteImport } from './routes/education-os'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as LoginRouteRouteImport } from './routes/login/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LoginIndexRouteImport } from './routes/login/index'
+import { Route as LoginTeacherRouteImport } from './routes/login/teacher'
+import { Route as LoginStudentRouteImport } from './routes/login/student'
+import { Route as LoginAdminRouteImport } from './routes/login/admin'
 import { Route as ExamIdRouteImport } from './routes/exam.$id'
 
+const TeacherRoute = TeacherRouteImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StudentRoute = StudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -28,6 +54,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const RemediationRulesRoute = RemediationRulesRouteImport.update({
   id: '/remediation-rules',
   path: '/remediation-rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewRoute = PreviewRouteImport.update({
+  id: '/preview',
+  path: '/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineImportsRoute = OfflineImportsRouteImport.update({
@@ -45,6 +76,11 @@ const GenerateRoute = GenerateRouteImport.update({
   path: '/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExplainPracticeRoute = ExplainPracticeRouteImport.update({
+  id: '/explain-practice',
+  path: '/explain-practice',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EducationOsRoute = EducationOsRouteImport.update({
   id: '/education-os',
   path: '/education-os',
@@ -55,15 +91,45 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRouteRoute = LoginRouteRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const LoginIndexRoute = LoginIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => LoginRouteRoute,
+} as any)
+const LoginTeacherRoute = LoginTeacherRouteImport.update({
+  id: '/teacher',
+  path: '/teacher',
+  getParentRoute: () => LoginRouteRoute,
+} as any)
+const LoginStudentRoute = LoginStudentRouteImport.update({
+  id: '/student',
+  path: '/student',
+  getParentRoute: () => LoginRouteRoute,
+} as any)
+const LoginAdminRoute = LoginAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => LoginRouteRoute,
 } as any)
 const ExamIdRoute = ExamIdRouteImport.update({
   id: '/exam/$id',
@@ -73,95 +139,187 @@ const ExamIdRoute = ExamIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRoute
   '/education-os': typeof EducationOsRoute
+  '/explain-practice': typeof ExplainPracticeRoute
   '/generate': typeof GenerateRoute
   '/library': typeof LibraryRoute
   '/offline-imports': typeof OfflineImportsRoute
+  '/preview': typeof PreviewRoute
   '/remediation-rules': typeof RemediationRulesRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
+  '/student': typeof StudentRoute
+  '/teacher': typeof TeacherRoute
   '/exam/$id': typeof ExamIdRoute
+  '/login/admin': typeof LoginAdminRoute
+  '/login/student': typeof LoginStudentRoute
+  '/login/teacher': typeof LoginTeacherRoute
+  '/login/': typeof LoginIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRoute
   '/education-os': typeof EducationOsRoute
+  '/explain-practice': typeof ExplainPracticeRoute
   '/generate': typeof GenerateRoute
   '/library': typeof LibraryRoute
   '/offline-imports': typeof OfflineImportsRoute
+  '/preview': typeof PreviewRoute
   '/remediation-rules': typeof RemediationRulesRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
+  '/student': typeof StudentRoute
+  '/teacher': typeof TeacherRoute
   '/exam/$id': typeof ExamIdRoute
+  '/login/admin': typeof LoginAdminRoute
+  '/login/student': typeof LoginStudentRoute
+  '/login/teacher': typeof LoginTeacherRoute
+  '/login': typeof LoginIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRouteRouteWithChildren
   '/about': typeof AboutRoute
+  '/admin': typeof AdminRoute
   '/dashboard': typeof DashboardRoute
   '/education-os': typeof EducationOsRoute
+  '/explain-practice': typeof ExplainPracticeRoute
   '/generate': typeof GenerateRoute
   '/library': typeof LibraryRoute
   '/offline-imports': typeof OfflineImportsRoute
+  '/preview': typeof PreviewRoute
   '/remediation-rules': typeof RemediationRulesRoute
   '/settings': typeof SettingsRoute
+  '/setup': typeof SetupRoute
+  '/student': typeof StudentRoute
+  '/teacher': typeof TeacherRoute
   '/exam/$id': typeof ExamIdRoute
+  '/login/admin': typeof LoginAdminRoute
+  '/login/student': typeof LoginStudentRoute
+  '/login/teacher': typeof LoginTeacherRoute
+  '/login/': typeof LoginIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/about'
+    | '/admin'
     | '/dashboard'
     | '/education-os'
+    | '/explain-practice'
     | '/generate'
     | '/library'
     | '/offline-imports'
+    | '/preview'
     | '/remediation-rules'
     | '/settings'
+    | '/setup'
+    | '/student'
+    | '/teacher'
     | '/exam/$id'
+    | '/login/admin'
+    | '/login/student'
+    | '/login/teacher'
+    | '/login/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
+    | '/admin'
     | '/dashboard'
     | '/education-os'
+    | '/explain-practice'
     | '/generate'
     | '/library'
     | '/offline-imports'
+    | '/preview'
     | '/remediation-rules'
     | '/settings'
+    | '/setup'
+    | '/student'
+    | '/teacher'
     | '/exam/$id'
+    | '/login/admin'
+    | '/login/student'
+    | '/login/teacher'
+    | '/login'
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/about'
+    | '/admin'
     | '/dashboard'
     | '/education-os'
+    | '/explain-practice'
     | '/generate'
     | '/library'
     | '/offline-imports'
+    | '/preview'
     | '/remediation-rules'
     | '/settings'
+    | '/setup'
+    | '/student'
+    | '/teacher'
     | '/exam/$id'
+    | '/login/admin'
+    | '/login/student'
+    | '/login/teacher'
+    | '/login/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRouteRoute: typeof LoginRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
+  AdminRoute: typeof AdminRoute
   DashboardRoute: typeof DashboardRoute
   EducationOsRoute: typeof EducationOsRoute
+  ExplainPracticeRoute: typeof ExplainPracticeRoute
   GenerateRoute: typeof GenerateRoute
   LibraryRoute: typeof LibraryRoute
   OfflineImportsRoute: typeof OfflineImportsRoute
+  PreviewRoute: typeof PreviewRoute
   RemediationRulesRoute: typeof RemediationRulesRoute
   SettingsRoute: typeof SettingsRoute
+  SetupRoute: typeof SetupRoute
+  StudentRoute: typeof StudentRoute
+  TeacherRoute: typeof TeacherRoute
   ExamIdRoute: typeof ExamIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/teacher': {
+      id: '/teacher'
+      path: '/teacher'
+      fullPath: '/teacher'
+      preLoaderRoute: typeof TeacherRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/student': {
+      id: '/student'
+      path: '/student'
+      fullPath: '/student'
+      preLoaderRoute: typeof StudentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings': {
       id: '/settings'
       path: '/settings'
@@ -174,6 +332,13 @@ declare module '@tanstack/react-router' {
       path: '/remediation-rules'
       fullPath: '/remediation-rules'
       preLoaderRoute: typeof RemediationRulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview': {
+      id: '/preview'
+      path: '/preview'
+      fullPath: '/preview'
+      preLoaderRoute: typeof PreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline-imports': {
@@ -197,6 +362,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/explain-practice': {
+      id: '/explain-practice'
+      path: '/explain-practice'
+      fullPath: '/explain-practice'
+      preLoaderRoute: typeof ExplainPracticeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/education-os': {
       id: '/education-os'
       path: '/education-os'
@@ -211,11 +383,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/about': {
       id: '/about'
       path: '/about'
       fullPath: '/about'
       preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -224,6 +410,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/login/': {
+      id: '/login/'
+      path: '/'
+      fullPath: '/login/'
+      preLoaderRoute: typeof LoginIndexRouteImport
+      parentRoute: typeof LoginRouteRoute
+    }
+    '/login/teacher': {
+      id: '/login/teacher'
+      path: '/teacher'
+      fullPath: '/login/teacher'
+      preLoaderRoute: typeof LoginTeacherRouteImport
+      parentRoute: typeof LoginRouteRoute
+    }
+    '/login/student': {
+      id: '/login/student'
+      path: '/student'
+      fullPath: '/login/student'
+      preLoaderRoute: typeof LoginStudentRouteImport
+      parentRoute: typeof LoginRouteRoute
+    }
+    '/login/admin': {
+      id: '/login/admin'
+      path: '/admin'
+      fullPath: '/login/admin'
+      preLoaderRoute: typeof LoginAdminRouteImport
+      parentRoute: typeof LoginRouteRoute
     }
     '/exam/$id': {
       id: '/exam/$id'
@@ -235,16 +449,41 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface LoginRouteRouteChildren {
+  LoginAdminRoute: typeof LoginAdminRoute
+  LoginStudentRoute: typeof LoginStudentRoute
+  LoginTeacherRoute: typeof LoginTeacherRoute
+  LoginIndexRoute: typeof LoginIndexRoute
+}
+
+const LoginRouteRouteChildren: LoginRouteRouteChildren = {
+  LoginAdminRoute: LoginAdminRoute,
+  LoginStudentRoute: LoginStudentRoute,
+  LoginTeacherRoute: LoginTeacherRoute,
+  LoginIndexRoute: LoginIndexRoute,
+}
+
+const LoginRouteRouteWithChildren = LoginRouteRoute._addFileChildren(
+  LoginRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRouteRoute: LoginRouteRouteWithChildren,
   AboutRoute: AboutRoute,
+  AdminRoute: AdminRoute,
   DashboardRoute: DashboardRoute,
   EducationOsRoute: EducationOsRoute,
+  ExplainPracticeRoute: ExplainPracticeRoute,
   GenerateRoute: GenerateRoute,
   LibraryRoute: LibraryRoute,
   OfflineImportsRoute: OfflineImportsRoute,
+  PreviewRoute: PreviewRoute,
   RemediationRulesRoute: RemediationRulesRoute,
   SettingsRoute: SettingsRoute,
+  SetupRoute: SetupRoute,
+  StudentRoute: StudentRoute,
+  TeacherRoute: TeacherRoute,
   ExamIdRoute: ExamIdRoute,
 }
 export const routeTree = rootRouteImport

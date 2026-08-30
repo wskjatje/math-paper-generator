@@ -1,0 +1,75 @@
+{
+  "version": 1,
+  "calibrated": true,
+  "calibrationNote": "方法：对本机 Chatterbox 旁路用 probeText 在 speed=1.0 实测基线 WPM=180.0，再 speed=targetWpm/baselineWpm。 目标 WPM 来自 data/listening-tts/calibration.targets.json（考试大纲常见转述区间等，见各档 targetWpmSource）。 停顿来自本仓库听力稿结构约定（非北京真题静音实测）。 未见北京市考试院公开「听力录音」官方 WPM；若要对齐具体北京真题听感，请用授权音频复测后改 targets 并重跑 calibrate。 标定时间：2026-07-21T23:43:48.931Z",
+  "gradeBands": [
+    {
+      "id": "primary_upper",
+      "label": "小学高段",
+      "matchSubjectSubstrings": [
+        "小学",
+        "五年级",
+        "六年级"
+      ],
+      "speed": 0.667,
+      "cueGapSec": 1,
+      "turnGapSec": 0.4
+    },
+    {
+      "id": "junior",
+      "label": "初中/中考向",
+      "matchSubjectSubstrings": [
+        "初一",
+        "初二",
+        "初三",
+        "初中",
+        "中考"
+      ],
+      "speed": 0.667,
+      "cueGapSec": 1,
+      "turnGapSec": 0.4
+    },
+    {
+      "id": "senior",
+      "label": "高中/衔接向",
+      "matchSubjectSubstrings": [
+        "高一",
+        "高二",
+        "高三",
+        "高中",
+        "初升高"
+      ],
+      "speed": 0.722,
+      "cueGapSec": 1,
+      "turnGapSec": 0.4
+    }
+  ],
+  "measurement": {
+    "baselineWpm": 180,
+    "probeDurationSec": 9,
+    "probeWordCount": 27,
+    "bands": [
+      {
+        "id": "primary_upper",
+        "speed": 0.667,
+        "targetWpm": 120,
+        "targetWpmSource": "未见北京/全国小学听力录音官方 WPM；暂与考纲常见下沿 120 wpm 对齐（与 junior 同目标）。有据后改本字段并重跑 calibrate。",
+        "gapSource": "本仓库听力稿结构停顿约定：docs/listening-piper-setup.md（__WORD_GAP__ 默认 1.0s，__TURN_GAP__ 默认 0.4s），非北京真题静音实测。"
+      },
+      {
+        "id": "junior",
+        "speed": 0.667,
+        "targetWpm": 120,
+        "targetWpmSource": "《普通高等学校招生全国统一考试》英语科听力语速长期公开表述区间下沿约 120 wpm（多份考纲/考试说明转述）；未见北京市考试院公布「中考听力录音」独立官方 WPM。",
+        "gapSource": "本仓库听力稿结构停顿约定：docs/listening-piper-setup.md"
+      },
+      {
+        "id": "senior",
+        "speed": 0.722,
+        "targetWpm": 130,
+        "targetWpmSource": "同上公开表述区间上沿约 130 wpm（考试大纲常见转述 120–130）；近年部分全国卷实测更高，本档先取大纲区间上沿，可在复测后改 targets 再 calibrate。",
+        "gapSource": "本仓库听力稿结构停顿约定：docs/listening-piper-setup.md"
+      }
+    ]
+  }
+}

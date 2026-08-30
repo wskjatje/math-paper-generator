@@ -1,0 +1,559 @@
+{
+  "enabled": true,
+  "routePath": "/explain-practice",
+  "navLabel": "练习讲解",
+  "publicKind": "explain",
+  "storageKeyTemplate": "{packageId}/{bandId}/explain.mp4",
+  "scriptJsonName": "script.json",
+  "modelPurposes": {
+    "itemGen": "explain_item_gen",
+    "scriptGen": "explain_script_gen"
+  },
+  "quantity": {
+    "min": 1,
+    "max": 1
+  },
+  "difficulties": [
+    "beginner",
+    "intermediate",
+    "competition",
+    "advanced"
+  ],
+  "scenePurposes": [
+    "read_stem",
+    "idea",
+    "step",
+    "pitfall",
+    "answer",
+    "summary"
+  ],
+  "abilityBands": [
+    {
+      "id": "L1",
+      "label": "入门",
+      "maxNarrationCharsPerScene": 90,
+      "maxScenes": 10,
+      "maxTotalNarrationChars": 600,
+      "maxDurationSec": 540,
+      "forbiddenTerms": [
+        "显然",
+        "易得",
+        "易知",
+        "trivial",
+        "不难看出",
+        "同理可得"
+      ],
+      "requireLifeAnalogy": true,
+      "pedagogySummary": "面向基础较弱的学生：短句、先生活再符号、一步一镜，允许多步拆解。"
+    },
+    {
+      "id": "L2",
+      "label": "巩固",
+      "maxNarrationCharsPerScene": 120,
+      "maxScenes": 10,
+      "maxTotalNarrationChars": 720,
+      "maxDurationSec": 600,
+      "forbiddenTerms": [
+        "显然",
+        "trivial"
+      ],
+      "requireLifeAnalogy": false,
+      "pedagogySummary": "面向多数学生：教材语为主，必要时一句类比，步骤完整。"
+    },
+    {
+      "id": "L3",
+      "label": "提升",
+      "maxNarrationCharsPerScene": 100,
+      "maxScenes": 8,
+      "maxTotalNarrationChars": 560,
+      "maxDurationSec": 420,
+      "forbiddenTerms": [],
+      "requireLifeAnalogy": false,
+      "pedagogySummary": "面向学有余力：术语可直接使用，少铺垫，突出关键步骤与易错点。"
+    }
+  ],
+  "skeletons": [
+    {
+      "id": "fill_blank_calc",
+      "label": "填空·计算",
+      "questionType": "fill_blank",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "single_choice_concept",
+      "label": "选择·概念",
+      "questionType": "multiple_choice",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "pitfall",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "方程基础"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "short_answer_explain",
+      "label": "解答·分步",
+      "questionType": "short_answer",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "proof_explain",
+      "label": "证明·分步",
+      "questionType": "proof",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "cross_math_physics_explain",
+      "label": "数物综合·分步",
+      "questionType": "cross_math_physics",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "cross_math_chemistry_explain",
+      "label": "数化综合·分步",
+      "questionType": "cross_math_chemistry",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "chemistry",
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "cross_physics_math_explain",
+      "label": "物数综合·分步",
+      "questionType": "cross_physics_math",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "cross_chemistry_math_explain",
+      "label": "化数综合·分步",
+      "questionType": "cross_chemistry_math",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "chemistry",
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "programming_explain",
+      "label": "编程·分步",
+      "questionType": "programming",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "answer",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    },
+    {
+      "id": "essay_explain",
+      "label": "写作·分步",
+      "questionType": "essay",
+      "requiresTeacherLockAlways": true,
+      "scenePurposeSequence": [
+        "read_stem",
+        "idea",
+        "step",
+        "summary"
+      ],
+      "allowedKnowledgeTags": [
+        "有理数加减",
+        "有理数乘除",
+        "整式加减",
+        "方程基础",
+        "力与运动",
+        "压强与浮力",
+        "功和机械能"
+      ],
+      "allowedSubjectIds": [
+        "math",
+        "physics"
+      ],
+      "secondsPerSceneDefault": 4
+    }
+  ],
+  "statusLabels": {
+    "draft": "草稿包",
+    "generating_item": "草稿包",
+    "awaiting_teacher_lock": "草稿包",
+    "queued_script": "生成讲义中",
+    "script_ready": "讲义就绪",
+    "queued_render": "成片中",
+    "ready": "可播放",
+    "failed": "失败"
+  },
+  "render": {
+    "backend": "board_ffmpeg",
+    "allowBackendFallback": false,
+    "manimRuntime": "local",
+    "ffmpegBinEnv": "MPG_EXPLAIN_FFMPEG_BIN",
+    "piperBinEnv": "MPG_PIPER_BIN",
+    "piperModelEnv": "MPG_PIPER_MODEL",
+    "frameWidth": 1280,
+    "frameHeight": 720,
+    "fps": 1,
+    "silencePadSec": 0.35,
+    "ffmpegBinName": "ffmpeg",
+    "ttsEngine": "say",
+    "board": {
+      "burnOnScreenText": true,
+      "fontFileEnv": "MPG_EXPLAIN_BOARD_FONT",
+      "fontFileCandidates": [
+        "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
+        "/System/Library/Fonts/Supplemental/Songti.ttc",
+        "/Library/Fonts/Arial Unicode.ttf"
+      ],
+      "backgroundColor": "0x1a1a1a",
+      "fontColor": "white",
+      "fontSize": 40,
+      "marginX": 72,
+      "marginY": 72,
+      "lineSpacing": 16,
+      "maxCharsPerLine": 28,
+      "maxLines": 14
+    },
+    "manimTemplates": {
+      "sceneTemplateMap": {
+        "read_stem": "read_stem",
+        "idea": "idea",
+        "step": "step",
+        "answer": "answer",
+        "pitfall": "pitfall",
+        "summary": "summary"
+      }
+    },
+    "manim": {
+      "localBinEnv": "MPG_EXPLAIN_MANIM_BIN",
+      "localBinName": "manim",
+      "dockerBinEnv": "MPG_EXPLAIN_DOCKER_BIN",
+      "dockerBinName": "docker",
+      "dockerImage": "manimcommunity/manim:stable",
+      "quality": "l",
+      "scriptRelPath": "apps/web/manim-explain/render_explain_scenes.py",
+      "sceneModuleName": "render_explain_scenes",
+      "sceneClassName": "ExplainTemplateScene",
+      "workdirMount": "/manim"
+    }
+  },
+  "renderEnhance": {
+    "enabled": true,
+    "allowedTtsEngines": ["say", "piper"],
+    "ttsEngineFallback": ["say", "piper"],
+    "subtitles": {
+      "enabled": true,
+      "burnIn": true,
+      "requireBurnIn": false,
+      "maxCharsPerCue": 42,
+      "maxLinesPerCue": 2
+    },
+    "synth": {
+      "concatMaxAttempts": 2,
+      "minOutputBytes": 1024,
+      "minDurationSec": 0.5,
+      "ffprobeBinEnv": "MPG_EXPLAIN_FFPROBE_BIN",
+      "ffprobeBinName": "ffprobe"
+    },
+    "broll": {
+      "enabled": false,
+      "provider": "none",
+      "allowedPurposes": ["idea", "summary"],
+      "forbiddenPurposes": ["read_stem", "step", "answer", "pitfall"],
+      "skipOnFailure": true
+    }
+  },
+  "messages": {
+    "disabled": "练习讲解未启用。",
+    "mysqlUnavailable": "数据库不可用，无法使用练习讲解。",
+    "ffmpegMissing": "未检测到视频合成工具，无法生成讲解。",
+    "ttsMissing": "未检测到语音合成，无法生成讲解。",
+    "notLocked": "练习包尚未授权生成，请重新选题生成。",
+    "bandRequired": "未配置有效能力档，无法生成讲解。",
+    "invalidTransition": "当前状态不允许该操作。",
+    "scriptGateFailed": "讲解稿未通过校验。",
+    "renderFailed": "讲解视频生成失败。",
+    "notReady": "讲解尚未就绪。",
+    "packageMissing": "练习包不存在。",
+    "examMissing": "试卷不存在或已删除。",
+    "questionMissing": "题目不存在。",
+    "questionIncomplete": "该题缺少答案或解析步骤，无法生成讲解。",
+    "questionTypeUnsupported": "该题型暂无讲解骨架，无法生成讲解。",
+    "subjectUnresolved": "无法从试卷解析学科，无法生成讲解。",
+    "gradeUnresolved": "无法从试卷解析年级，无法生成讲解。",
+    "knowledgeMissing": "该题未标注知识点，无法生成讲解。",
+    "boardFontMissing": "未找到板书字体，无法生成带画面的讲解视频。",
+    "handoutAiFailed": "讲义生成失败。",
+    "handoutEmpty": "模型未返回讲义正文。若使用 DeepSeek V4 等带思考模式的模型，请改用兼容对话模型，或确认已关闭思考模式后重试。",
+    "handoutParseFailed": "模型返回无法解析为讲义。请换模型重试，或在设置中改选其它用途模型。",
+    "handoutCoverageFailed": "讲义未覆盖卷内标答或解析步骤。系统已尝试并入锁定原文仍不足，请换模型重试或先补全该题答案与步骤。",
+    "defaultBandMissing": "未配置默认能力档，无法生成讲解。",
+    "scriptModelUnresolved": "请先在设置 → 用途模型中，为「练习讲解 · 讲义生成」选择一条已添加的模型。",
+    "scriptModelInteractionsOnly": "所选模型不支持对话补全，无法生成讲义。请在设置 → 用途模型中改选其他模型。",
+    "manimMissing": "未检测到 Manim，无法按模板生成讲解动画。",
+    "manimRuntimeInvalid": "Manim 运行时配置无效，请使用本机或 Docker。",
+    "manimTemplateMissing": "分镜用途缺少模板映射，无法生成讲解动画。",
+    "backendUnsupported": "当前成片后端本版未启用。",
+    "backendFallbackForbidden": "成片失败，禁止改用其他后端冒充成功。",
+    "code2videoNotEnabled": "Code2Video 成片本版未启用。",
+    "oneClickInProgress": "正在生成讲解…",
+    "oneClickBandProgress": "{{bandLabel}}：{{phaseLabel}}",
+    "explainMissing": "暂无讲解",
+    "manimAvailableHint": "可切模板成片",
+    "statusUnknown": "处理中",
+    "ttsFallbackExhausted": "所有已配置的语音引擎均不可用或合成失败，无法生成讲解。",
+    "ttsEngineNotAllowed": "语音引擎不在配置允许列表中，无法生成讲解。",
+    "subtitleBurnFailed": "字幕烧录失败，无法生成讲解。",
+    "concatFailed": "视频拼接失败，无法生成讲解。",
+    "outputTooSmall": "成片文件过小，判定无效。",
+    "outputTooShort": "成片时长过短，判定无效。",
+    "durationProbeFailed": "无法探测成片时长，无法完成校验。",
+    "enhanceConfigInvalid": "讲解成片增强配置无效。",
+    "analogyRequired": "入门档讲义须包含生活类比，请换模型重试。",
+    "bandIdsRequired": "请至少选择一个能力档。",
+    "bandIdInvalid": "所选能力档无效。",
+    "explainBandUnresolved": "学生未绑定讲解能力档，且无默认档可用。"
+  },
+  "questionTypeSkeletonMap": {
+    "fill_blank": "fill_blank_calc",
+    "calculation": "fill_blank_calc",
+    "multiple_choice": "single_choice_concept",
+    "multiple_choice_multi": "single_choice_concept",
+    "short_answer": "short_answer_explain",
+    "proof": "proof_explain",
+    "cross_math_physics": "cross_math_physics_explain",
+    "cross_math_chemistry": "cross_math_chemistry_explain",
+    "cross_physics_math": "cross_physics_math_explain",
+    "cross_chemistry_math": "cross_chemistry_math_explain",
+    "programming": "programming_explain",
+    "essay": "essay_explain"
+  },
+  "allowUnboundGradeFromExam": true,
+  "requireKnowledgeTagFromExam": false,
+  "stemPreviewMaxChars": 120,
+  "defaultAbilityBandId": "L2",
+  "handoutGeneration": {
+    "mode": "ai",
+    "temperature": 0.35,
+    "maxTokens": 4096,
+    "maxAttempts": 2,
+    "systemPrompt": "你是中学讲义编写助手。只根据给定题干、标答与解析步骤编写分镜讲义与口播，不得编造与标答冲突的结论或数值。是否举例、是否展开公式说明，完全按本题与能力档教学要求决定，禁止套用固定口头禅或固定段落模板。输出且仅输出 JSON 对象。",
+    "userPromptTemplate": "能力档：{{bandLabel}}\n教学要求：{{bandPedagogy}}\n分档补充说明：{{bandOverlay}}\n口播禁词（不得出现）：{{forbiddenTerms}}\n生活类比要求：{{analogyRequirement}}\n（单镜口播≤{{maxNarrationChars}}字，总分镜≤{{maxScenes}}，口播总字≤{{maxTotalNarrationChars}}，单镜默认时长约{{secondsPerSceneDefault}}秒）。\n允许的分镜目的（须按序列使用，step 可对每一步各一镜）：{{purposeSequence}}\n\n题干：\n{{stem}}\n\n标答：\n{{answer}}\n\n解析步骤（JSON）：\n{{stepsJson}}\n\n选择题选项（可能为空 JSON 数组）：\n{{optionsJson}}\n\n请输出 JSON：{\"scenes\":[{\"purpose\":\"...\",\"narration\":\"口播\",\"onScreen\":\"板书（可含公式 LaTeX）\",\"durationSec\":number}]}\n硬约束：scenes 非空；purpose 必须属于允许列表；narration/onScreen 非空；标答要点须在某镜出现；每条解析步骤的核心描述须被某镜覆盖；禁止输出 Markdown 围栏。\n务必：标答原文须完整出现在至少一镜的 onScreen；每条解析步骤 description 原文须出现在某镜 onScreen（可改述口播，但板书须保留原文要点）。口播可按能力档通俗改述，但不得改答案与步骤结论。",
+    "requireAnswerCoverage": true,
+    "requireStepCoverage": true,
+    "lifeAnalogyMarkers": [
+      "比如",
+      "比方",
+      "好像",
+      "就像",
+      "好比",
+      "生活中",
+      "打个比方",
+      "可以想成"
+    ],
+    "bandOverlays": {
+      "L1": "口播必须口语化、短句；至少一处生活类比帮助理解题意或算法；每步只讲一件事；避免「显然」「易得」等词。",
+      "L2": "用清晰教材语讲解，步骤完整；类比可选，勿堆砌套话。",
+      "L3": "突出关键推理与易错点，术语可直接使用，少做生活铺垫。"
+    },
+    "chatCompletionsExtras": {
+      "thinking": { "type": "disabled" },
+      "response_format": { "type": "json_object" }
+    }
+  },
+  "factsTransformTemplates": {
+    "read_stem": {
+      "narration": "{{stem}}",
+      "onScreen": "{{stem}}"
+    },
+    "idea": {
+      "narration": "{{idea}}",
+      "onScreen": "{{idea}}"
+    },
+    "step": {
+      "narration": "{{stepBody}}",
+      "onScreen": "{{stepOnScreen}}"
+    },
+    "pitfall": {
+      "narration": "{{pitfall}}",
+      "onScreen": "{{pitfall}}"
+    },
+    "answer": {
+      "narration": "{{answer}}",
+      "onScreen": "{{answer}}"
+    },
+    "summary": {
+      "narration": "{{summary}}",
+      "onScreen": "{{summary}}"
+    }
+  },
+  "scriptGenModelSelection": {
+    "requireOpenAiCompatEndpoint": true,
+    "unsupportedModelIdPatterns": [
+      "deep-research",
+      "interactions-only"
+    ]
+  },
+  "modelPurposeLabels": {
+    "explain_script_gen": "练习讲解 · 讲义生成",
+    "explain_item_gen": "练习讲解 · 出题（预留）"
+  }
+}

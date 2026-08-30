@@ -1,6 +1,7 @@
 /**
- * 试卷库列表合并逻辑（云端 + 本地 + 内置演示卷），与存储偏好组合。
+ * 试卷库列表合并逻辑（云端 + 本地 + MySQL + 内置演示卷），与存储偏好组合。
  * `auto` 且已配 Supabase：`仓库演示卷 ∪ 本地 data/local-exams ∪ 云端 exams`，同 id **云端覆盖**。
+ * 未配云端且 MySQL 统一面：`本地 data/local-exams ∪ MySQL exams`，同 id **MySQL 覆盖**。
  */
 import { getSupabaseAdmin } from "@/lib/supabaseOptional.server";
 import {
@@ -153,8 +154,14 @@ export async function listExamsForLibrary(options?: {
       const mysqlRows = await listMysqlExamRows({
         includeStaging: scope === "offline-imports" && includeStaging,
       });
-      const mysql = mysqlRows.map((e) => ({ ...e, storage_source: "mysql" as const }));
-      const merged = scoped(mysql).sort(sortDesc);
+      const byId = new Map<string, Exam>();
+      for (const e of localsRaw) {
+        byId.set(e.id, { ...e, storage_source: "local" });
+      }
+      for (const e of mysqlRows) {
+        byId.set(e.id, { ...e, storage_source: "mysql" });
+      }
+      const merged = scoped([...byId.values()]).sort(sortDesc);
       return { exams: await enrichExamsWithHasExamples(merged) };
     }
     const locals = localsRaw.map((e) => ({ ...e, storage_source: "local" as const }));

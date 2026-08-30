@@ -1,7 +1,16 @@
 import type { Difficulty, QuestionType } from "@/lib/types";
 import { DIFFICULTY_LABELS } from "@/lib/types";
+import { EXAM_SEMANTIC_GATES } from "@/config/examDomain";
 
 export type GradeBand = "primary" | "junior" | "senior";
+
+export const GRADE_BAND_ORDER: GradeBand[] = ["primary", "junior", "senior"];
+
+export const GRADE_BAND_LABELS: Record<GradeBand, string> = {
+  primary: "小学",
+  junior: "初中",
+  senior: "高中",
+};
 
 /**
  * 学年基准（不含学期）。学段用于限定可选学科；入库标签中的「学年」匹配用 {@link gradeYearLabel}。
@@ -34,6 +43,16 @@ export const GEN_GRADE_UNBOUND_ID = "gen_unbound" as const;
 
 export function isGenerationGradeUnbound(gradeId: string | undefined | null): boolean {
   return gradeId === GEN_GRADE_UNBOUND_ID;
+}
+
+/**
+ * 竞赛模式年级参照：仅接受 {@link GRADE_LEVEL_OPTIONS} 中的 id；
+ * 空 / unbound / 未知 id → {@link GEN_GRADE_UNBOUND_ID}（不臆造年级）。
+ */
+export function resolveContestGradePayload(gradeId: string | undefined | null): string {
+  const g = gradeId?.trim() ?? "";
+  if (!g || isGenerationGradeUnbound(g)) return GEN_GRADE_UNBOUND_ID;
+  return GRADE_LEVEL_OPTIONS.some((o) => o.id === g) ? g : GEN_GRADE_UNBOUND_ID;
 }
 
 /** 学年 id → 中文称谓（不含学期），兼容旧入库标签 */
@@ -109,6 +128,16 @@ export function gradeBaseId(gradeId: string): string {
 export function gradeBand(gradeId: string): GradeBand | undefined {
   const base = gradeBaseId(gradeId);
   return GRADE_BASE_BAND[base];
+}
+
+/**
+ * 竞赛年级参照：侧重与定位对齐时允许上浮一档（小学→初中规则，初中→高中规则）。
+ * 高中不再上浮。不新编学段表，仅在已有 primary/junior/senior 上递进。
+ */
+export function stretchGradeBandOneStep(band: GradeBand): GradeBand {
+  if (band === "primary") return "junior";
+  if (band === "junior") return "senior";
+  return "senior";
 }
 
 /** 当前年级下允许选择的学科 id 列表 */
@@ -457,6 +486,45 @@ export function curriculumSubjectLabel(id: string): string {
   return CURRICULUM_SUBJECT_OPTIONS.find((s) => s.id === id)?.label ?? id;
 }
 
+/** 从试卷 subjects 标签解析学科 id（如「数学」→ math）；忽略「年级:…」等非学科项 */
+export function curriculumSubjectIdsFromExamSubjects(
+  subjects: string[] | null | undefined,
+): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of subjects ?? []) {
+    const t = String(raw || "").trim();
+    if (!t || t.startsWith("年级:") || t.startsWith("教材") || t.startsWith("试卷场景")) continue;
+    const stripped = t.startsWith("学科:") ? t.slice(3).trim() : t;
+    const byId = CURRICULUM_SUBJECT_OPTIONS.find((s) => s.id === stripped);
+    const byLabel = CURRICULUM_SUBJECT_OPTIONS.find((s) => s.label === stripped);
+    const id = byId?.id ?? byLabel?.id;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+/** 从试卷 subjects 标签解析年级 id（如「年级:初三（下）」→ jhs_g3_s2） */
+export function preferredGradeIdFromExamSubjects(
+  subjects: string[] | null | undefined,
+): string | null {
+  for (const raw of subjects ?? []) {
+    const t = String(raw || "").trim();
+    const m = /^年级:(.+)$/.exec(t);
+    if (!m) continue;
+    const label = m[1].trim();
+    const hit = GRADE_LEVEL_OPTIONS.find((g) => g.label === label);
+    if (hit) return hit.id;
+    const yearHit = GRADE_LEVEL_OPTIONS.find(
+      (g) => g.label === `${label}（上）` || g.label.startsWith(label),
+    );
+    if (yearHit) return yearHit.id;
+  }
+  return null;
+}
+
 /** 生成页「特别要求」输入框占位示例，随所选学科 id 变化 */
 export function notesPlaceholderForSubject(subjectId: string): string {
   const examples: Record<string, string> = {
@@ -613,10 +681,66 @@ const DEFAULT_COMPETITION_FOCUS: readonly { id: string; label: string }[] = [
   { id: "general_comp", label: "学科综合拓展与竞技向" },
 ];
 
+/** 无学科专表或学段过滤后为空时的默认侧重（来自目录常量，非临场臆造） */
+export function defaultCompetitionFocusOptions(): { id: string; label: string }[] {
+  return [...DEFAULT_COMPETITION_FOCUS];
+}
+
 /** 竞赛 / 高阶难度下，可选的侧重列表（随学科变化） */
 export function competitionFocusOptions(subjectId: string): { id: string; label: string }[] {
   const list = COMPETITION_FOCUS_BY_SUBJECT[subjectId] ?? DEFAULT_COMPETITION_FOCUS;
   return [...list];
+}
+
+function competitionFocusLabelHitsAlignmentForbid(
+  label: string,
+  band: GradeBand,
+): boolean {
+  const cfg = EXAM_SEMANTIC_GATES;
+  if (!cfg.enabled || !cfg.alignment.enabled) return false;
+  for (const rule of cfg.alignment.rules) {
+    if (!rule.whenGradeBands.includes(band)) continue;
+    for (const pattern of rule.forbidCorpusPatterns) {
+      try {
+        if (new RegExp(pattern, "i").test(label)) return true;
+      } catch {
+        /* 配置正则非法则跳过该条，不臆造替代规则 */
+      }
+    }
+  }
+  return false;
+}
+
+/**
+ * 对已有侧重列表套用 exam-domain alignment（按年级学段禁止模式）。
+ * - 无年级 / unbound / 无法解析学段 → 原列表
+ * - 过滤学段取 {@link stretchGradeBandOneStep}（小学可够到初中档，初中可够到高中档）
+ * - 过滤后为空 → fallback（默认 {@link defaultCompetitionFocusOptions}）
+ */
+export function applyCompetitionFocusGradeAlignment<T extends { label: string }>(
+  options: readonly T[],
+  gradeId?: string | null,
+  fallbackWhenEmpty: readonly T[] = defaultCompetitionFocusOptions() as readonly T[],
+): T[] {
+  const g = gradeId?.trim() ?? "";
+  if (!g || isGenerationGradeUnbound(g)) return [...options];
+  const band = gradeBand(g);
+  if (!band) return [...options];
+  const alignmentBand = stretchGradeBandOneStep(band);
+  const filtered = options.filter(
+    (o) => !competitionFocusLabelHitsAlignmentForbid(o.label, alignmentBand),
+  );
+  return filtered.length > 0 ? filtered : [...fallbackWhenEmpty];
+}
+
+/**
+ * 竞赛侧重：先按学科取表，再按年级学段套用 exam-domain alignment 禁止模式过滤。
+ */
+export function competitionFocusOptionsForGrade(
+  subjectId: string,
+  gradeId?: string | null,
+): { id: string; label: string }[] {
+  return applyCompetitionFocusGradeAlignment(competitionFocusOptions(subjectId), gradeId);
 }
 
 export function competitionFocusLabelById(subjectId: string, focusId: string): string {
@@ -624,8 +748,12 @@ export function competitionFocusLabelById(subjectId: string, focusId: string): s
   return hit?.label ?? focusId;
 }
 
-export function isValidCompetitionFocus(subjectId: string, focusId: string): boolean {
-  return competitionFocusOptions(subjectId).some((o) => o.id === focusId);
+export function isValidCompetitionFocus(
+  subjectId: string,
+  focusId: string,
+  gradeId?: string | null,
+): boolean {
+  return competitionFocusOptionsForGrade(subjectId, gradeId).some((o) => o.id === focusId);
 }
 
 /**
@@ -1245,6 +1373,34 @@ export function targetTracksForExamTrack(track: ExamTrackId): { id: string; labe
     id: t.id,
     label: t.label,
   }));
+}
+
+/**
+ * 竞赛「目标体系」→ 主学科（与学科下拉对齐；AMC / 袋鼠归数学）。
+ * 无映射的赛系不参与学科过滤。
+ */
+export const CONTEST_TARGET_SUBJECT_BY_ID: Readonly<Record<string, string>> = {
+  ct_math_league: "math",
+  ct_physics: "physics",
+  ct_chemistry: "chemistry",
+  ct_info: "it",
+  ct_amc: "math",
+  ct_kangaroo: "math",
+};
+
+export function subjectIdForContestTargetTrack(targetId: string | undefined | null): string | null {
+  if (!targetId?.trim()) return null;
+  return CONTEST_TARGET_SUBJECT_BY_ID[targetId] ?? null;
+}
+
+/** 竞赛模式：按学科过滤目标体系；学科为空时返回该轨道全部选项 */
+export function contestTargetTracksForSubject(
+  subjectId: string | undefined | null,
+): { id: string; label: string }[] {
+  const all = targetTracksForExamTrack("contest_track");
+  const sid = subjectId?.trim() ?? "";
+  if (!sid) return all;
+  return all.filter((t) => CONTEST_TARGET_SUBJECT_BY_ID[t.id] === sid);
 }
 
 export function targetTrackLabel(id: string | undefined): string {

@@ -4,9 +4,13 @@
  */
 
 import { stripLeadingChoiceMarker } from "@/lib/examChoiceOptions.shared";
+import { healDisplayHygieneQuestion } from "@/lib/examDisplayHygiene.shared";
+import { maybeDedupeMcqOptions } from "@/lib/examMcqOptions.shared";
 import type { SessionExamSnapshot } from "@/lib/examSession";
 import { shouldSuppressVectorDiagramSchemaForQuestion } from "@/lib/examRasterFigureHints.shared";
 import { runDefaultImportFormulaPipelineInRepo } from "@/lib/importFormulaPipeline.shared";
+import { applyExamTextNormalizationForPersist } from "@/lib/examTextNormalization.shared";
+import { stripExamPaperUiMetaInstructions } from "@/lib/examPaperSurfaceText.shared";
 import {
   materializeQuestionRasterFigures,
   stripNonResolvableMarkdownImagesFromText,
@@ -90,15 +94,25 @@ export function sanitizeImportedQuestionForPersist(q: Question): Question {
   const optIn = Array.isArray(q.options) ? q.options.map((o) => String(o ?? "")) : null;
   const optsLeadStripped = optIn?.map((o) => stripLeadingChoiceMarker(o)) ?? null;
   const contentStripped = stripNonResolvableMarkdownImagesFromText(
-    sanitizeImportedStemStructuralPollution(String(q.content ?? "")),
-  );
-  const contentNorm = runDefaultImportFormulaPipelineInRepo(contentStripped);
-  const optionsNorm = (sanitizeImportedMcqOptionTails(optsLeadStripped) ?? q.options)?.map((o) =>
-    runDefaultImportFormulaPipelineInRepo(
-      stripNonResolvableMarkdownImagesFromText(String(o)),
+    stripExamPaperUiMetaInstructions(
+      sanitizeImportedStemStructuralPollution(String(q.content ?? "")),
     ),
-  ) as Question["options"];
-  const answerNorm = runDefaultImportFormulaPipelineInRepo(String(q.answer ?? ""));
+  );
+  const contentNorm = applyExamTextNormalizationForPersist(
+    runDefaultImportFormulaPipelineInRepo(contentStripped),
+  );
+  const optionsAfterPipeline = (sanitizeImportedMcqOptionTails(optsLeadStripped) ?? q.options)?.map(
+    (o) =>
+      applyExamTextNormalizationForPersist(
+        runDefaultImportFormulaPipelineInRepo(
+          stripNonResolvableMarkdownImagesFromText(String(o)),
+        ),
+      ),
+  );
+  const optionsNorm = maybeDedupeMcqOptions(optionsAfterPipeline, "persist") as Question["options"];
+  const answerNorm = applyExamTextNormalizationForPersist(
+    runDefaultImportFormulaPipelineInRepo(String(q.answer ?? "")),
+  );
   const stepsNorm = Array.isArray(q.solution_steps)
     ? q.solution_steps.map((step) => ({
         ...step,
@@ -114,13 +128,13 @@ export function sanitizeImportedQuestionForPersist(q: Question): Question {
       }))
     : q.solution_steps;
 
-  const cleaned: Question = {
+  const cleaned: Question = healDisplayHygieneQuestion({
     ...q,
     content: contentNorm,
     options: optionsNorm ?? q.options,
     answer: answerNorm,
     solution_steps: stepsNorm,
-  };
+  });
   const withRaster = materializeQuestionRasterFigures(cleaned);
   const fd = computeQuestionFigureDependencyV1(withRaster);
   if (

@@ -1,5 +1,9 @@
 /**
  * 对本地 MySQL 执行 sql/mysql/zhixue_schema.sql
+ *
+ * 注：`local_accounts` / `local_sessions` 不在本 schema 文件内（本机账号栈另表）。
+ * 讲解能力档列 `explain_ability_band_id` 由 `mysqlAccountStore.server.ts` 启动/ensure
+ * 幂等 `ALTER TABLE ... ADD COLUMN`（忽略 errno 1060），勿在此重复臆造账号表 DDL。
  */
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
@@ -90,6 +94,10 @@ async function ensureMysqlExamParityColumns(conn: Connection): Promise<void> {
     "ALTER TABLE questions ADD COLUMN type_label VARCHAR(500) NULL",
     "ALTER TABLE exams ADD COLUMN figure_registry JSON NULL DEFAULT NULL COMMENT 'P7-1A 卷面图 registry'",
     "ALTER TABLE questions ADD COLUMN figure_refs JSON NULL DEFAULT NULL COMMENT 'P7-1A 题目图引用'",
+    "ALTER TABLE exams ADD COLUMN quality_status VARCHAR(32) NULL DEFAULT NULL",
+    "ALTER TABLE exams ADD COLUMN quality_report JSON NULL DEFAULT NULL",
+    "ALTER TABLE exams ADD COLUMN quality_checked_at DATETIME(3) NULL DEFAULT NULL",
+    "ALTER TABLE exams ADD COLUMN quality_exclude_assign TINYINT(1) NOT NULL DEFAULT 0",
   ];
   for (const q of alters) {
     try {
@@ -123,6 +131,33 @@ CREATE TABLE IF NOT EXISTS remote_import_jobs (
   updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
   PRIMARY KEY (id),
   KEY idx_remote_import_ws_updated (workspace_key, updated_at DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+`);
+}
+
+async function ensureExplainPracticePackagesTable(conn: Connection): Promise<void> {
+  await conn.query(`
+CREATE TABLE IF NOT EXISTS explain_practice_packages (
+  id CHAR(36) NOT NULL,
+  workspace_key VARCHAR(64) NOT NULL DEFAULT 'default',
+  status VARCHAR(32) NOT NULL,
+  source_kind VARCHAR(32) NOT NULL,
+  type_spec_json JSON NULL,
+  item_json JSON NULL,
+  locked_at DATETIME(3) NULL,
+  locked_by VARCHAR(128) NULL,
+  band_id VARCHAR(32) NULL,
+  script_json JSON NULL,
+  asset_storage_key VARCHAR(512) NULL,
+  asset_checksum VARCHAR(128) NULL,
+  failure_code VARCHAR(64) NULL,
+  failure_message TEXT NULL,
+  created_by VARCHAR(128) NULL,
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  PRIMARY KEY (id),
+  KEY idx_explain_pkg_ws_updated (workspace_key, updated_at DESC),
+  KEY idx_explain_pkg_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 `);
 }
@@ -322,6 +357,7 @@ export async function applyZhixueMysqlSchema(c: MysqlConnectionForm): Promise<vo
     await ensureExamRemediationRulesTable(conn);
     await ensureWorkspaceSettingsTable(conn);
     await ensureRemoteImportJobsTable(conn);
+    await ensureExplainPracticePackagesTable(conn);
     await ensureCurriculumCatalogTables(conn);
     await seedBundledProjectConfigToMysql(conn);
   } finally {

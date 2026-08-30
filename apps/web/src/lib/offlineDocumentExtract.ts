@@ -137,7 +137,7 @@ export async function extractTextFromFile(file: File): Promise<string> {
 
   if (IMG_RE.test(lower)) {
     throw new Error(
-      `${file.name}：图片请通过线下导入上传，由网关 GOT-OCR 2.0 识别（需 npm run docker:api:detach）`,
+      `${file.name}：图片请通过线下导入上传识别`,
     );
   }
 

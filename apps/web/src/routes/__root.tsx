@@ -4,7 +4,9 @@ import { GenerationJobQueueRunner } from "@/components/generation/GenerationJobQ
 import { RemoteImportJobQueueRunner } from "@/components/remoteImport/RemoteImportJobQueueRunner";
 import { SiteHeader } from "@/components/SiteHeader";
 import { SiteFooter } from "@/components/SiteFooter";
+import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
+import { AuthProvider } from "@/hooks/useAuth";
 import { useChatContextPeriodicSync } from "@/hooks/useChatContextPeriodicSync";
 
 import appCss from "../styles.css?url";
@@ -18,12 +20,9 @@ function NotFoundComponent() {
         <h2 className="mt-2 text-xl font-semibold text-foreground">页面未找到</h2>
         <p className="mt-2 text-sm text-muted-foreground">你访问的页面不存在或已被移动。</p>
         <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            返回首页
-          </Link>
+          <Button type="button" asChild>
+            <Link to="/">返回首页</Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -40,37 +39,27 @@ export const Route = createRootRoute({
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "知学" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
-      { title: "知学 Zhixue — 开源竞赛与奥数试题档案库" },
+      { title: "知学 — 教师与学生在线学习系统" },
       {
         name: "description",
-        content:
-          "由 AI 严谨生成、含分步推导的开源竞赛与跨学科试卷；可定制生成、浏览试卷库、导出 Markdown / PDF。",
+        content: "统一的运维、教师、学生端；支持账号管理、师生对应与作业布置。",
       },
       { name: "author", content: "Zhixue" },
-      { property: "og:title", content: "知学 Zhixue — 开源竞赛与奥数试题档案库" },
+      { property: "og:title", content: "知学 — 教师与学生在线学习系统" },
       {
         property: "og:description",
-        content: "AI 严谨命题 · 分步推导 · 开源可下载的竞赛试卷与例题。",
+        content: "统一的运维、教师、学生端；支持账号管理、师生对应与作业布置。",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "知学 Zhixue — 开源竞赛与奥数试题档案库" },
+      { name: "twitter:title", content: "知学 — 教师与学生在线学习系统" },
       {
         name: "twitter:description",
-        content: "AI 严谨命题 · 分步推导 · 开源可下载的竞赛试卷与例题。",
-      },
-      {
-        property: "og:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d2a48dd4-0a93-4811-9305-e834aca249f3/id-preview-6be827ad--1ab451eb-508b-48f3-bc06-a231cf22e5ab.lovable.app-1777594590148.png",
-      },
-      {
-        name: "twitter:image",
-        content:
-          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/d2a48dd4-0a93-4811-9305-e834aca249f3/id-preview-6be827ad--1ab451eb-508b-48f3-bc06-a231cf22e5ab.lovable.app-1777594590148.png",
+        content: "统一的运维、教师、学生端；支持账号管理、师生对应与作业布置。",
       },
     ],
     links: [
+      /** 不用 Google Fonts：国内网络常超时 10–20s+，会卡住首屏（本机已实测 fonts.googleapis.com 超时） */
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "icon", href: "/pwa-icon.svg", type: "image/svg+xml" },
@@ -100,21 +89,32 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function RootComponent() {
-  useChatContextPeriodicSync();
+/** 视口壳：顶栏/底栏固定，主区内部滚动（对齐旧前端） */
+function AppChrome({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="app-chrome-shell flex h-svh max-h-svh flex-col overflow-hidden">
       <GatewayOcrWarmupRunner />
       <GenerationJobQueueRunner />
       <RemoteImportJobQueueRunner />
       <SiteHeader />
-      <main className="flex-1">
-        <Outlet />
+      <main className="app-chrome-main flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+        {children}
       </main>
       <SiteFooter />
       <div className="no-print">
         <Toaster richColors position="top-center" />
       </div>
     </div>
+  );
+}
+
+function RootComponent() {
+  useChatContextPeriodicSync();
+  return (
+    <AuthProvider>
+      <AppChrome>
+        <Outlet />
+      </AppChrome>
+    </AuthProvider>
   );
 }

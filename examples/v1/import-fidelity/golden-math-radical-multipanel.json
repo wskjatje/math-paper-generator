@@ -1,0 +1,30 @@
+{
+  "id": "golden-math-radical-multipanel",
+  "title": "黄金集：根式坐标 + 一题多图 + 多小问",
+  "notes": "匿名化样例；用于保真指标（数值/根式 exact match、题图召回、多图完整率）。不含真实考生信息。",
+  "sourcePlainText": "1. 如图①②，已知点 B(5√3,0)，F(-√3,0)，且 △ABC 为等边三角形。（Ⅰ）求 BF 长度；（Ⅱ）求面积。\n2. 如图，在平面直角坐标系中，点 A(0,4)。",
+  "expected": {
+    "questionCount": 2,
+    "questions": [
+      {
+        "index": 1,
+        "mustContain": ["5√3", "-√3", "等边", "（Ⅰ）", "（Ⅱ）"],
+        "figureCount": 2,
+        "subquestionMarkers": ["Ⅰ", "Ⅱ"]
+      },
+      {
+        "index": 2,
+        "mustContain": ["A(0,4)"],
+        "figureCount": 1,
+        "subquestionMarkers": []
+      }
+    ]
+  },
+  "metrics": [
+    "radical_exact_match",
+    "numeric_exact_match",
+    "figure_recall",
+    "multi_figure_completeness",
+    "source_traceability"
+  ]
+}

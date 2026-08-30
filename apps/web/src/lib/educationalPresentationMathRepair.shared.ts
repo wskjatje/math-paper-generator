@@ -18,7 +18,11 @@ export function repairPresentationMathLatex(raw: string): string {
   s = s.replace(/\(\s*A\s+O\s+B\s*\)/gi, "(\\triangle AOB)");
   s = s.replace(/\s+/g, " ");
 
-  if (/\\frac\{|\\sqrt|\\leqslant|\\geqslant/.test(s) && !/\$[^$]+\$/.test(s)) {
+  // TeX 定界 → $…$，避免节点 latex 仍带 \( \) 进 MathContent 二次包裹
+  if (/^\\\([\s\S]*\\\)$/.test(s)) s = `$${s.slice(2, -2).trim()}$`;
+  else if (/^\\\[[\s\S]*\\\]$/.test(s)) s = `$${s.slice(2, -2).trim()}$`;
+
+  if (/\\frac\{|\\sqrt|\\leqslant|\\geqslant|\\triangle|\\angle/.test(s) && !/\$[^$]+\$/.test(s)) {
     s = `$${s}$`;
   }
   return s;

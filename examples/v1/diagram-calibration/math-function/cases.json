@@ -1,0 +1,1385 @@
+[
+  {
+    "id": "linear",
+    "content": "如图，一次函数 y=2*x+1 的图像。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -3,
+            "max": 3,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -3,
+            "max": 5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "2*x+1",
+          "domain": {
+            "min": -3,
+            "max": 3
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "parabola",
+    "content": "如图，抛物线 y=x^2 过原点。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -3,
+            "max": 3,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": {
+            "min": -3,
+            "max": 3
+          },
+          "samples": 128
+        },
+        {
+          "type": "point",
+          "axes": "ax1",
+          "x": 0,
+          "y": 0,
+          "label": "O"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "parabola-vertex",
+    "content": "如图，y=x^2-2*x 顶点 (1,-1)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 4,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -3,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "x^2-2*x",
+          "domain": {
+            "min": -2,
+            "max": 4
+          },
+          "samples": 128
+        },
+        {
+          "type": "point",
+          "axes": "ax1",
+          "x": 1,
+          "y": -1,
+          "label": "(1,-1)"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "abs",
+    "content": "如图，y=abs(x) 的图像。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -3,
+            "max": 3,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "abs(x)",
+          "domain": {
+            "min": -3,
+            "max": 3
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "sqrt",
+    "content": "如图，y=sqrt(x)（x≥0）。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1,
+            "max": 4,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 3,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "sqrt(x)",
+          "domain": {
+            "min": 0,
+            "max": 4
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "sin",
+    "content": "如图，y=sin(x) 的图像。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -6.5,
+            "max": 6.5,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1.5,
+            "max": 1.5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "sin(x)",
+          "domain": {
+            "min": -6,
+            "max": 6
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "cos",
+    "content": "如图，y=cos(x)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -6.5,
+            "max": 6.5,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1.5,
+            "max": 1.5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "cos(x)",
+          "domain": {
+            "min": -6,
+            "max": 6
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "exp",
+    "content": "如图，y=exp(x)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -0.5,
+            "max": 5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "exp(x)",
+          "domain": {
+            "min": -2,
+            "max": 2
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "log",
+    "content": "如图，y=log(x)（x>0）。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -0.5,
+            "max": 5,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -3,
+            "max": 2,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "log(x)",
+          "domain": {
+            "min": 0.2,
+            "max": 5
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "rational",
+    "content": "如图，y=1/x。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -3,
+            "max": 3,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -3,
+            "max": 3,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "1/x",
+          "domain": {
+            "min": -3,
+            "max": 3
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "cubic",
+    "content": "如图，y=x^3-x。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "x^3-x",
+          "domain": {
+            "min": -2,
+            "max": 2
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "line-intercept",
+    "content": "如图，直线过点 (0,2) 与 (1,0)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1,
+            "max": 3,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 3,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "2-2*x",
+          "domain": {
+            "min": -1,
+            "max": 3
+          },
+          "samples": 128
+        },
+        {
+          "type": "point",
+          "axes": "ax1",
+          "x": 0,
+          "y": 2,
+          "label": "(0,2)"
+        },
+        {
+          "type": "point",
+          "axes": "ax1",
+          "x": 1,
+          "y": 0,
+          "label": "(1,0)"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "quad-factored",
+    "content": "如图，y=(x-1)*(x-3)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1,
+            "max": 5,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -2,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "(x-1)*(x-3)",
+          "domain": {
+            "min": -1,
+            "max": 5
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "tan-partial",
+    "content": "如图，y=tan(x) 在区间约从 -1.2 到 1.2（避开渐近线）。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1.5,
+            "max": 1.5,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -4,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "tan(x)",
+          "domain": {
+            "min": -1.2,
+            "max": 1.2
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "shifted-sin",
+    "content": "如图，y=sin(x)+1。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -6,
+            "max": 6,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 3,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "sin(x)+1",
+          "domain": {
+            "min": -6,
+            "max": 6
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "neg-parabola",
+    "content": "如图，y=-x^2+4。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -3,
+            "max": 3,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -2,
+            "max": 5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "-x^2+4",
+          "domain": {
+            "min": -3,
+            "max": 3
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "pi-const",
+    "content": "如图，y=pi+0*x（水平线）。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "y": {
+            "min": 0,
+            "max": 5,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "pi+0*x",
+          "domain": {
+            "min": -2,
+            "max": 2
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "power",
+    "content": "如图，y=x^3。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -4,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "x^3",
+          "domain": {
+            "min": -2,
+            "max": 2
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "recip-shift",
+    "content": "如图，y=1/(x-1)（避开 x=1）。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 4,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -4,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "1/(x-1)",
+          "domain": {
+            "min": -2,
+            "max": 0.7
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "abs-shift",
+    "content": "如图，y=abs(x-2)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1,
+            "max": 5,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "abs(x-2)",
+          "domain": {
+            "min": -1,
+            "max": 5
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "bad-expr",
+    "content": "如图，函数图像。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "eval(x)",
+          "domain": {
+            "min": -2,
+            "max": 2
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "domain-oob",
+    "content": "如图，y=x。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1,
+            "max": 1,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 1,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "x",
+          "domain": {
+            "min": -5,
+            "max": 5
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "stem-point-miss",
+    "content": "如图，曲线过点 (2,3)。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 4,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -2,
+            "max": 4,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": {
+            "min": -2,
+            "max": 4
+          },
+          "samples": 128
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "no-curve",
+    "content": "如图，坐标系。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "y": {
+            "min": -2,
+            "max": 2,
+            "tick_step": 1
+          },
+          "grid": {
+            "major": true
+          }
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "m3-tangent-x2-at-2",
+    "content": "如图，抛物线 y=x^2 在 x=2 处切线斜率为 4。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -1, "max": 4, "tick_step": 1 },
+          "y": { "min": -1, "max": 8, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": { "min": -1, "max": 4 },
+          "samples": 128
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 2,
+          "span": { "min": 0, "max": 4 },
+          "label": { "text": "切线" }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-tangent-poly",
+    "content": "如图，函数 y=x^3-x 在 x=1 处切线斜率为 2。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -2, "max": 2, "tick_step": 1 },
+          "y": { "min": -2, "max": 2, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^3-x",
+          "domain": { "min": -2, "max": 2 },
+          "samples": 200
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 1,
+          "span": { "min": -0.5, "max": 2 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-tangent-sin",
+    "content": "如图，y=sin(x) 在 x=0 处切线斜率为 1。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -3.2, "max": 3.2, "tick_step": 1 },
+          "y": { "min": -1.5, "max": 1.5, "tick_step": 0.5 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "sin(x)",
+          "domain": { "min": -3.2, "max": 3.2 },
+          "samples": 256
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 0,
+          "span": { "min": -1.5, "max": 1.5 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-tangent-exp",
+    "content": "如图，y=exp(x) 在 x=0 处切线斜率为 1。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -2, "max": 2, "tick_step": 1 },
+          "y": { "min": -0.5, "max": 4, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "exp(x)",
+          "domain": { "min": -2, "max": 2 },
+          "samples": 128
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 0,
+          "span": { "min": -1, "max": 1.5 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-tangent-linear",
+    "content": "如图，一次函数 y=3*x+1 在 x=1 处切线斜率为 3。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -2, "max": 3, "tick_step": 1 },
+          "y": { "min": -4, "max": 8, "tick_step": 2 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "3*x+1",
+          "domain": { "min": -2, "max": 3 },
+          "samples": 64
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 1,
+          "span": { "min": -1, "max": 3 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-integral-x2-0-2",
+    "content": "如图，阴影为抛物线 y=x^2 与 x 轴在区间 [0,2] 上围成的区域。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -1, "max": 3, "tick_step": 1 },
+          "y": { "min": -1, "max": 5, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": { "min": -1, "max": 3 },
+          "samples": 128
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 0, "max": 2 },
+          "label": { "text": "阴影部分" }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-integral-from-to",
+    "content": "如图，求从 1 到 3 曲线 y=x 与 x 轴围成阴影的面积。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": 0, "max": 4, "tick_step": 1 },
+          "y": { "min": -1, "max": 4, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x",
+          "domain": { "min": 0, "max": 4 },
+          "samples": 64
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 1, "max": 3 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-integral-sin",
+    "content": "如图，定积分阴影表示 y=sin(x) 在区间 [0,3.1416] 上与 x 轴围成区域。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -0.5, "max": 3.5, "tick_step": 1 },
+          "y": { "min": -1.2, "max": 1.2, "tick_step": 0.5 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "sin(x)",
+          "domain": { "min": -0.5, "max": 3.5 },
+          "samples": 256
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 0, "max": 3.1416 },
+          "fill_opacity": 0.3
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-integral-sqrt",
+    "content": "如图，阴影为 y=sqrt(x) 在 [1,4] 上与 x 轴围成区域。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": 0, "max": 5, "tick_step": 1 },
+          "y": { "min": -0.5, "max": 3, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "sqrt(x)",
+          "domain": { "min": 0, "max": 5 },
+          "samples": 128
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 1, "max": 4 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-integral-quad",
+    "content": "如图，求 ∫_0^1 (1-x^2) 的几何意义阴影。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -0.5, "max": 1.5, "tick_step": 0.5 },
+          "y": { "min": -0.5, "max": 1.5, "tick_step": 0.5 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "1-x^2",
+          "domain": { "min": -0.5, "max": 1.5 },
+          "samples": 128
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 0, "max": 1 }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-tangent-and-integral",
+    "content": "如图，抛物线 y=x^2 在 x=2 处切线斜率为 4；阴影为区间 [0,2] 上曲线与 x 轴围成区域。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -1, "max": 4, "tick_step": 1 },
+          "y": { "min": -2, "max": 6, "tick_step": 1 },
+          "grid": { "major": true }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": { "min": -1, "max": 4 },
+          "samples": 256
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 2,
+          "span": { "min": 0, "max": 4 },
+          "label": { "text": "切线" }
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 0, "max": 2 },
+          "label": { "text": "阴影部分" }
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "m3-n1-wrong-slope",
+    "content": "如图，y=x^2 在 x=2 处切线斜率为 2。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -1, "max": 4, "tick_step": 1 },
+          "y": { "min": -1, "max": 8, "tick_step": 1 }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": { "min": -1, "max": 4 }
+        },
+        {
+          "type": "tangent",
+          "axes": "ax1",
+          "curve": "f1",
+          "at_x": 2
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "m3-n2-wrong-interval",
+    "content": "如图，阴影为 y=x^2 在区间 [0,2] 上与 x 轴围成区域。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -1, "max": 3, "tick_step": 1 },
+          "y": { "min": -1, "max": 5, "tick_step": 1 }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": { "min": -1, "max": 3 }
+        },
+        {
+          "type": "integral_region",
+          "axes": "ax1",
+          "curve": "f1",
+          "x": { "min": 0, "max": 1 }
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "m3-n3-missing-tangent",
+    "content": "如图，y=x^2 在 x=2 处切线斜率为 4。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": { "min": -1, "max": 4, "tick_step": 1 },
+          "y": { "min": -1, "max": 8, "tick_step": 1 }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x^2",
+          "domain": { "min": -1, "max": 4 }
+        }
+      ]
+    },
+    "expectOk": false
+  }
+]

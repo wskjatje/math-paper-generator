@@ -53,7 +53,7 @@
 | 载体 | 用途 |
 |------|------|
 | `data/ocr-repair-lexicon.json` | 字面/正则 OCR 补丁 |
-| `data/remote-paper-catalog.json` | 历年卷清单与正文来源 |
+| （已移除）网上历年卷目录 | 请改用线下文件导入 |
 | MySQL / Supabase `ocr_repair_lexicon` | 运维追加修复规则 |
 | `tests/fixtures/**` | 回归样本（可用真实片段，**夹具目录名**表拓扑/失败类，不表题号） |
 

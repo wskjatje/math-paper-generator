@@ -1,0 +1,3 @@
+# Crawl4AI 课本目录采集（可选工具）
+# 安装：python3 -m venv .venv && .venv/bin/pip install -U -r requirements.txt && .venv/bin/crawl4ai-setup
+crawl4ai>=0.6.0,<1.0.0

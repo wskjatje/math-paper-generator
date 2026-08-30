@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
+/** 全站页头：短标题 + 至多一行副文案 */
 export function PageHeader({
   eyebrow,
   title,
@@ -15,28 +16,31 @@ export function PageHeader({
   className?: string;
 }) {
   return (
-    <header className={cn("mb-8 md:mb-10 border-b border-border/50 pb-8", className)}>
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0 max-w-3xl space-y-2 lg:space-y-3">
-          {eyebrow && (
-            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-gold sm:text-xs">
+    <header
+      className={cn(
+        "mb-5 border-b border-border/50 pb-4 md:mb-6 md:pb-5",
+        className,
+      )}
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="min-w-0 max-w-3xl space-y-1">
+          {eyebrow ? (
+            <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-muted-foreground">
               {eyebrow}
             </p>
-          )}
-          <h1 className="text-display text-3xl tracking-tight text-foreground sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
+          ) : null}
+          <h1 className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl">
             {title}
           </h1>
-          {description && (
-            <p className="text-sm leading-relaxed text-muted-foreground md:text-[15px]">
-              {description}
-            </p>
-          )}
+          {description ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : null}
         </div>
-        {actions && (
-          <div className="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end lg:pt-1">
+        {actions ? (
+          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
             {actions}
           </div>
-        )}
+        ) : null}
       </div>
     </header>
   );

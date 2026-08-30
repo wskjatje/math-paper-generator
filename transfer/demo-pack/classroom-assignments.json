@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "assignments": [
+    {
+      "id": "d6cce242-d3b2-4df5-a43f-af7d09ddfa99",
+      "exam_id": "6feb26c6-2813-4ebb-8b0e-d2c02b36c4db",
+      "teacher_label": "教师",
+      "title": "测试",
+      "class_name": null,
+      "due_at": null,
+      "hide_answers": true,
+      "created_at": "2026-07-18T03:12:03.025Z",
+      "teacher_user_id": null
+    }
+  ],
+  "submissions": [
+    {
+      "id": "d3420393-dd16-4772-93dd-61358dedb348",
+      "assignment_id": "d6cce242-d3b2-4df5-a43f-af7d09ddfa99",
+      "student_label": "123",
+      "answer_payload": {
+        "version": 1,
+        "answers": {
+          "dae36ca3-e215-4f6e-9a54-d11de0b5e37b": {
+            "value": "C"
+          },
+          "806c51b2-e494-4565-b64f-e7eb539877cc": {
+            "value": "C"
+          },
+          "32b7208d-1f6f-4b12-a320-4627ff7a5601": {
+            "value": "A,B,C,D"
+          },
+          "15257e2c-e579-4eb7-bdd0-704e204b2064": {
+            "value": "A,B,C,D"
+          },
+          "27e607b1-7019-4792-9fd7-8da88f74e827": {
+            "value": ""
+          },
+          "ce37bac7-ff4d-4877-82d6-9a23885237ce": {
+            "value": ""
+          },
+          "db82f2d3-342a-4797-bbe9-bff663f63768": {
+            "value": ""
+          },
+          "624e13f3-a785-4deb-83af-237f76b96d51": {
+            "value": ""
+          },
+          "21743800-47af-4b8e-9d25-b640e8ac8ec4": {
+            "value": ""
+          },
+          "a033ef6c-d52f-4858-9a11-b4d49c3ead86": {
+            "value": ""
+          },
+          "f1761e8d-0151-4a10-9c87-2feff44b0674": {
+            "value": ""
+          }
+        },
+        "notes": "1"
+      },
+      "submitted_at": "2026-07-24T00:26:23.406Z",
+      "student_user_id": null
+    }
+  ]
+}

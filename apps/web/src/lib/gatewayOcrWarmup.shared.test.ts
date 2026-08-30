@@ -21,12 +21,12 @@ describe("gatewayOcrWarmup.shared", () => {
   it("formatGatewayOcrWarmupError maps HF download failures", () => {
     expect(
       formatGatewayOcrWarmupError("RuntimeError: Cannot send a request, as the client has been closed."),
-    ).toContain("HF");
+    ).toMatch(/识图|重试/);
     expect(
       formatGatewayOcrWarmupError("OSError: Can't load image processor"),
-    ).toContain("zhixue_hf_cache");
-    expect(formatGatewayOcrWarmupError("httpx.ConnectTimeout: timed out")).toContain(
-      "got-ocr:download-model",
+    ).toMatch(/识图|运维/);
+    expect(formatGatewayOcrWarmupError("httpx.ConnectTimeout: timed out")).toMatch(
+      /识图|超时/,
     );
   });
 

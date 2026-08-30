@@ -7,6 +7,10 @@ export type GenerationErrorCategory =
   | "multipart_answer"
   | "equation_verify"
   | "empty_field"
+  | "figure_scene"
+  | "alignment"
+  | "solution_conflict"
+  | "domain_verify"
   | "other";
 
 /** 展示用（设置页、调试） */
@@ -15,16 +19,24 @@ export const GENERATION_ERROR_CATEGORY_LABELS: Record<GenerationErrorCategory, s
   multipart_answer: "多问 answer 编号",
   equation_verify: "方程数值/代入验算",
   empty_field: "空题干或空答案",
+  figure_scene: "如图 figure_scene",
+  alignment: "年级/竞赛定位对齐",
+  solution_conflict: "解析与答案冲突",
+  domain_verify: "学科语义验算",
   other: "其它格式",
 };
 
 /** 从单条校验文案推断类别（用于统计习惯） */
 export function categorizeValidationIssue(issue: string): GenerationErrorCategory {
   const s = issue;
-  if (/options|选择题|多选题/.test(s)) return "mcq_options";
+  if (/计数类选择题|多选题答案字母|选出多项|options|选择题|多选题/.test(s)) return "mcq_options";
   if (/（1）|多问|逐问/.test(s)) return "multipart_answer";
-  if (/方程|代入|根|矛盾/.test(s)) return "equation_verify";
+  if (/方程|代入|根|矛盾/.test(s) && !/解析断言/.test(s)) return "equation_verify";
   if (/为空/.test(s)) return "empty_field";
+  if (/如图|figure_scene|配图|scene 中缺失/.test(s)) return "figure_scene";
+  if (/整卷定位|年级学段与竞赛定位/.test(s)) return "alignment";
+  if (/解析断言无解|解析.*答案/.test(s)) return "solution_conflict";
+  if (/量纲|质量分数|重力数值当作质量/.test(s)) return "domain_verify";
   return "other";
 }
 

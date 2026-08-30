@@ -187,7 +187,7 @@ export type MysqlUiState = {
   passwordStoredEncrypted: boolean;
   encryptionKeySource: "env" | "local-file" | "will-create";
   /** 当前生效连接是否来自 Supabase workspace_settings（否则来自本地文件） */
-  source: "supabase" | "file";
+  source?: "supabase" | "file";
 };
 
 async function supabaseMysqlBlock(): Promise<Record<string, unknown> | null> {

@@ -14,9 +14,19 @@ import { useServerFn } from "@tanstack/react-start";
 import {
   fetchAiSettingsFromDb,
   getBackendCapabilities,
-  probeAiConnection,
+  saveAiSettingsToDb,
 } from "@/lib/exam.functions.server";
+import {
+  getActiveCurriculumCatalog,
+  resolveGenerationCoursewareSlice,
+} from "@/lib/curriculum.functions.server";
 import { listMysqlCurriculumCatalogEntries } from "@/lib/curriculumCatalog.functions.server";
+import { ensureTextbookDirectoryForGradeFn } from "@/lib/textbookDirectory.functions.server";
+import type { CurriculumCatalogPayload, TextbookBook } from "@/lib/curriculumCatalog.types";
+import {
+  editionLabelByIdFromPayload,
+  resolveEditionIdFromHint,
+} from "@/lib/curriculumCatalog.shared";
 import {
   GRADE_LEVEL_OPTIONS,
   ALL_QUESTION_TYPES,
@@ -26,29 +36,46 @@ import {
   emptyQuestionComposition,
   questionTypesForSubject,
   scopesForGradeAndSubject,
-  competitionFocusOptions,
+  competitionFocusOptionsForGrade,
   competitionFocusLabelById,
   EXAM_GENERATION_MODE_OPTIONS,
   EXAM_TRACK_IDS_ENTRANCE,
   EXAM_TRACK_OPTIONS,
   GEN_GRADE_UNBOUND_ID,
-  examTrackLabel,
   gradeLevelLabel,
   inferExamGenerationModeFromTrack,
   isCompetitionUnrestricted,
   isGenerationGradeUnbound,
   notesPlaceholderForSubject,
+  resolveContestGradePayload,
   PAPER_KIND_OPTIONS,
   paperKindIdsForExamMode,
   paperKindLabel,
   subjectLabelForGeneratePicker,
-  targetTrackLabel,
+  contestTargetTracksForSubject,
   targetTracksForExamTrack,
   type ExamGenerationModeId,
   type ExamTrackId,
   type PaperKindId,
 } from "@/lib/generateCatalog";
-import { loadAiSettings, saveAiSettings } from "@/lib/aiSettingsStorage";
+import {
+  loadAiSettings,
+  reconcileAiSettingsWithServer,
+  saveAiSettings,
+  toAiRuntimePayload,
+} from "@/lib/aiSettingsStorage";
+import { GENERATE_PAGE_UI } from "@/config/examDomain";
+import {
+  assessSubjectExamModelReady,
+  type SubjectExamModelMissingReason,
+} from "@/lib/aiRuntime.shared";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
+
+function subjectModelMissingHint(reason: SubjectExamModelMissingReason): string {
+  if (reason === "empty_catalog") return GENERATE_PAGE_UI.subjectModelEmptyCatalog;
+  if (reason === "subject_unmapped") return GENERATE_PAGE_UI.subjectModelUnmapped;
+  return GENERATE_PAGE_UI.subjectModelIncomplete;
+}
 import {
   CUSTOM_COMPOSITION_TYPE_PREFIX,
   QUESTION_TYPE_LABELS,
@@ -58,7 +85,17 @@ import {
 } from "@/lib/types";
 import { Sparkles, AlertTriangle, GripVertical, Trash2, Tag, Plus, CircleHelp } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { FilterChip, FilterChipGroup } from "@/components/ui/filter-chip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
@@ -72,6 +109,9 @@ import {
 import { requestGenerationQueueDrain } from "@/lib/generationQueueDrain";
 import { writePageFilterSnapshot } from "@/lib/pageFilterSync";
 import { PaperGenerationJobQueueControl } from "@/components/generation/GenerationJobQueues";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageShell } from "@/components/layout/PageShell";
+import { FormPanel } from "@/components/layout/FormPanel";
 import { ChapterScopePicker } from "@/components/generation/ChapterScopePicker";
 import { TextbookEditionCombobox } from "@/components/generation/TextbookEditionCombobox";
 import {
@@ -104,18 +144,15 @@ const MAX_PER_TYPE = 20;
 /** 自定义题型名称：汉字（Han）不超过此数量 */
 const MAX_CUSTOM_HAN = 10;
 
-const COMPETITION_FOCUS_HELP =
-  "数理化生、信息学是传统学科奥赛主阵地；语文、英语同样有大作文、素养与综合能力赛；史地政等侧重材料辨析与论述竞技。「竞赛」与「高阶竞赛」共用本列表；选择「高阶竞赛」时，命题应对齐全国决赛 / 国家集训队选拔级区分度（见模型提示中的高阶说明）。";
+const COMPETITION_FOCUS_HELP = "约束命题方向；高阶难度对齐决赛区分度。";
 
-const SCOPE_FIELD_HELP =
-  "选项随所选年级、学科与课标进度变化；可多选。竞赛或高阶难度下不按细分范围约束，故不显示本题。";
+const SCOPE_FIELD_HELP = "可多选；竞赛/高阶难度不按此约束。";
 
 const SCENARIO_FIELD_HELP_BY_MODE: Record<ExamGenerationModeId, string> = {
-  school_sync: "校内场景：随堂测、单元卷、期中 / 期末；与年级、命题范围一致。",
-  entrance_select:
-    "升学场景：模拟卷、压轴专项、冲刺与真题风格；与「期中 / 期末」等校内场景语义分离。",
-  subject_contest: "竞赛场景：校赛至奥赛层级；建议搭配「竞赛 / 高阶」难度并勾选竞赛侧重。",
-  ai_drill: "专项训练：常用日常卷或单元卷型，侧重题型与题量配置。",
+  school_sync: "随堂测、单元卷、期中/期末。",
+  entrance_select: "模拟卷、压轴与冲刺风格。",
+  subject_contest: "校赛至奥赛层级。",
+  ai_drill: "侧重题型与题量。",
 };
 
 const HELP_TOOLTIP_CONTENT_CLASS =
@@ -201,9 +238,16 @@ function HelpTooltipIcon({ text, ariaLabel }: { text: string; ariaLabel: string 
 function Generate() {
   useGenerationHabitsCloudSync();
   const fetchAiDbFn = useServerFn(fetchAiSettingsFromDb);
+  const saveAiDbFn = useServerFn(saveAiSettingsToDb);
   const capsFn = useServerFn(getBackendCapabilities);
-  const probeAiFn = useServerFn(probeAiConnection);
   const listMysqlCatalogFn = useServerFn(listMysqlCurriculumCatalogEntries);
+  const activeCurriculumFn = useServerFn(getActiveCurriculumCatalog);
+  const resolveSliceFn = useServerFn(resolveGenerationCoursewareSlice);
+  const [curriculumVersionId, setCurriculumVersionId] = useState<string | null>(null);
+  const [curriculumReady, setCurriculumReady] = useState(false);
+  const [activeCurriculumPayload, setActiveCurriculumPayload] =
+    useState<CurriculumCatalogPayload | null>(null);
+  const [aiReadyHint, setAiReadyHint] = useState("");
 
   const [title, setTitle] = useState("");
   const [grade, setGrade] = useState("");
@@ -221,11 +265,50 @@ function Generate() {
   const [targetTrackId, setTargetTrackId] = useState("");
   /** 校内同步：教材版本与章节侧重（可选） */
   const [textbookEditionHint, setTextbookEditionHint] = useState("");
+  /** 远程/本地教材目录单元勾选（ensureTextbookDirectoryForGrade） */
+  const [textbookUnitIds, setTextbookUnitIds] = useState<string[]>([]);
+  const [directoryBook, setDirectoryBook] = useState<TextbookBook | null>(null);
+  const [directoryBusy, setDirectoryBusy] = useState(false);
+  const [directoryHint, setDirectoryHint] = useState<string | null>(null);
   /** 章节目录勾选 id；与补充说明一并序列化为 chapter_focus */
   const [chapterCatalogIds, setChapterCatalogIds] = useState<string[]>([]);
   const [chapterFocusSupplement, setChapterFocusSupplement] = useState("");
   /** 数据库中的分册章节目录（与内置目录合并后展示） */
   const [mysqlChapterEntries, setMysqlChapterEntries] = useState<ChapterCatalogEntry[]>([]);
+  /** 入队成功后：保留设定或整表清空 */
+  const [postEnqueueDialogOpen, setPostEnqueueDialogOpen] = useState(false);
+  const postEnqueueSettledRef = useRef(false);
+  const ensureDirectoryFn = useServerFn(ensureTextbookDirectoryForGradeFn);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const r = await activeCurriculumFn();
+        if (cancelled) return;
+        setActiveCurriculumPayload(r.payload);
+        setCurriculumVersionId(r.versionId);
+        setCurriculumReady(true);
+      } catch (e) {
+        if (!cancelled) {
+          setActiveCurriculumPayload(null);
+          setCurriculumVersionId(null);
+          setCurriculumReady(false);
+          toast.error(toUserFacingErrorMessage(e, "无法加载生效课件"));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeCurriculumFn]);
+
+  /** 生效课件 editionId：由版本文案解析，无匹配则为 null（不硬编码） */
+  const resolvedTextbookEditionId = useMemo(() => {
+    if (!textbookEditionHint.trim() || !activeCurriculumPayload) return null;
+    return resolveEditionIdFromHint(activeCurriculumPayload.editions, textbookEditionHint);
+  }, [textbookEditionHint, activeCurriculumPayload]);
+
   /** 与后端最小约束一致；不由界面预设「常用」150/120 */
   const [duration, setDuration] = useState(60);
   const [score, setScore] = useState(100);
@@ -243,7 +326,7 @@ function Generate() {
   const [showExtendedSubjects, setShowExtendedSubjects] = useState(false);
   const [examPersistenceEnabled, setExamPersistenceEnabled] = useState<boolean | null>(null);
   /** 当前选云端且服务端未配置 LOVABLE_API_KEY 时为 false */
-  const [cloudAiReady, setCloudAiReady] = useState<boolean | null>(null);
+  const [subjectModelReady, setSubjectModelReady] = useState(true);
 
   useEffect(() => {
     writePageFilterSnapshot("generate", {
@@ -333,6 +416,82 @@ function Generate() {
     };
   }, [examMode, grade, subject, listMysqlCatalogFn]);
 
+  /** 按年级 × 学科 × 版本文案自动获取教材目录（远程/本地清单，非硬编码） */
+  useEffect(() => {
+    if (examMode !== "school_sync") {
+      setDirectoryBook(null);
+      setTextbookUnitIds([]);
+      setDirectoryHint(null);
+      return;
+    }
+    if (!grade.trim() || !subject.trim() || !textbookEditionHint.trim()) {
+      setDirectoryBook(null);
+      setTextbookUnitIds([]);
+      setDirectoryHint(null);
+      return;
+    }
+    let cancelled = false;
+    setDirectoryBusy(true);
+    setDirectoryHint(null);
+    void (async () => {
+      try {
+        const editionId = resolveEditionIdFromHint(
+          activeCurriculumPayload?.editions,
+          textbookEditionHint,
+        );
+        const r = await ensureDirectoryFn({
+          data: {
+            gradeId: grade,
+            subjectId: subject,
+            ...(editionId ? { editionId } : {}),
+            refresh: false,
+          },
+        });
+        if (cancelled) return;
+        const hint = textbookEditionHint.trim();
+        const book =
+          (editionId ? r.books.find((b) => b.editionId === editionId) : null) ||
+          r.books.find((b) => b.editionId === hint) ||
+          r.books.find(
+            (b) =>
+              b.title.includes(hint) ||
+              hint.includes(b.title) ||
+              b.editionId.includes(hint) ||
+              hint.includes(b.editionId),
+          ) ||
+          r.books[0] ||
+          null;
+        setDirectoryBook(book);
+        if (!book) {
+          setTextbookUnitIds([]);
+          setDirectoryHint("暂无教材目录，请到设置 → 课件同步。");
+          return;
+        }
+        if (!book.units.length) {
+          setTextbookUnitIds([]);
+          setDirectoryHint(`「${book.title}」尚无单元纲要`);
+          return;
+        }
+        setTextbookUnitIds(book.units.map((u) => u.id));
+        setDirectoryHint(
+          r.updatedAt
+            ? `已载入「${book.title}」（${book.units.length} 单元；更新于 ${r.updatedAt}）`
+            : `已载入「${book.title}」（${book.units.length} 单元）`,
+        );
+      } catch (e) {
+        if (cancelled) return;
+        setDirectoryBook(null);
+        setTextbookUnitIds([]);
+        setDirectoryHint(e instanceof Error ? e.message : "目录加载失败");
+      } finally {
+        if (!cancelled) setDirectoryBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [examMode, grade, subject, textbookEditionHint, activeCurriculumPayload, ensureDirectoryFn]);
+
   useEffect(() => {
     setShowExtendedSubjects(false);
   }, [examMode, examTrack, grade]);
@@ -378,7 +537,14 @@ function Generate() {
     [],
   );
 
-  const targetTrackChoices = useMemo(() => targetTracksForExamTrack(examTrack), [examTrack]);
+  const targetTrackChoices = useMemo(() => {
+    if (examMode === "subject_contest") {
+      // 先选学科；未选学科时不展开风格列表
+      if (!subject.trim()) return [];
+      return contestTargetTracksForSubject(subject);
+    }
+    return targetTracksForExamTrack(examTrack);
+  }, [examMode, examTrack, subject]);
 
   const handleExamModeChange = useCallback((next: ExamGenerationModeId) => {
     setExamMode(next);
@@ -391,6 +557,9 @@ function Generate() {
       return;
     }
     setTextbookEditionHint("");
+    setTextbookUnitIds([]);
+    setDirectoryBook(null);
+    setDirectoryHint(null);
     setChapterCatalogIds([]);
     setChapterFocusSupplement("");
     setGrade(GEN_GRADE_UNBOUND_ID);
@@ -413,16 +582,39 @@ function Generate() {
   }, [examMode]);
 
   useEffect(() => {
+    if (examMode === "subject_contest") {
+      if (targetTrackChoices.length === 1) {
+        setTargetTrackId(targetTrackChoices[0]!.id);
+        return;
+      }
+      if (targetTrackChoices.length === 0) {
+        setTargetTrackId("");
+        return;
+      }
+    }
     setTargetTrackId((prev) => {
       if (!prev.trim()) return prev;
       return targetTrackChoices.some((t) => t.id === prev) ? prev : "";
     });
-  }, [examTrack, targetTrackChoices]);
+  }, [examMode, examTrack, targetTrackChoices]);
+  const gradeForQuestionTypes =
+    examMode === "school_sync"
+      ? grade
+      : examMode === "subject_contest"
+        ? resolveContestGradePayload(grade)
+        : GEN_GRADE_UNBOUND_ID;
   const competitionFocusOptionsList = useMemo(
-    () => (subject ? competitionFocusOptions(subject) : []),
-    [subject],
+    () => (subject ? competitionFocusOptionsForGrade(subject, gradeForQuestionTypes) : []),
+    [subject, gradeForQuestionTypes],
   );
-  const gradeForQuestionTypes = examMode === "school_sync" ? grade : GEN_GRADE_UNBOUND_ID;
+
+  useEffect(() => {
+    const allowed = new Set(competitionFocusOptionsList.map((o) => o.id));
+    setCompetitionFocus((prev) => {
+      const next = prev.filter((id) => allowed.has(id));
+      return next.length === prev.length ? prev : next;
+    });
+  }, [competitionFocusOptionsList]);
 
   const allowedQuestionTypes = useMemo(
     () =>
@@ -503,6 +695,15 @@ function Generate() {
       if (typeof p.grade === "string") {
         setGrade(p.grade === GEN_GRADE_UNBOUND_ID ? "" : p.grade);
       }
+    } else if (inferredMode === "subject_contest") {
+      if (
+        typeof p.grade === "string" &&
+        GRADE_LEVEL_OPTIONS.some((g) => g.id === p.grade)
+      ) {
+        setGrade(p.grade);
+      } else {
+        setGrade(GEN_GRADE_UNBOUND_ID);
+      }
     } else {
       setGrade(GEN_GRADE_UNBOUND_ID);
     }
@@ -545,8 +746,13 @@ function Generate() {
     if (typeof p.allow_overlap_with_library_question_types === "boolean") {
       setAllowLibraryQuestionTypeOverlap(p.allow_overlap_with_library_question_types);
     }
-    if (typeof p.textbook_edition_hint === "string")
+    /** 新字段 hint 优先；兼容旧队列 / 仿照生成 payload.textbook_edition */
+    if (typeof p.textbook_edition_hint === "string" && p.textbook_edition_hint.trim()) {
       setTextbookEditionHint(p.textbook_edition_hint);
+    } else if (typeof p.textbook_edition === "string" && p.textbook_edition.trim()) {
+      setTextbookEditionHint(p.textbook_edition);
+    }
+    if (Array.isArray(p.textbook_unit_ids)) setTextbookUnitIds(p.textbook_unit_ids);
     const gradeForChapterParse =
       inferredMode === "school_sync" && typeof p.grade === "string"
         ? p.grade === GEN_GRADE_UNBOUND_ID
@@ -619,36 +825,32 @@ function Generate() {
   useEffect(() => {
     void (async () => {
       try {
-        const res = await fetchAiDbFn();
-        if (res.ok) saveAiSettings(res.settings);
+        await reconcileAiSettingsWithServer({
+          fetch: () => fetchAiDbFn(),
+          save: (settings) => saveAiDbFn({ data: settings }),
+        });
       } catch (e) {
-        console.warn("[generate] fetchAiSettingsFromDb:", e);
+        console.warn("[generate] reconcileAiSettingsWithServer:", e);
       }
     })();
-  }, [fetchAiDbFn]);
+  }, [fetchAiDbFn, saveAiDbFn]);
 
   useEffect(() => {
-    const checkCloudBackend = () => {
-      const mode = loadAiSettings().mode;
-      if (mode !== "cloud") {
-        setCloudAiReady(true);
-        return;
-      }
-      void probeAiFn({ data: { mode: "cloud" } }).then((r) => setCloudAiReady(r.ok));
+    const checkSubjectModel = () => {
+      const runtime = toAiRuntimePayload(loadAiSettings());
+      const result = assessSubjectExamModelReady(runtime, subject);
+      setSubjectModelReady(result.ready);
+      setAiReadyHint(result.ready ? "" : subjectModelMissingHint(result.reason));
     };
-    checkCloudBackend();
-    window.addEventListener("focus", checkCloudBackend);
-    return () => window.removeEventListener("focus", checkCloudBackend);
-  }, [probeAiFn]);
+    checkSubjectModel();
+    window.addEventListener("focus", checkSubjectModel);
+    return () => window.removeEventListener("focus", checkSubjectModel);
+  }, [subject]);
 
   const totalQ =
     Object.values(composition).reduce((a, b) => a + b, 0) +
     customCompositionSlots.reduce((s, row) => s + row.count, 0);
 
-  const examModeLabel = useMemo(
-    () => EXAM_GENERATION_MODE_OPTIONS.find((m) => m.id === examMode)?.label ?? "",
-    [examMode],
-  );
   const gradeLabel = useMemo(
     () => GRADE_LEVEL_OPTIONS.find((g) => g.id === grade)?.label ?? "—",
     [grade],
@@ -659,23 +861,20 @@ function Generate() {
   );
   const difficultyLabel = difficultyDisplayLabelForExamMode(examMode, difficulty);
   const paperKindShort = paperKindLabel(paperKind);
-  const trackShort = [
-    examMode !== "school_sync" && examMode !== "ai_drill" ? examTrackLabel(examTrack) : null,
-    targetTrackId.trim() ? targetTrackLabel(targetTrackId) : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const headerSummary = [
-    examModeLabel,
-    ...(examMode === "school_sync" ? [gradeLabel] : []),
-    subjectLabel,
-    trackShort,
-    paperKindShort,
-    difficultyLabel,
-    `共 ${totalQ} 题`,
-  ]
-    .filter((x) => x !== "")
-    .join(" · ");
+
+  const textbookEditionOverview =
+    examMode === "school_sync" && textbookEditionHint.trim()
+      ? resolvedTextbookEditionId && activeCurriculumPayload
+        ? editionLabelByIdFromPayload(activeCurriculumPayload, resolvedTextbookEditionId)
+        : textbookEditionHint.trim()
+      : "";
+  const competitionFocusOverview =
+    examMode === "subject_contest" &&
+    difficulty &&
+    isCompetitionUnrestricted(difficulty) &&
+    competitionFocus.length > 0
+      ? competitionFocus.map((id) => competitionFocusLabelById(subject, id)).join("、")
+      : "";
 
   const toggleIn = (setter: Dispatch<SetStateAction<string[]>>, id: string) => {
     setter((prev) => (prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]));
@@ -696,7 +895,7 @@ function Generate() {
     setCompositionRowOrder((prev) => reorderRowKeys(prev, dragged, targetKey));
   };
 
-  /** 提交后加入队列并清空表单；不使用整页 reload，以免中断后台生成请求。 */
+  /** 整表清空；不使用整页 reload，以免中断后台生成请求。 */
   const resetFormToNewPaper = () => {
     setTitle("");
     setGrade("");
@@ -709,6 +908,9 @@ function Generate() {
     setExamTrack("school_sync");
     setTargetTrackId("");
     setTextbookEditionHint("");
+    setTextbookUnitIds([]);
+    setDirectoryBook(null);
+    setDirectoryHint(null);
     setChapterCatalogIds([]);
     setChapterFocusSupplement("");
     setDuration(60);
@@ -720,12 +922,42 @@ function Generate() {
     setAllowLibraryQuestionTypeOverlap(true);
   };
 
+  /** 保留命题设定，仅清空标题便于连续出下一份 */
+  const keepSettingsClearTitle = () => {
+    setTitle("");
+  };
+
+  const finishPostEnqueueChoice = (mode: "keep" | "clear") => {
+    if (postEnqueueSettledRef.current) return;
+    postEnqueueSettledRef.current = true;
+    if (mode === "clear") resetFormToNewPaper();
+    else keepSettingsClearTitle();
+    setPostEnqueueDialogOpen(false);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   const submit = () => {
     const trimmedTitle = title.trim();
     if (!trimmedTitle) return toast.error("请填写试卷标题");
     if (trimmedTitle.length < 2) return toast.error("试卷标题至少 2 个字");
     if (examMode === "school_sync") {
       if (!grade || isGenerationGradeUnbound(grade)) return toast.error("请选择年级");
+      if (!textbookEditionHint.trim()) return toast.error("请选择教材版本");
+      if (directoryBusy) return toast.error("正在加载教材目录，请稍候");
+      if (!directoryBook?.units.length) {
+        return toast.error(directoryHint || "当前年级无可用教材目录，无法命题");
+      }
+      if (textbookUnitIds.length === 0) return toast.error("请至少选择一个教材单元");
+      if (!curriculumReady || !curriculumVersionId) {
+        return toast.error("生效课件未就绪，无法命题");
+      }
+      if (!resolvedTextbookEditionId) {
+        return toast.error(
+          "所选教材版本无法映射到生效课件中的版本 id，请在设置「课件」确认版本枚举后重选",
+        );
+      }
     }
     if (!subject) return toast.error("请选择学科");
     if (!paperKind) return toast.error("请选择试卷场景");
@@ -743,10 +975,7 @@ function Generate() {
     /** 软提示：时长 × 系数（约每分钟 2 题）作为参考上限，不拦截提交 */
     const softSuggestMax = Math.min(120, Math.max(24, duration * 2));
     if (totalQ > softSuggestMax) {
-      toast.warning(
-        `当前共 ${totalQ} 题；按 ${duration} 分钟估算，超过参考值约 ${softSuggestMax} 题时生成可能较慢或易被接口截断，仍可继续提交。`,
-        { duration: 9000 },
-      );
+      toast.warning("题量偏多，生成可能较慢。", { duration: 5000 });
     }
     if (customCompositionSlots.some((s) => s.count > 0 && !s.name.trim())) {
       return toast.error("自定义题型需填写题型名称");
@@ -757,142 +986,133 @@ function Generate() {
       return toast.error(`自定义题型名称最多 ${MAX_CUSTOM_HAN} 个汉字`);
     }
 
-    const compositionPayload = buildCompositionPayload(
-      compositionRowOrder,
-      composition,
-      customCompositionSlots,
-    );
+    void (async () => {
+      if (examMode === "school_sync" && resolvedTextbookEditionId) {
+        try {
+          await resolveSliceFn({
+            data: {
+              paperKindId: paperKind,
+              gradeId: grade,
+              subjectId: subject,
+              editionId: resolvedTextbookEditionId,
+            },
+          });
+        } catch (e) {
+          toast.error(toUserFacingErrorMessage(e, "无可用课件切片"));
+          return;
+        }
+      }
 
-    const gradePayload = examMode === "school_sync" ? grade : GEN_GRADE_UNBOUND_ID;
-    const gradeLabelForJob = gradeLevelLabel(gradePayload);
-    const subjectLabelForJob = subjectLabelForGeneratePicker(examMode, subject);
-    const payloadSnapshot: PaperGenPayloadSnapshot = {
-      title: trimmedTitle,
-      grade: gradePayload,
-      exam_mode: examMode,
-      subject,
-      exam_track: examTrack,
-      target_track_id: targetTrackId.trim() || undefined,
-      textbook_edition_hint: textbookEditionHint.trim() || undefined,
-      chapter_focus: chapterFocusSerialized.trim().slice(0, 800) || undefined,
-      chapter_catalog_ids: chapterCatalogIds.length > 0 ? [...chapterCatalogIds] : undefined,
-      chapter_focus_supplement: chapterFocusSupplement.trim() || undefined,
-      scopes: scopeRestricted ? scopes : [],
-      competition_focus:
-        examMode === "subject_contest" && isCompetitionUnrestricted(difficulty!)
-          ? competitionFocus
-          : [],
-      paper_kind: paperKind,
-      difficulty: difficulty!,
-      duration_min: duration,
-      total_score: score,
-      compositionPayload,
-      composition: { ...composition },
-      customCompositionSlots: customCompositionSlots.map((s) => ({
-        id: s.id,
-        name: s.name,
-        count: s.count,
-      })),
-      compositionRowOrder: [...compositionRowOrder],
-      notes: notes || "",
-      allow_overlap_with_library_question_types: allowLibraryQuestionTypeOverlap,
-    };
+      const compositionPayload = buildCompositionPayload(
+        compositionRowOrder,
+        composition,
+        customCompositionSlots,
+      );
 
-    const jobId = crypto.randomUUID();
-    const nowIso = new Date().toISOString();
-    upsertPaperJob({
-      id: jobId,
-      title: trimmedTitle,
-      gradeId: gradePayload,
-      subjectId: subject,
-      gradeLabel: gradeLabelForJob,
-      subjectLabel: subjectLabelForJob,
-      status: "queued",
-      createdAt: nowIso,
-      updatedAt: nowIso,
-      payload: payloadSnapshot,
-    });
+      const gradePayload =
+        examMode === "school_sync"
+          ? grade
+          : examMode === "subject_contest"
+            ? resolveContestGradePayload(grade)
+            : GEN_GRADE_UNBOUND_ID;
+      const gradeLabelForJob = gradeLevelLabel(gradePayload);
+      const subjectLabelForJob = subjectLabelForGeneratePicker(examMode, subject);
+      const payloadSnapshot: PaperGenPayloadSnapshot = {
+        title: trimmedTitle,
+        grade: gradePayload,
+        exam_mode: examMode,
+        subject,
+        exam_track: examTrack,
+        target_track_id: targetTrackId.trim() || undefined,
+        textbook_edition_hint: textbookEditionHint.trim() || undefined,
+        textbook_edition: resolvedTextbookEditionId || undefined,
+        textbook_unit_ids:
+          examMode === "school_sync" && textbookUnitIds.length > 0
+            ? [...textbookUnitIds]
+            : undefined,
+        chapter_focus: chapterFocusSerialized.trim().slice(0, 800) || undefined,
+        chapter_catalog_ids: chapterCatalogIds.length > 0 ? [...chapterCatalogIds] : undefined,
+        chapter_focus_supplement: chapterFocusSupplement.trim() || undefined,
+        scopes: scopeRestricted ? scopes : [],
+        competition_focus:
+          examMode === "subject_contest" && isCompetitionUnrestricted(difficulty!)
+            ? competitionFocus
+            : [],
+        paper_kind: paperKind,
+        difficulty: difficulty!,
+        duration_min: duration,
+        total_score: score,
+        compositionPayload,
+        composition: { ...composition },
+        customCompositionSlots: customCompositionSlots.map((s) => ({
+          id: s.id,
+          name: s.name,
+          count: s.count,
+        })),
+        compositionRowOrder: [...compositionRowOrder],
+        notes: notes || "",
+        allow_overlap_with_library_question_types: allowLibraryQuestionTypeOverlap,
+      };
 
-    resetFormToNewPaper();
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-    toast.success("已加入命题队列", {
-      description:
-        "表单已清空，可继续提交多份；同一时间仅执行 1 个生成任务，其余按顺序排队，请在右上角「命题队列」查看。",
-      duration: 9000,
-    });
+      const jobId = crypto.randomUUID();
+      const nowIso = new Date().toISOString();
+      upsertPaperJob({
+        id: jobId,
+        title: trimmedTitle,
+        gradeId: gradePayload,
+        subjectId: subject,
+        gradeLabel: gradeLabelForJob,
+        subjectLabel: subjectLabelForJob,
+        status: "queued",
+        createdAt: nowIso,
+        updatedAt: nowIso,
+        payload: payloadSnapshot,
+      });
 
-    requestGenerationQueueDrain();
+      toast.success("已加入命题队列");
+      requestGenerationQueueDrain();
+      postEnqueueSettledRef.current = false;
+      setPostEnqueueDialogOpen(true);
+    })();
   };
 
   return (
-    <div className="container mx-auto max-w-7xl px-4 py-10">
-      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-display text-3xl md:text-4xl">定制生成试卷</h1>
-          <p className="mt-1.5 max-w-2xl text-sm text-muted-foreground">
-            配置学段、学科、难度与题型。提交后任务进入「命题队列」，本页会清空表单以便继续拟题；可连续提交多份，系统一次只跑
-            1 个，其余「排队中」；结果与状态请在队列中查看。
-          </p>
-        </div>
-        <div className="flex flex-col items-end gap-2">
-          <PaperGenerationJobQueueControl />
-          <p
-            className="text-xs text-muted-foreground sm:max-w-[min(100%,24rem)] sm:text-right sm:leading-relaxed font-mono"
-            title={headerSummary}
-          >
-            {headerSummary}
-          </p>
-        </div>
-      </div>
+    <PageShell size="full">
+      <PageHeader title="定制生成试卷" actions={<PaperGenerationJobQueueControl />} />
 
-      {cloudAiReady === false && (
-        <Alert className="mb-8 border-destructive/40 bg-destructive/[0.06] text-foreground">
+      {!subjectModelReady && (
+        <Alert className="mb-4 border-destructive/40 bg-destructive/[0.06] text-foreground">
           <AlertTriangle className="h-4 w-4 text-destructive" />
-          <AlertTitle>云端命题未配置密钥</AlertTitle>
+          <AlertTitle>{GENERATE_PAGE_UI.aiUnavailableTitle}</AlertTitle>
           <AlertDescription className="text-muted-foreground">
-            在「设置」中选择<strong className="text-foreground">云端</strong>时，须在项目根{" "}
-            <code className="rounded bg-muted px-1 text-[11px]">.env</code> 中配置{" "}
-            <code className="rounded bg-muted px-1 text-[11px]">LOVABLE_API_KEY</code>
-            （见 <code className="rounded bg-muted px-1 text-[11px]">.env.example</code>
-            ）并<strong className="text-foreground">重启</strong>
-            <code className="rounded bg-muted px-1 text-[11px]">npm run dev</code>
-            。若无网关密钥，可到
-            <Link
-              to="/settings"
-              className="mx-0.5 font-medium text-primary underline underline-offset-2"
-            >
-              设置
+            {aiReadyHint || GENERATE_PAGE_UI.aiUnavailableFallback}{" "}
+            <Link to="/settings" className="font-medium text-primary underline underline-offset-2">
+              {GENERATE_PAGE_UI.settingsLinkLabel}
             </Link>
-            改为<strong className="text-foreground">本地</strong>（如{" "}
-            <code className="rounded bg-muted px-1 text-[11px]">http://127.0.0.1:11434</code>
-            ）后再生成。
           </AlertDescription>
         </Alert>
       )}
 
       {examPersistenceEnabled === false && (
-        <Alert className="mb-8 border-amber-500/40 bg-amber-500/[0.06] text-foreground">
+        <Alert className="mb-4 border-amber-500/40 bg-amber-500/[0.06] text-foreground">
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-          <AlertTitle>无法将试卷保存到本地或云端</AlertTitle>
+          <AlertTitle>{GENERATE_PAGE_UI.persistenceWarningTitle}</AlertTitle>
           <AlertDescription className="text-muted-foreground">
-            默认会尝试写入项目{" "}
-            <code className="rounded bg-muted px-1 text-[11px]">data/local-exams</code>；若
-            目录不可写，试卷将仅保留在浏览器会话。配置{" "}
-            <code className="rounded bg-muted px-1 text-[11px]">SUPABASE_URL</code> 与{" "}
-            <code className="rounded bg-muted px-1 text-[11px]">SUPABASE_SERVICE_ROLE_KEY</code>{" "}
-            并执行 迁移可改为云端持久化；「设置」中的 AI 只影响命题，不替代存储配置。
+            {GENERATE_PAGE_UI.persistenceWarningBeforeLink}
+            <Link
+              to="/settings"
+              className="mx-0.5 font-medium text-primary underline underline-offset-2"
+            >
+              {GENERATE_PAGE_UI.settingsLinkLabel}
+            </Link>
+            {GENERATE_PAGE_UI.persistenceWarningAfterLink}
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid gap-8 lg:grid-cols-12 lg:items-start">
-        <div className="space-y-6 lg:col-span-8">
-          <section className="paper-card space-y-4 p-5 md:p-6">
-            <h2 className="text-display border-b border-border/60 pb-3 text-lg text-foreground">
-              命题目标（考试模式）
-            </h2>
+      <div className="grid gap-6 md:gap-8 lg:grid-cols-12 lg:items-start">
+        <div className="space-y-5 lg:col-span-8">
+          <FormPanel title="试卷设定">
             <div className="space-y-2">
               <label className="block text-sm font-medium text-foreground">考试模式</label>
               <select
@@ -906,16 +1126,8 @@ function Generate() {
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-muted-foreground leading-snug">
-                {EXAM_GENERATION_MODE_OPTIONS.find((m) => m.id === examMode)?.description}
-              </p>
             </div>
-          </section>
 
-          <section className="paper-card space-y-4 p-5 md:p-6">
-            <h2 className="text-display border-b border-border/60 pb-3 text-lg text-foreground">
-              基本信息
-            </h2>
             <Field label="试卷标题">
               <input
                 value={title}
@@ -926,84 +1138,50 @@ function Generate() {
             </Field>
 
             {examMode === "school_sync" && (
-              <>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground">年级</label>
-                    <select
-                      value={grade}
-                      onChange={(e) => setGrade(e.target.value)}
-                      className={CONTROL}
-                    >
-                      <option value="">请选择年级</option>
-                      {GRADE_LEVEL_OPTIONS.map((g) => (
-                        <option key={g.id} value={g.id}>
-                          {g.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground">学科</label>
-                    <select
-                      value={subject}
-                      disabled={!grade}
-                      onChange={(e) => setSubject(e.target.value)}
-                      className={`${CONTROL} disabled:cursor-not-allowed disabled:opacity-60`}
-                    >
-                      <option value="">{grade ? "请选择学科" : "请先选择年级"}</option>
-                      {visibleCurriculumOptions.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.label}
-                        </option>
-                      ))}
-                    </select>
-                    {hasExtendedSubjectBucket && (
-                      <button
-                        type="button"
-                        className="text-xs text-primary underline-offset-4 hover:underline"
-                        onClick={() => setShowExtendedSubjects((v) => !v)}
-                      >
-                        {showExtendedSubjects
-                          ? "收起「更多学科」"
-                          : "更多学科（信息技术、音体美等）"}
-                      </button>
-                    )}
-                  </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">年级</label>
+                  <select
+                    value={grade}
+                    onChange={(e) => setGrade(e.target.value)}
+                    className={CONTROL}
+                  >
+                    <option value="">请选择年级</option>
+                    {GRADE_LEVEL_OPTIONS.map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
-                <div className="space-y-3 rounded-md border border-border/50 bg-muted/10 px-3 py-3">
-                  <p className="text-xs font-medium text-foreground">教材版本 · 章节范围（可选）</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label="教材版本（随学科 · 可搜索）">
-                      <TextbookEditionCombobox
-                        subjectId={subject}
-                        value={textbookEditionHint}
-                        onChange={setTextbookEditionHint}
-                        disabled={!grade || !subject}
-                      />
-                      <p className="mt-1.5 text-xs text-muted-foreground leading-snug">
-                        下拉内支持关键字筛选；选项随学科变化，避免语文卷出现「外研版」等误配。
-                      </p>
-                    </Field>
-                    <Field label="章节范围（目录多选 + 补充）">
-                      <ChapterScopePicker
-                        entries={mergedChapterEntries}
-                        gradeId={grade}
-                        subjectId={subject}
-                        selectedIds={chapterCatalogIds}
-                        onSelectedIdsChange={setChapterCatalogIds}
-                        supplement={chapterFocusSupplement}
-                        onSupplementChange={setChapterFocusSupplement}
-                        disabled={!grade || !subject}
-                      />
-                    </Field>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-snug">
-                    章节目录为内置知识点与数据库分册目录合并展示（数据库条目在前）；勾选与补充说明合并为一条入库文案；队列快照可保存勾选
-                    id 以便回填。
-                  </p>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-foreground">学科</label>
+                  <select
+                    value={subject}
+                    disabled={!grade}
+                    onChange={(e) => setSubject(e.target.value)}
+                    className={`${CONTROL} disabled:cursor-not-allowed disabled:opacity-60`}
+                  >
+                    <option value="">{grade ? "请选择学科" : "请先选择年级"}</option>
+                    {visibleCurriculumOptions.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.label}
+                      </option>
+                    ))}
+                  </select>
+                  {hasExtendedSubjectBucket && (
+                    <button
+                      type="button"
+                      className="text-xs text-primary underline-offset-4 hover:underline"
+                      onClick={() => setShowExtendedSubjects((v) => !v)}
+                    >
+                      {showExtendedSubjects
+                        ? "收起「更多学科」"
+                        : "更多学科（信息技术、音体美等）"}
+                    </button>
+                  )}
                 </div>
-              </>
+              </div>
             )}
 
             {examMode === "entrance_select" && (
@@ -1067,42 +1245,13 @@ function Generate() {
                       {showExtendedSubjects ? "收起「更多学科」" : "更多学科（信息技术、音体美等）"}
                     </button>
                   )}
-                  <p className="text-xs text-muted-foreground leading-snug">
-                    升学选拔不按「六年级 +
-                    初升高」混排；年级字段已隐藏，由升学阶段与目标体系统领命题。
-                    默认列出与当前升学阶段匹配的核心学科；弱结构化科目请展开「更多学科」。
-                  </p>
                 </div>
               </>
             )}
 
             {examMode === "subject_contest" && (
-              <>
-                <div className="rounded-md border border-border/60 bg-muted/20 px-3 py-2.5 text-sm">
-                  <span className="font-medium text-foreground">考试轨道</span>
-                  <p className="mt-1 text-xs text-muted-foreground leading-snug">
-                    学科竞赛卷：请在下方选择竞赛侧重（须选「竞赛 /
-                    高阶」难度）；不按校内单元教材约束。 仅开放数学 / 物理 / 化学 / 信息学 /
-                    生物五项竞赛向命题（入库标签仍为对应学科 id）。
-                  </p>
-                </div>
+              <div className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-foreground">目标体系</label>
-                    <select
-                      value={targetTrackId}
-                      onChange={(e) => setTargetTrackId(e.target.value)}
-                      disabled={targetTrackChoices.length === 0}
-                      className={`${CONTROL} disabled:cursor-not-allowed disabled:opacity-60`}
-                    >
-                      <option value="">可选：竞赛命题风格</option>
-                      {targetTrackChoices.map((t) => (
-                        <option key={t.id} value={t.id}>
-                          {t.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-foreground">学科</label>
                     <select
@@ -1118,8 +1267,48 @@ function Generate() {
                       ))}
                     </select>
                   </div>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-foreground">
+                      年级参照
+                      <span className="ml-1 font-normal text-muted-foreground">（可选）</span>
+                    </label>
+                    <select
+                      value={isGenerationGradeUnbound(grade) ? "" : grade}
+                      onChange={(e) =>
+                        setGrade(e.target.value.trim() ? e.target.value : GEN_GRADE_UNBOUND_ID)
+                      }
+                      className={CONTROL}
+                    >
+                      <option value="">不指定</option>
+                      {GRADE_LEVEL_OPTIONS.map((g) => (
+                        <option key={g.id} value={g.id}>
+                          {g.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-              </>
+                {targetTrackChoices.length > 1 ? (
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-foreground">
+                      命题风格
+                      <span className="ml-1 font-normal text-muted-foreground">（可选）</span>
+                    </label>
+                    <select
+                      value={targetTrackId}
+                      onChange={(e) => setTargetTrackId(e.target.value)}
+                      className={CONTROL}
+                    >
+                      <option value="">不指定</option>
+                      {targetTrackChoices.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+              </div>
             )}
 
             {examMode === "ai_drill" && (
@@ -1146,18 +1335,9 @@ function Generate() {
                     {showExtendedSubjects ? "收起「更多学科」" : "更多学科（信息技术、音体美等）"}
                   </button>
                 )}
-                <p className="text-xs text-muted-foreground leading-snug">
-                  专项训练不绑定校内年级；请用「题型组成」与「特别要求」写清能力点与题量。
-                  默认展示核心学科；其它科目请展开「更多学科」。
-                </p>
               </div>
             )}
-          </section>
 
-          <section className="paper-card space-y-4 p-5 md:p-6">
-            <h2 className="text-display border-b border-border/60 pb-3 text-lg text-foreground">
-              难度 · 规模
-            </h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <Field label="难度">
                 <div className="space-y-1.5">
@@ -1176,12 +1356,6 @@ function Generate() {
                       </option>
                     ))}
                   </select>
-                  {examMode !== "subject_contest" && (
-                    <p className="text-xs text-muted-foreground leading-snug">
-                      升学 / 校内 /
-                      专项模式下「压轴」由目标体系与试卷场景表达；此处仅选基础或提升能力层级。
-                    </p>
-                  )}
                 </div>
               </Field>
 
@@ -1211,17 +1385,11 @@ function Generate() {
               </Field>
             </div>
 
-            {examMode === "ai_drill" && (
-              <p className="text-xs text-muted-foreground leading-snug">
-                AI 专项模式：下方「题型组成」为核心；时长与总分可按碎片练习微调。
-              </p>
-            )}
-
             {difficulty != null && scopeRestricted && (
               <Field
                 label={
                   <>
-                    <span>命题范围（随年级、学科与课标进度，多选）</span>
+                    <span>命题范围</span>
                     <HelpTooltipIcon text={SCOPE_FIELD_HELP} ariaLabel="命题范围说明" />
                   </>
                 }
@@ -1242,7 +1410,7 @@ function Generate() {
                     <Field
                       label={
                         <>
-                          <span>竞赛侧重（本学科内多选；模块 / 能力轴之间可交叉综合）</span>
+                          <span>竞赛侧重</span>
                           {(difficulty === "competition" || difficulty === "advanced") && (
                             <HelpTooltipIcon
                               text={COMPETITION_FOCUS_HELP}
@@ -1259,21 +1427,12 @@ function Generate() {
                       />
                     </Field>
                   ) : (
-                    <p className="text-xs text-muted-foreground">请先选择学科，再勾选竞赛侧重。</p>
+                    <p className="text-xs text-muted-foreground">请先选择学科。</p>
                   )}
                 </div>
               )}
 
-            {difficulty != null &&
-              !scopeRestricted &&
-              !isCompetitionUnrestricted(difficulty) &&
-              examMode === "entrance_select" && (
-                <p className="text-xs text-muted-foreground leading-snug">
-                  升学选拔类不按校内课标细分范围约束；需要口径时在文末「特别要求」补充即可。
-                </p>
-              )}
-
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6">
               <Field label={`时长 ${duration} 分钟`}>
                 <input
                   type="range"
@@ -1298,29 +1457,72 @@ function Generate() {
               </Field>
             </div>
 
-            <div className="rounded-md border border-border/50 bg-muted/15 px-3 py-2.5">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  id="allow-library-overlap"
-                  checked={allowLibraryQuestionTypeOverlap}
-                  onCheckedChange={(v) => setAllowLibraryQuestionTypeOverlap(v === true)}
-                  className="mt-0.5"
-                />
-                <div className="min-w-0 space-y-0.5">
-                  <Label htmlFor="allow-library-overlap" className="cursor-pointer text-foreground">
-                    允许与题库题型重叠
-                  </Label>
-                  <p className="text-xs text-muted-foreground leading-snug">
-                    不勾选则本次题型须避开题库任一卷已用过的题型；仅影响本次生成。
-                  </p>
+            {examMode === "school_sync" && (
+              <details className="rounded-md border border-border/50 bg-muted/10 px-3 py-2">
+                <summary className="cursor-pointer select-none text-sm font-medium text-foreground">
+                  教材与目录（可选）
+                </summary>
+                <div className="mt-3 space-y-4 border-t border-border/40 pt-3">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Field label="教材版本（随学科 · 可搜索）">
+                      <TextbookEditionCombobox
+                        subjectId={subject}
+                        value={textbookEditionHint}
+                        onChange={setTextbookEditionHint}
+                        disabled={!grade || !subject}
+                      />
+                    </Field>
+                    <Field label="章节范围（目录多选 + 补充）">
+                      <ChapterScopePicker
+                        entries={mergedChapterEntries}
+                        gradeId={grade}
+                        subjectId={subject}
+                        selectedIds={chapterCatalogIds}
+                        onSelectedIdsChange={setChapterCatalogIds}
+                        supplement={chapterFocusSupplement}
+                        onSupplementChange={setChapterFocusSupplement}
+                        disabled={!grade || !subject}
+                      />
+                    </Field>
+                  </div>
+                  <Field
+                    label={
+                      <>
+                        <span>教材目录</span>
+                        {directoryBusy ? (
+                          <span className="ml-2 text-xs text-muted-foreground">加载中…</span>
+                        ) : null}
+                      </>
+                    }
+                  >
+                    {!grade || !subject || !textbookEditionHint.trim() ? (
+                      <p className="text-sm text-muted-foreground">请先选择年级、学科与教材版本</p>
+                    ) : directoryHint && !directoryBook?.units.length ? (
+                      <p className="text-sm text-amber-700 dark:text-amber-400">{directoryHint}</p>
+                    ) : directoryBook?.units.length ? (
+                      <div className="space-y-2">
+                        {directoryHint ? (
+                          <p className="text-xs text-muted-foreground">{directoryHint}</p>
+                        ) : null}
+                        <p className="text-sm text-foreground">{directoryBook.title}</p>
+                        <TagToggleGroup
+                          options={directoryBook.units.map((u) => ({ id: u.id, label: u.label }))}
+                          selected={textbookUnitIds}
+                          onToggle={(id) => toggleIn(setTextbookUnitIds, id)}
+                        />
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">暂无目录</p>
+                    )}
+                  </Field>
                 </div>
-              </div>
-            </div>
-          </section>
+              </details>
+            )}
+          </FormPanel>
 
-          <section className="paper-card space-y-4 p-5 md:p-6">
-            <div className="flex flex-col gap-3 border-b border-border/60 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <h2 className="text-display shrink-0 text-lg text-foreground">题型组成</h2>
+          <FormPanel>
+            <div className="flex flex-col gap-3 border-b border-border/50 pb-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <h2 className="shrink-0 text-base font-semibold text-foreground">题型组成</h2>
               <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
                 {grade && subject && (
                   <button
@@ -1505,69 +1707,117 @@ function Generate() {
                 return null;
               })}
             </div>
-          </section>
+          </FormPanel>
 
-          <section className="paper-card space-y-4 p-5 md:p-6">
-            <div className="border-b border-border/60 pb-3">
-              <h2 className="text-display text-lg text-foreground">
-                特别要求<span className="text-sm font-normal text-muted-foreground">（可选）</span>
-              </h2>
+          <details className="rounded-md border border-border/50 bg-muted/10 px-3 py-2">
+            <summary className="cursor-pointer select-none text-sm font-medium text-foreground">
+              特别要求与题库（可选）
+            </summary>
+            <div className="mt-3 space-y-4 border-t border-border/40 pt-3">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="allow-library-overlap"
+                  checked={allowLibraryQuestionTypeOverlap}
+                  onCheckedChange={(v) => setAllowLibraryQuestionTypeOverlap(v === true)}
+                  className="mt-0.5"
+                />
+                <div className="min-w-0 space-y-0.5">
+                  <Label htmlFor="allow-library-overlap" className="cursor-pointer text-foreground">
+                    允许与题库题型重叠
+                  </Label>
+                </div>
+              </div>
+              <Field label="特别要求">
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={4}
+                  placeholder={
+                    subject
+                      ? notesPlaceholderForSubject(subject)
+                      : "请先选择学科"
+                  }
+                  className={`${CONTROL} resize-none`}
+                />
+              </Field>
             </div>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={4}
-              placeholder={
-                subject
-                  ? notesPlaceholderForSubject(subject)
-                  : "例如：请先选择学科；选定后占位提示将随学科更新……"
-              }
-              className={`${CONTROL} resize-none`}
-            />
-          </section>
-        </div>
-
-        <aside className="flex flex-col gap-4 lg:sticky lg:top-24 lg:col-span-4 lg:self-start">
-          <div className="paper-card p-5 md:p-6">
-            <h3 className="text-display border-b border-border/60 pb-3 text-lg text-foreground">
-              命题概览
-            </h3>
-            <div className="mt-4 space-y-0 text-sm">
-              <OverviewRow label="试卷标题" value={title.trim() || "—"} />
-              <OverviewRow label="年级" value={gradeLabel} />
-              <OverviewRow label="学科" value={subjectLabel} />
-              <OverviewRow label="试卷场景" value={paperKindShort} />
-              <OverviewRow label="难度" value={difficultyLabel} />
-              <OverviewRow
-                label="竞赛侧重"
-                value={
-                  examMode === "subject_contest" &&
-                  difficulty &&
-                  isCompetitionUnrestricted(difficulty) &&
-                  competitionFocus.length > 0
-                    ? competitionFocus
-                        .map((id) => competitionFocusLabelById(subject, id))
-                        .join("、")
-                    : "—"
-                }
-              />
-              <OverviewRow label="时长" value={`${duration} 分钟`} />
-              <OverviewRow label="总分" value={`${score} 分`} />
-              <OverviewRow label="题量" value={`${totalQ} 题`} last />
-            </div>
-          </div>
+          </details>
 
           <button
             type="button"
             onClick={submit}
-            className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary px-5 py-3.5 text-base font-medium text-primary-foreground shadow-sm transition-all hover:shadow-[var(--shadow-elevated)]"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3.5 text-base font-medium text-primary-foreground shadow-sm transition-all hover:shadow-[var(--shadow-elevated)] lg:hidden"
+          >
+            <Sparkles className="h-4 w-4" />
+            生成试卷
+          </button>
+        </div>
+
+        <aside className="flex flex-col gap-4 lg:sticky lg:top-16 lg:col-span-4 lg:self-start">
+          <FormPanel title="命题概览">
+            <div className="space-y-0 text-sm">
+              <OverviewRow label="试卷标题" value={title.trim() || "—"} />
+              {examMode === "school_sync" ||
+              (examMode === "subject_contest" &&
+                !isGenerationGradeUnbound(grade) &&
+                gradeLabel !== "—") ? (
+                <OverviewRow
+                  label={examMode === "subject_contest" ? "年级参照" : "年级"}
+                  value={gradeLabel}
+                />
+              ) : null}
+              <OverviewRow label="学科" value={subjectLabel} />
+              {textbookEditionOverview ? (
+                <OverviewRow label="教材版本" value={textbookEditionOverview} />
+              ) : null}
+              <OverviewRow label="试卷场景" value={paperKindShort} />
+              <OverviewRow label="难度" value={difficultyLabel} />
+              {competitionFocusOverview ? (
+                <OverviewRow label="竞赛侧重" value={competitionFocusOverview} />
+              ) : null}
+              <OverviewRow label="时长" value={`${duration} 分钟`} />
+              <OverviewRow label="总分" value={`${score} 分`} />
+              <OverviewRow label="题量" value={`${totalQ} 题`} last />
+            </div>
+          </FormPanel>
+
+          <button
+            type="button"
+            onClick={submit}
+            className="hidden w-full items-center justify-center gap-2 rounded-md bg-primary px-5 py-3.5 text-base font-medium text-primary-foreground shadow-sm transition-all hover:shadow-[var(--shadow-elevated)] lg:inline-flex"
           >
             <Sparkles className="h-4 w-4" />
             生成试卷
           </button>
         </aside>
       </div>
-    </div>
+
+      <Dialog
+        open={postEnqueueDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && postEnqueueDialogOpen) {
+            finishPostEnqueueChoice("keep");
+            return;
+          }
+          setPostEnqueueDialogOpen(open);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>已加入命题队列</DialogTitle>
+            <DialogDescription>下一步如何处理表单？</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:justify-end">
+            <Button type="button" variant="outline" onClick={() => finishPostEnqueueChoice("clear")}>
+              清空表单
+            </Button>
+            <Button type="button" onClick={() => finishPostEnqueueChoice("keep")}>
+              保留设定
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </PageShell>
   );
 }
 
@@ -1603,22 +1853,18 @@ function TagToggleGroup({
   onToggle: (id: string) => void;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <FilterChipGroup label="多选选项" selection="multi" className="gap-2">
       {options.map((s) => (
-        <button
+        <FilterChip
           key={s.id}
-          type="button"
+          size="md"
+          selection="multi"
+          active={selected.includes(s.id)}
           onClick={() => onToggle(s.id)}
-          className={
-            "rounded-md border px-3 py-1.5 text-sm transition-colors " +
-            (selected.includes(s.id)
-              ? "bg-primary text-primary-foreground border-primary"
-              : "bg-card border-border text-foreground hover:bg-accent")
-          }
         >
           {s.label}
-        </button>
+        </FilterChip>
       ))}
-    </div>
+    </FilterChipGroup>
   );
 }

@@ -140,14 +140,14 @@ export function offlineImportOcrIngestHeadline(summary: OfflineImportOcrIngestSu
     return "尚未上传或未识别";
   }
   if (summary.gatewayImageCount > 0 && summary.browserFallbackCount === 0) {
-    return `本次图片全部经网关 GOT-OCR（${summary.gatewayImageCount} 张）`;
+    return `识图完成（${summary.gatewayImageCount} 张）`;
   }
   const timeoutCount = summary.files.filter((f) => f.route === "gateway_timeout").length;
   if (timeoutCount > 0 && summary.gatewayImageCount === 0) {
-    return `网关 GOT-OCR 超时（${timeoutCount} 张），请预热后重试`;
+    return `识图超时（${timeoutCount} 张）`;
   }
   if (summary.textLayerCount > 0 && summary.imageCount === 0) {
-    return "正文来自 PDF/Word 文本层（非网关识图）";
+    return "正文来自文档文本";
   }
-  return "已抽取，请查看各文件来源";
+  return "已抽取";
 }

@@ -8,10 +8,11 @@ import type { FigureCognitiveRoleV1 } from "@/lib/figureCognitiveSemantics.share
 export const PACKING_DEBUG_QUERY_PARAM = "packing_debug" as const;
 
 export function isPackingDebugEnabled(opts?: {
+  /** @deprecated 生产/DEV 均须显式 ?packing_debug=1，避免默认打扰卷面 */
   dev?: boolean;
   searchFlag?: boolean;
 }): boolean {
-  return opts?.dev === true || opts?.searchFlag === true;
+  return opts?.searchFlag === true;
 }
 
 export function formatPackingTransformsAttr(

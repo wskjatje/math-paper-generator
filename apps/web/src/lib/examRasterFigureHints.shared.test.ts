@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Question } from "@/lib/types";
 import {
+  diagramSchemaConflictsWithTriangleStem,
   optionsHaveConcreteFigureSupply,
   questionHasConcreteVisualGeometryEvidence,
   questionMissingExpectedRasterFigures,
@@ -9,6 +10,7 @@ import {
   stemExpectsScanStyleFigure,
   stemHasConcreteFigureSupply,
 } from "@/lib/examRasterFigureHints.shared";
+import { shouldSuppressVectorDiagramForDisplay } from "@/lib/questionRendererPolicy.shared";
 
 function mcq(partial: Partial<Question>): Question {
   return {
@@ -167,5 +169,30 @@ describe("examRasterFigureHints.shared", () => {
       options: ["a", "b", "c", "d"],
     });
     expect(questionMissingExpectedRasterFigures(q)).toBe(true);
+  });
+
+  it("等腰三角形题干 + 四点 diagram_schema → 冲突抑制（不猜正确图）", () => {
+    const stem = "在一个等腰三角形中，如果底边长为8，两条腰的长度则为 __________。";
+    const badSchema = {
+      version: "1" as const,
+      points: [
+        { x: 50, y: 0, id: "A" },
+        { x: 70, y: 10, id: "B" },
+        { x: 30, y: 10, id: "C" },
+        { x: 50, y: 18, id: "D" },
+      ],
+      segments: [
+        ["A", "B"],
+        ["A", "C"],
+        ["B", "D"],
+        ["C", "D"],
+      ] as [string, string][],
+    };
+    expect(diagramSchemaConflictsWithTriangleStem(stem, badSchema)).toBe(true);
+    const q = {
+      ...mcq({ content: stem, type: "fill_blank", options: null as unknown as string[] }),
+      diagram_schema: badSchema,
+    } as Question;
+    expect(shouldSuppressVectorDiagramForDisplay(q)).toBe(true);
   });
 });

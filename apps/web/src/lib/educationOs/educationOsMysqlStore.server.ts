@@ -23,7 +23,7 @@ function toIso(v: unknown): string {
 
 export async function ensureMysqlEduProfile(userId: string): Promise<void> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   await pool.execute(
     `INSERT INTO edu_profiles (id, role, display_name, metadata)
@@ -60,7 +60,7 @@ export async function mysqlUpdateEducationOsProfile(
   patch: { display_name?: string; metadata?: Record<string, unknown> },
 ): Promise<void> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   const sets: string[] = [];
   const vals: unknown[] = [];
@@ -89,7 +89,7 @@ export async function mysqlSaveOsQuestionDocument(opts: {
   visibility: string;
 }): Promise<string> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   const id = randomUUID();
   await pool.execute(
@@ -151,7 +151,7 @@ export async function mysqlRecordLearningEvent(
   payload: Record<string, unknown>,
 ): Promise<void> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   const id = randomUUID();
   await pool.execute(
@@ -233,7 +233,7 @@ export async function mysqlCreateTutorSession(
   opts: { title?: string | null; exam_id?: string | null },
 ): Promise<string> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   const id = randomUUID();
   await pool.execute(
@@ -272,7 +272,7 @@ export async function mysqlCreateEducationAgent(
   opts: { agent_kind: string; label?: string | null },
 ): Promise<string> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   const id = randomUUID();
   await pool.execute(
@@ -292,7 +292,7 @@ export async function mysqlAddWrongBookEntry(opts: {
   snapshot?: Record<string, unknown> | null;
 }): Promise<string> {
   const pool = await getMysqlPool();
-  if (!pool) throw new Error("MySQL 未配置");
+  if (!pool) throw new Error("本机数据库未配置");
 
   const id = randomUUID();
   await pool.execute(

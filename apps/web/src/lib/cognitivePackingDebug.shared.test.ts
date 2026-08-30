@@ -7,9 +7,9 @@ import {
 } from "@/lib/cognitivePackingDebug.shared";
 
 describe("cognitivePackingDebug stabilization", () => {
-  it("enables only in dev or explicit search flag", () => {
+  it("enables only with explicit ?packing_debug=1", () => {
     expect(isPackingDebugEnabled({ dev: false, searchFlag: false })).toBe(false);
-    expect(isPackingDebugEnabled({ dev: true })).toBe(true);
+    expect(isPackingDebugEnabled({ dev: true, searchFlag: false })).toBe(false);
     expect(isPackingDebugEnabled({ searchFlag: true })).toBe(true);
   });
 

@@ -10,7 +10,8 @@ export const Route = createFileRoute("/about")({
       { title: "关于 — 知学 Zhixue" },
       {
         name: "description",
-        content: "知学 Zhixue 是一座开源的竞赛与奥数试题档案，所有内容含分步推导。",
+        content:
+          "知学 Zhixue 是一座开源的竞赛与奥数试题档案，所有内容含分步推导。",
       },
     ],
   }),
@@ -20,8 +21,7 @@ function About() {
   return (
     <PageShell size="narrow">
       <PageHeader
-        eyebrow="关于"
-        title="关于 知学 Zhixue"
+        title="关于知学"
         description="开源竞赛试题档案：严谨命题、分步推导。"
       />
 
@@ -45,12 +45,12 @@ function About() {
             {
               i: ShieldCheck,
               t: "严谨可验证",
-              d: "AI 在 high-reasoning 模式下命题，对每道题独立解一遍自检后入库；杜绝随意拼凑组卷。",
+              d: "AI 在深度推理模式下命题，并对每道题独立验算后再入库，避免随意拼凑。",
             },
             {
               i: BookOpen,
               t: "结构化解析",
-              d: "答案以 LaTeX 渲染数学公式、mhchem 渲染化学方程、代码高亮处理算法题。",
+              d: "数学公式、化学式与程序代码均可清晰排版展示。",
             },
             {
               i: GitBranch,
@@ -91,7 +91,7 @@ function About() {
             </Link>{" "}
             自定义学科、题型、难度，命制专属试卷。
           </li>
-          <li>试卷详情页可一键下载 Markdown 或打印为 PDF，方便分享与教学。</li>
+          <li>试卷详情页可下载文本版或打印为 PDF，方便分享与教学。</li>
         </ol>
 
         <h2 className="text-display text-2xl mt-10">免责声明</h2>

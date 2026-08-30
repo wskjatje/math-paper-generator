@@ -1,0 +1,2146 @@
+[
+  {
+    "id": "buoy-1",
+    "content": "如图所示，一个重 $5\\text{ N}$ 的物体漂浮在水面上。物体在水中静止时受到的浮力是：",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "wl",
+          "x": 30,
+          "y": 90
+        },
+        {
+          "type": "point",
+          "id": "wr",
+          "x": 210,
+          "y": 90
+        },
+        {
+          "type": "segment",
+          "from": "wl",
+          "to": "wr"
+        },
+        {
+          "type": "label",
+          "at": "wl",
+          "text": "水面",
+          "dx": 50,
+          "dy": -10
+        },
+        {
+          "type": "rect",
+          "id": "body",
+          "x": 100,
+          "y": 55,
+          "width": 40,
+          "height": 55,
+          "fill": "#e2e8f0"
+        },
+        {
+          "type": "force",
+          "from": [
+            120,
+            82
+          ],
+          "to": [
+            120,
+            120
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            120,
+            82
+          ],
+          "to": [
+            120,
+            45
+          ],
+          "label": "F浮"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "buoy-2",
+    "content": "如图，物体漂浮，重力与浮力平衡。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "wl",
+          "x": 30,
+          "y": 90
+        },
+        {
+          "type": "point",
+          "id": "wr",
+          "x": 210,
+          "y": 90
+        },
+        {
+          "type": "segment",
+          "from": "wl",
+          "to": "wr"
+        },
+        {
+          "type": "label",
+          "at": "wl",
+          "text": "水面",
+          "dx": 50,
+          "dy": -10
+        },
+        {
+          "type": "rect",
+          "id": "body",
+          "x": 100,
+          "y": 55,
+          "width": 40,
+          "height": 55,
+          "fill": "#e2e8f0"
+        },
+        {
+          "type": "force",
+          "from": [
+            120,
+            82
+          ],
+          "to": [
+            120,
+            120
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            120,
+            82
+          ],
+          "to": [
+            120,
+            45
+          ],
+          "label": "浮力"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "buoy-3",
+    "content": "如图所示，木块漂浮在水面上。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "rect",
+          "x": 80,
+          "y": 60,
+          "width": 50,
+          "height": 40
+        },
+        {
+          "type": "point",
+          "id": "a",
+          "x": 40,
+          "y": 90
+        },
+        {
+          "type": "point",
+          "id": "b",
+          "x": 200,
+          "y": 90
+        },
+        {
+          "type": "segment",
+          "from": "a",
+          "to": "b"
+        },
+        {
+          "type": "label",
+          "at": "a",
+          "text": "水面",
+          "dx": 40,
+          "dy": -8
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "buoy-4",
+    "content": "如图，物体漂浮，标出重力 $G$ 与浮力。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "wl",
+          "x": 30,
+          "y": 90
+        },
+        {
+          "type": "point",
+          "id": "wr",
+          "x": 210,
+          "y": 90
+        },
+        {
+          "type": "segment",
+          "from": "wl",
+          "to": "wr"
+        },
+        {
+          "type": "label",
+          "at": "wl",
+          "text": "水面",
+          "dx": 50,
+          "dy": -10
+        },
+        {
+          "type": "rect",
+          "id": "body",
+          "x": 100,
+          "y": 55,
+          "width": 40,
+          "height": 55,
+          "fill": "#e2e8f0"
+        },
+        {
+          "type": "force",
+          "from": [
+            120,
+            82
+          ],
+          "to": [
+            120,
+            120
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            120,
+            82
+          ],
+          "to": [
+            120,
+            45
+          ],
+          "label": "F浮"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "pulley-1",
+    "content": "如图，用相同的滑轮组分别匀速提升重物 $G_1$、$G_2$。若 $G_1 > G_2$，则：",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "c1",
+          "x": 80,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "c2",
+          "x": 80,
+          "y": 100
+        },
+        {
+          "type": "circle",
+          "center": "c1",
+          "r": 18
+        },
+        {
+          "type": "circle",
+          "center": "c2",
+          "r": 18
+        },
+        {
+          "type": "point",
+          "id": "p1",
+          "x": 62,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "p2",
+          "x": 62,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "p3",
+          "x": 98,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "p4",
+          "x": 98,
+          "y": 160
+        },
+        {
+          "type": "segment",
+          "from": "p1",
+          "to": "p2"
+        },
+        {
+          "type": "segment",
+          "from": "p2",
+          "to": "p3"
+        },
+        {
+          "type": "segment",
+          "from": "p3",
+          "to": "p4"
+        },
+        {
+          "type": "rect",
+          "x": 85,
+          "y": 160,
+          "width": 26,
+          "height": 22,
+          "label": "G_1"
+        },
+        {
+          "type": "force",
+          "from": [
+            98,
+            160
+          ],
+          "to": [
+            98,
+            190
+          ],
+          "label": "G_1"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "pulley-2",
+    "content": "如图，一动一定滑轮组提升重物 $G_1$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "c1",
+          "x": 80,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "c2",
+          "x": 80,
+          "y": 100
+        },
+        {
+          "type": "circle",
+          "center": "c1",
+          "r": 18
+        },
+        {
+          "type": "circle",
+          "center": "c2",
+          "r": 18
+        },
+        {
+          "type": "point",
+          "id": "p1",
+          "x": 62,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "p2",
+          "x": 62,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "p3",
+          "x": 98,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "p4",
+          "x": 98,
+          "y": 160
+        },
+        {
+          "type": "segment",
+          "from": "p1",
+          "to": "p2"
+        },
+        {
+          "type": "segment",
+          "from": "p2",
+          "to": "p3"
+        },
+        {
+          "type": "segment",
+          "from": "p3",
+          "to": "p4"
+        },
+        {
+          "type": "rect",
+          "x": 85,
+          "y": 160,
+          "width": 26,
+          "height": 22,
+          "label": "G_1"
+        },
+        {
+          "type": "force",
+          "from": [
+            98,
+            160
+          ],
+          "to": [
+            98,
+            190
+          ],
+          "label": "G_1"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "pulley-3",
+    "content": "如图所示滑轮组。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "c",
+          "x": 100,
+          "y": 50
+        },
+        {
+          "type": "circle",
+          "center": "c",
+          "r": 20
+        },
+        {
+          "type": "point",
+          "id": "t",
+          "x": 100,
+          "y": 10
+        },
+        {
+          "type": "segment",
+          "from": "t",
+          "to": "c"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "pulley-4",
+    "content": "如图，滑轮组提升 $G_1$ 与 $G_2$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "c1",
+          "x": 80,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "c2",
+          "x": 80,
+          "y": 100
+        },
+        {
+          "type": "circle",
+          "center": "c1",
+          "r": 18
+        },
+        {
+          "type": "circle",
+          "center": "c2",
+          "r": 18
+        },
+        {
+          "type": "point",
+          "id": "p1",
+          "x": 62,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "p2",
+          "x": 62,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "p3",
+          "x": 98,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "p4",
+          "x": 98,
+          "y": 160
+        },
+        {
+          "type": "segment",
+          "from": "p1",
+          "to": "p2"
+        },
+        {
+          "type": "segment",
+          "from": "p2",
+          "to": "p3"
+        },
+        {
+          "type": "segment",
+          "from": "p3",
+          "to": "p4"
+        },
+        {
+          "type": "rect",
+          "x": 85,
+          "y": 160,
+          "width": 26,
+          "height": 22,
+          "label": "G_1"
+        },
+        {
+          "type": "force",
+          "from": [
+            98,
+            160
+          ],
+          "to": [
+            98,
+            190
+          ],
+          "label": "G_1"
+        },
+        {
+          "type": "force",
+          "from": [
+            40,
+            160
+          ],
+          "to": [
+            40,
+            190
+          ],
+          "label": "G_2"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "ves-1",
+    "content": "如图所示连通器，内盛水。则 A、B 两点水的压强差为：",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 60,
+          "y": 140,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 160,
+          "y": 120,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "tl",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "tr",
+          "x": 180,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "bl",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "br",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "ml",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mr",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mt",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "mt2",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "segment",
+          "from": "tl",
+          "to": "bl"
+        },
+        {
+          "type": "segment",
+          "from": "bl",
+          "to": "ml"
+        },
+        {
+          "type": "segment",
+          "from": "ml",
+          "to": "mt"
+        },
+        {
+          "type": "segment",
+          "from": "mt",
+          "to": "mt2"
+        },
+        {
+          "type": "segment",
+          "from": "mt2",
+          "to": "mr"
+        },
+        {
+          "type": "segment",
+          "from": "mr",
+          "to": "br"
+        },
+        {
+          "type": "segment",
+          "from": "br",
+          "to": "tr"
+        },
+        {
+          "type": "point",
+          "id": "L1",
+          "x": 40,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L2",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L3",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "L4",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        {
+          "type": "point",
+          "id": "R1",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R2",
+          "x": 180,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R3",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "R4",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "R1",
+            "R2",
+            "R3",
+            "R4"
+          ]
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "ves-2",
+    "content": "如图，连通器中 A、B 两点。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 60,
+          "y": 140,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 160,
+          "y": 120,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "tl",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "tr",
+          "x": 180,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "bl",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "br",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "ml",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mr",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mt",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "mt2",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "segment",
+          "from": "tl",
+          "to": "bl"
+        },
+        {
+          "type": "segment",
+          "from": "bl",
+          "to": "ml"
+        },
+        {
+          "type": "segment",
+          "from": "ml",
+          "to": "mt"
+        },
+        {
+          "type": "segment",
+          "from": "mt",
+          "to": "mt2"
+        },
+        {
+          "type": "segment",
+          "from": "mt2",
+          "to": "mr"
+        },
+        {
+          "type": "segment",
+          "from": "mr",
+          "to": "br"
+        },
+        {
+          "type": "segment",
+          "from": "br",
+          "to": "tr"
+        },
+        {
+          "type": "point",
+          "id": "L1",
+          "x": 40,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L2",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L3",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "L4",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        {
+          "type": "point",
+          "id": "R1",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R2",
+          "x": 180,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R3",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "R4",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "R1",
+            "R2",
+            "R3",
+            "R4"
+          ]
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "ves-3",
+    "content": "如图所示连通器，点 $A$ 与点 $B$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 60,
+          "y": 140,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 160,
+          "y": 120,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "tl",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "tr",
+          "x": 180,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "bl",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "br",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "ml",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mr",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mt",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "mt2",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "segment",
+          "from": "tl",
+          "to": "bl"
+        },
+        {
+          "type": "segment",
+          "from": "bl",
+          "to": "ml"
+        },
+        {
+          "type": "segment",
+          "from": "ml",
+          "to": "mt"
+        },
+        {
+          "type": "segment",
+          "from": "mt",
+          "to": "mt2"
+        },
+        {
+          "type": "segment",
+          "from": "mt2",
+          "to": "mr"
+        },
+        {
+          "type": "segment",
+          "from": "mr",
+          "to": "br"
+        },
+        {
+          "type": "segment",
+          "from": "br",
+          "to": "tr"
+        },
+        {
+          "type": "point",
+          "id": "L1",
+          "x": 40,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L2",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L3",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "L4",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        {
+          "type": "point",
+          "id": "R1",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R2",
+          "x": 180,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R3",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "R4",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "R1",
+            "R2",
+            "R3",
+            "R4"
+          ]
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "ves-4",
+    "content": "如图，连通器内盛水，比较 A、B 两点压强。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 60,
+          "y": 140,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 160,
+          "y": 120,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "tl",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "tr",
+          "x": 180,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "bl",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "br",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "ml",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mr",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "mt",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "mt2",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "segment",
+          "from": "tl",
+          "to": "bl"
+        },
+        {
+          "type": "segment",
+          "from": "bl",
+          "to": "ml"
+        },
+        {
+          "type": "segment",
+          "from": "ml",
+          "to": "mt"
+        },
+        {
+          "type": "segment",
+          "from": "mt",
+          "to": "mt2"
+        },
+        {
+          "type": "segment",
+          "from": "mt2",
+          "to": "mr"
+        },
+        {
+          "type": "segment",
+          "from": "mr",
+          "to": "br"
+        },
+        {
+          "type": "segment",
+          "from": "br",
+          "to": "tr"
+        },
+        {
+          "type": "point",
+          "id": "L1",
+          "x": 40,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L2",
+          "x": 90,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "L3",
+          "x": 90,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "L4",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        {
+          "type": "point",
+          "id": "R1",
+          "x": 130,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R2",
+          "x": 180,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "R3",
+          "x": 180,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "R4",
+          "x": 130,
+          "y": 160
+        },
+        {
+          "type": "liquid",
+          "points": [
+            "R1",
+            "R2",
+            "R3",
+            "R4"
+          ]
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "inc-1",
+    "content": "如图，斜面长 $s = 5\\text{ m}$，高 $h = 3\\text{ m}$。用 $100\\text{ N}$ 的拉力 $F$，将重 $120\\text{ N}$ 的物体匀速拉到顶端。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "C",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 200,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "E",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "C",
+            "D",
+            "E"
+          ],
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "E"
+        },
+        {
+          "type": "segment",
+          "from": "E",
+          "to": "C"
+        },
+        {
+          "type": "label",
+          "at": "D",
+          "text": "s",
+          "dx": -40,
+          "dy": 18
+        },
+        {
+          "type": "label",
+          "at": "E",
+          "text": "h",
+          "dx": -18,
+          "dy": 40
+        },
+        {
+          "type": "rect",
+          "x": 100,
+          "y": 100,
+          "width": 28,
+          "height": 20,
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            100
+          ],
+          "to": [
+            150,
+            70
+          ],
+          "label": "F"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            120
+          ],
+          "to": [
+            114,
+            150
+          ],
+          "label": "G"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "inc-2",
+    "content": "如图，斜面上物体，拉力 $F$，重力 $G$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "C",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 200,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "E",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "C",
+            "D",
+            "E"
+          ],
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "E"
+        },
+        {
+          "type": "segment",
+          "from": "E",
+          "to": "C"
+        },
+        {
+          "type": "label",
+          "at": "D",
+          "text": "s",
+          "dx": -40,
+          "dy": 18
+        },
+        {
+          "type": "label",
+          "at": "E",
+          "text": "h",
+          "dx": -18,
+          "dy": 40
+        },
+        {
+          "type": "rect",
+          "x": 100,
+          "y": 100,
+          "width": 28,
+          "height": 20,
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            100
+          ],
+          "to": [
+            150,
+            70
+          ],
+          "label": "F"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            120
+          ],
+          "to": [
+            114,
+            150
+          ],
+          "label": "G"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "inc-3",
+    "content": "如图，斜面长 $s$，高 $h$，拉力 $F$，物体重力为 $G$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "C",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 200,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "E",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "C",
+            "D",
+            "E"
+          ],
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "E"
+        },
+        {
+          "type": "segment",
+          "from": "E",
+          "to": "C"
+        },
+        {
+          "type": "label",
+          "at": "D",
+          "text": "s",
+          "dx": -40,
+          "dy": 18
+        },
+        {
+          "type": "label",
+          "at": "E",
+          "text": "h",
+          "dx": -18,
+          "dy": 40
+        },
+        {
+          "type": "rect",
+          "x": 100,
+          "y": 100,
+          "width": 28,
+          "height": 20,
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            100
+          ],
+          "to": [
+            150,
+            70
+          ],
+          "label": "F"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            120
+          ],
+          "to": [
+            114,
+            150
+          ],
+          "label": "G"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "inc-4",
+    "content": "如图，物体沿斜面匀速上升，拉力为 $F$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "C",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 200,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "E",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "C",
+            "D",
+            "E"
+          ],
+          "fill": "#f1f5f9"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "E"
+        },
+        {
+          "type": "segment",
+          "from": "E",
+          "to": "C"
+        },
+        {
+          "type": "label",
+          "at": "D",
+          "text": "s",
+          "dx": -40,
+          "dy": 18
+        },
+        {
+          "type": "label",
+          "at": "E",
+          "text": "h",
+          "dx": -18,
+          "dy": 40
+        },
+        {
+          "type": "rect",
+          "x": 100,
+          "y": 100,
+          "width": 28,
+          "height": 20,
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            114,
+            100
+          ],
+          "to": [
+            150,
+            70
+          ],
+          "label": "F"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "lev-1",
+    "content": "如图所示，杠杆 AB 长 $1\\text{ m}$，支点为 O，$OA = 0.4\\text{ m}$。在 A 端挂 $100\\text{ N}$ 物体。若垂直杠杆于 B 端作用拉力 $F$ 使其水平平衡。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 0,
+          "y": 80,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "O",
+          "x": 40,
+          "y": 80,
+          "label": "O"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 100,
+          "y": 80,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        },
+        {
+          "type": "point",
+          "id": "S1",
+          "x": 30,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "S2",
+          "x": 50,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "S3",
+          "x": 40,
+          "y": 80
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "S1",
+            "S2",
+            "S3"
+          ],
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            0,
+            80
+          ],
+          "to": [
+            0,
+            120
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            100,
+            80
+          ],
+          "to": [
+            100,
+            40
+          ],
+          "label": "F"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "lev-2",
+    "content": "如图，杠杆 AB，支点 O，A 端挂重物，B 端拉力 $F$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 0,
+          "y": 80,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "O",
+          "x": 40,
+          "y": 80,
+          "label": "O"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 100,
+          "y": 80,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        },
+        {
+          "type": "point",
+          "id": "S1",
+          "x": 30,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "S2",
+          "x": 50,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "S3",
+          "x": 40,
+          "y": 80
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "S1",
+            "S2",
+            "S3"
+          ],
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            0,
+            80
+          ],
+          "to": [
+            0,
+            120
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            100,
+            80
+          ],
+          "to": [
+            100,
+            40
+          ],
+          "label": "F"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "lev-3",
+    "content": "如图所示，杠杆 AB，支点为 O。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 0,
+          "y": 50,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "O",
+          "x": 50,
+          "y": 50,
+          "label": "O"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 120,
+          "y": 50,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "lev-4",
+    "content": "如图，支点为 O 的杠杆 AB，A 端挂重物，B 端拉力 $F$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 0,
+          "y": 80,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "O",
+          "x": 40,
+          "y": 80,
+          "label": "O"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 100,
+          "y": 80,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        },
+        {
+          "type": "point",
+          "id": "S1",
+          "x": 30,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "S2",
+          "x": 50,
+          "y": 100
+        },
+        {
+          "type": "point",
+          "id": "S3",
+          "x": 40,
+          "y": 80
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "S1",
+            "S2",
+            "S3"
+          ],
+          "fill": "#cbd5e1"
+        },
+        {
+          "type": "force",
+          "from": [
+            0,
+            80
+          ],
+          "to": [
+            0,
+            120
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            100,
+            80
+          ],
+          "to": [
+            100,
+            40
+          ],
+          "label": "F"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "fbd-1",
+    "content": "如图，物体受拉力 $F$ 与摩擦力 $f$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "rect",
+          "x": 80,
+          "y": 70,
+          "width": 50,
+          "height": 40
+        },
+        {
+          "type": "force",
+          "from": [
+            130,
+            90
+          ],
+          "to": [
+            180,
+            90
+          ],
+          "label": "F"
+        },
+        {
+          "type": "force",
+          "from": [
+            80,
+            90
+          ],
+          "to": [
+            40,
+            90
+          ],
+          "label": "f"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "fbd-2",
+    "content": "如图，水平面上物体，拉力 $F$，支持力 $N$，重力 $G$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "rect",
+          "x": 90,
+          "y": 80,
+          "width": 40,
+          "height": 30
+        },
+        {
+          "type": "force",
+          "from": [
+            110,
+            80
+          ],
+          "to": [
+            110,
+            40
+          ],
+          "label": "N"
+        },
+        {
+          "type": "force",
+          "from": [
+            110,
+            110
+          ],
+          "to": [
+            110,
+            150
+          ],
+          "label": "G"
+        },
+        {
+          "type": "force",
+          "from": [
+            130,
+            95
+          ],
+          "to": [
+            180,
+            95
+          ],
+          "label": "F"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "neg-wrong-pack",
+    "content": "如图，杠杆 AB，支点为 O。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 0,
+          "y": 0,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 1,
+          "y": 0,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-missing-point",
+    "content": "如图所示，杠杆 AB，支点为 O。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 0,
+          "y": 50,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 100,
+          "y": 50,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-bad-force",
+    "content": "如图，拉力 $F$。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": [
+        {
+          "type": "rect",
+          "x": 10,
+          "y": 10,
+          "width": 20,
+          "height": 20
+        },
+        {
+          "type": "force",
+          "from": [
+            20,
+            20
+          ],
+          "to": [
+            50,
+            20
+          ],
+          "label": "Q"
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-empty",
+    "content": "如图，杠杆。",
+    "figure_scene": {
+      "pack": "physics.mechanics",
+      "version": 1,
+      "elements": []
+    },
+    "expectOk": false
+  }
+]

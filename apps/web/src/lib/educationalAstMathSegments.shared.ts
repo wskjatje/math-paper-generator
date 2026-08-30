@@ -5,7 +5,7 @@ export { segmentPlainText };
 
 /** 认知单元：几何 / 坐标 / 根号 / 代数（优先于 prose 切分） */
 const MATH_INLINE_RE =
-  /(\$[^$\n]+\$|\\\([^)]+\\\)|△[A-Z][A-Z0-9'′]{0,4}|∠[A-Z]{2,6}|[A-Z][A-Z0-9'′]?\([^)]*\)|[0-9]+(?:\.[0-9]+)?√[0-9]+|-√[0-9]+|\(\s*-?\d+\s*,\s*-?\d+\s*\))/g;
+  /(\$[^$\n]+\$|\\\([^)]+\\\)|\\\[[^\]]+\\\]|△[A-Z][A-Z0-9'′]{0,4}|∠[A-Z]{2,6}|[A-Z][A-Z0-9'′]?\([^)]*\)|[0-9]+(?:\.[0-9]+)?√[0-9]+|-√[0-9]+|\(\s*-?\d+\s*,\s*-?\d+\s*\))/g;
 
 /** 将段落文本拆为 text / MathInlineNode（P2.3.1；renderer 禁止再 parse） */
 export function splitEducationalMathSegments(raw: string): EducationalTextSegmentV1[] {
@@ -33,4 +33,9 @@ export function splitEducationalMathSegments(raw: string): EducationalTextSegmen
   }
   if (segments.length === 0) segments.push({ kind: "text", value: text });
   return segments;
+}
+
+/** 将 segment 流还原为可交 MathContent 的 markdown 串（保持 $…$ 定界） */
+export function segmentsToMathContentSource(segments: readonly EducationalTextSegmentV1[]): string {
+  return segments.map((s) => segmentPlainText(s)).join("");
 }

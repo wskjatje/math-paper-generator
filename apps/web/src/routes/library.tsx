@@ -12,14 +12,25 @@ import {
   Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 
 import {
   ExamCardActionRow,
   EXAM_CARD_ACTION_LABEL_CLASS,
 } from "@/components/exam/ExamCardActionRow";
+import { ExamQualityStatusBadge } from "@/components/exam/ExamQualityStatusBadge";
 import { ExampleGenerationJobQueueControl } from "@/components/generation/GenerationJobQueues";
+import {
+  EXAM_LIST_PAGE_SIZE,
+  SimplePager,
+  pageCountFor,
+  paginateSlice,
+} from "@/components/list/SimplePager";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageShell } from "@/components/layout/PageShell";
 import { useExampleGenJobs } from "@/hooks/useGenerationJobs";
 import { Button } from "@/components/ui/button";
+import { FilterChip, FilterChipGroup, FilterToolbar } from "@/components/ui/filter-chip";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -63,6 +74,9 @@ import {
   type Exam,
   type QuestionType,
 } from "@/lib/types";
+import {
+  type ExamQualityStatus,
+} from "@/lib/examQualityReport.shared";
 
 const SELECT_FIELD =
   "w-full min-w-[11rem] rounded-lg border border-input bg-background px-3 py-2.5 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring";
@@ -132,6 +146,9 @@ function Library() {
   const [gradeFilter, setGradeFilter] = useState<string>("all");
   const [subjectFilter, setSubjectFilter] = useState<string>("all");
   const [provenanceFilter, setProvenanceFilter] = useState<"all" | "generated" | "curated">("all");
+  const [qualityFilter, setQualityFilter] = useState<"all" | ExamQualityStatus | "exclude">(
+    "all",
+  );
 
   useEffect(() => {
     writePageFilterSnapshot("library", {
@@ -141,7 +158,7 @@ function Library() {
       subjectFilter,
       provenanceFilter,
     });
-  }, [q, diff, gradeFilter, subjectFilter, provenanceFilter]);
+  }, [q, diff, gradeFilter, subjectFilter, provenanceFilter, qualityFilter]);
 
   const [persistEnabled, setPersistEnabled] = useState<boolean | null>(null);
   const [examplesExam, setExamplesExam] = useState<Exam | null>(null);
@@ -233,9 +250,15 @@ function Library() {
           .includes(q.toLowerCase())
       )
         return false;
+      if (qualityFilter === "exclude") {
+        if (!e.quality_exclude_assign) return false;
+      } else if (qualityFilter !== "all") {
+        const st = e.quality_status ?? "unknown";
+        if (st !== qualityFilter) return false;
+      }
       return true;
     });
-  }, [exams, q, diff, gradeFilter, subjectFilter, provenanceFilter]);
+  }, [exams, q, diff, gradeFilter, subjectFilter, provenanceFilter, qualityFilter]);
 
   /** 按创建时间降序（最新在前） */
   const sortedFiltered = useMemo(() => {
@@ -243,6 +266,16 @@ function Library() {
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }, [filtered]);
+
+  const [listPage, setListPage] = useState(1);
+  useEffect(() => {
+    setListPage(1);
+  }, [q, diff, gradeFilter, subjectFilter, provenanceFilter, qualityFilter]);
+
+  const pageExams = useMemo(
+    () => paginateSlice(sortedFiltered, listPage, EXAM_LIST_PAGE_SIZE),
+    [sortedFiltered, listPage],
+  );
 
   const toggleType = (t: QuestionType) => {
     setPickedTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
@@ -273,10 +306,7 @@ function Library() {
     });
 
     setExamplesExam(null);
-    toast.success("已加入例题队列", {
-      description: "同一时间仅执行 1 个生成任务，其余按顺序排队；进度见右上角「例题队列」。",
-      duration: 8000,
-    });
+    toast.success("已加入例题队列");
     requestGenerationQueueDrain();
   };
 
@@ -289,7 +319,7 @@ function Library() {
       setRemoveExam(null);
       void router.invalidate();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "删除失败");
+      toast.error(toUserFacingErrorMessage(e, "删除失败"));
     } finally {
       setRemoveBusy(false);
     }
@@ -297,13 +327,12 @@ function Library() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <h1 className="text-display text-4xl md:text-5xl">试卷库</h1>
-            <p className="mt-2 text-sm text-muted-foreground">共 {exams.length} 份</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+      <PageShell size="full">
+        <PageHeader
+          title="试卷库"
+          description={`共 ${exams.length} 份`}
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
             <ExampleGenerationJobQueueControl />
             <Button
               type="button"
@@ -328,10 +357,11 @@ function Library() {
                 生成新试卷
               </Link>
             </Button>
-          </div>
-        </div>
+            </div>
+          }
+        />
 
-        <div className="paper-card mb-6 flex flex-col gap-4 p-4">
+        <FilterToolbar className="mb-6 flex flex-col gap-4">
           <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
             <div className="relative min-w-[12rem] flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -342,18 +372,23 @@ function Library() {
                 className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              <FilterChip active={diff === "all"} onClick={() => setDiff("all")}>
+            <FilterChipGroup label="按难度筛选">
+              <FilterChip size="md" active={diff === "all"} onClick={() => setDiff("all")}>
                 全部
               </FilterChip>
               {DIFFS.map((d) => (
-                <FilterChip key={d} active={diff === d} onClick={() => setDiff(d)}>
+                <FilterChip
+                  key={d}
+                  size="md"
+                  active={diff === d}
+                  onClick={() => setDiff(d)}
+                >
                   {DIFFICULTY_LABELS[d]}
                 </FilterChip>
               ))}
-            </div>
+            </FilterChipGroup>
           </div>
-          <div className="flex flex-col gap-3 border-t border-border/40 pt-4 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="flex flex-col gap-3 border-t border-border/50 pt-3.5 sm:flex-row sm:flex-wrap sm:items-end">
             <label className="block min-w-[11rem] flex-1 space-y-1.5">
               <span className="text-xs text-muted-foreground">来源</span>
               <select
@@ -367,13 +402,6 @@ function Library() {
                 <option value="generated">AI 命题</option>
                 <option value="curated">精选 / 演示</option>
               </select>
-              <p className="text-[11px] text-muted-foreground">
-                线下导入卷请至{" "}
-                <Link to="/offline-imports" className="text-primary hover:underline">
-                  导入线下卷
-                </Link>
-                。
-              </p>
             </label>
             <label className="block min-w-[11rem] flex-1 space-y-1.5">
               <span className="text-xs text-muted-foreground">年级</span>
@@ -405,16 +433,31 @@ function Library() {
                 ))}
               </select>
             </label>
+            <label className="block min-w-[11rem] flex-1 space-y-1.5">
+              <span className="text-xs text-muted-foreground">验证状态</span>
+              <select
+                value={qualityFilter}
+                onChange={(e) =>
+                  setQualityFilter(e.target.value as "all" | ExamQualityStatus | "exclude")
+                }
+                className={SELECT_FIELD}
+              >
+                <option value="all">全部状态</option>
+                <option value="unknown">未验证</option>
+                <option value="pass">已通过</option>
+                <option value="fail">有问题</option>
+                <option value="needs_review">待修</option>
+                <option value="exclude">不可布置</option>
+              </select>
+            </label>
           </div>
-        </div>
+        </FilterToolbar>
 
         <div>
           {sortedFiltered.length === 0 ? (
-            <div className="paper-card p-16 text-center">
+            <div className="paper-card px-6 py-10 text-center">
               {exams.length === 0 && persistEnabled === true ? (
-                <p className="text-muted-foreground">
-                  题库中还没有试卷。已配置持久化时，命题将写入云端（若已接 Supabase）或本地。
-                </p>
+                <p className="text-muted-foreground">题库还没有试卷。</p>
               ) : exams.length === 0 ? (
                 <p className="text-muted-foreground">暂无试卷。</p>
               ) : (
@@ -425,8 +468,9 @@ function Library() {
               </Link>
             </div>
           ) : (
+            <>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {sortedFiltered.map((e) => {
+              {pageExams.map((e) => {
                 const types = (e.question_types ?? []).filter(isQuestionType);
                 const canExamples =
                   persistEnabled === true && types.length > 0 && e.storage_source !== "project";
@@ -445,6 +489,7 @@ function Library() {
                       <span className="rounded-full bg-primary/8 px-2 py-0.5 text-primary">
                         {DIFFICULTY_LABELS[e.difficulty as Difficulty] ?? e.difficulty}
                       </span>
+                      <ExamQualityStatusBadge exam={e} />
                       {examProvenance(e) === "imported" && (
                         <span
                           className="rounded-full border border-emerald-500/35 bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-900 dark:text-emerald-100"
@@ -456,7 +501,7 @@ function Library() {
                       {e.storage_source === "local" ? (
                         <span
                           className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground"
-                          title="本地 data/local-exams"
+                          title="保存在本机"
                         >
                           <HardDrive className="h-3 w-3 shrink-0 opacity-80" />
                           本地
@@ -464,7 +509,7 @@ function Library() {
                       ) : e.storage_source === "supabase" ? (
                         <span
                           className="inline-flex items-center gap-1 rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-[11px] text-sky-900 dark:text-sky-100"
-                          title="Supabase 云端"
+                          title="保存在云端"
                         >
                           <Cloud className="h-3 w-3 shrink-0 opacity-80" />
                           云端
@@ -585,9 +630,17 @@ function Library() {
                 );
               })}
             </div>
+            <SimplePager
+              page={listPage}
+              pageCount={pageCountFor(sortedFiltered.length, EXAM_LIST_PAGE_SIZE)}
+              total={sortedFiltered.length}
+              pageSize={EXAM_LIST_PAGE_SIZE}
+              onPageChange={setListPage}
+            />
+            </>
           )}
         </div>
-      </div>
+      </PageShell>
 
       <Dialog
         open={removeExam !== null}
@@ -599,8 +652,7 @@ function Library() {
           <DialogHeader>
             <DialogTitle>从题库删除？</DialogTitle>
             <DialogDescription>
-              「{removeExam?.title ?? ""}
-              」将标记为逻辑删除，列表中不再出现；数据仍保留在数据库或本地文件中。
+              「{removeExam?.title ?? ""}」将从列表移除。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -640,9 +692,7 @@ function Library() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>按题型生成例题</DialogTitle>
-            <DialogDescription>
-              按勾选的题型，用卷内同类题为范式，按当前「设置」里的模型生成配套例题；入库后在试卷详情查看。
-            </DialogDescription>
+            <DialogDescription>按勾选题型生成配套例题。</DialogDescription>
           </DialogHeader>
           {examplesExam && (
             <div className="space-y-3">
@@ -680,30 +730,5 @@ function Library() {
         </DialogContent>
       </Dialog>
     </>
-  );
-}
-
-function FilterChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-md border px-3 py-1.5 text-sm transition-colors " +
-        (active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-border bg-card text-foreground hover:bg-accent")
-      }
-    >
-      {children}
-    </button>
   );
 }

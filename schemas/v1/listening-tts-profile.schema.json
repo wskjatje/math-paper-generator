@@ -1,0 +1,147 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://math-paper-generator.local/schemas/v1/listening-tts-profile.schema.json",
+  "title": "ListeningTtsProfile",
+  "description": "本机声纹克隆听力 TTS 档案（单路径）。语速/停顿/音色均须人工对照北京听力标定后填写；禁止依赖代码内默认值。",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "calibrated",
+    "endpoint",
+    "slots",
+    "gradeBands"
+  ],
+  "properties": {
+    "version": { "type": "integer", "const": 1 },
+    "calibrated": {
+      "type": "boolean",
+      "description": "必须为 true 才允许合成。标定完成前请保持 false。"
+    },
+    "calibrationNote": {
+      "type": "string",
+      "description": "可选：记录对照了哪一年北京卷、如何标定语速。"
+    },
+    "endpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["baseUrl", "model", "responseFormat"],
+      "properties": {
+        "baseUrl": {
+          "type": "string",
+          "minLength": 1,
+          "description": "本机 OpenAI 兼容根，如 http://127.0.0.1:7778/v1"
+        },
+        "apiKey": {
+          "type": "string",
+          "description": "可选；本机服务若无需鉴权可空字符串"
+        },
+        "model": {
+          "type": "string",
+          "minLength": 1,
+          "description": "本机 TTS 服务中的模型 id（以该服务文档为准，不由本仓库指定）"
+        },
+        "responseFormat": {
+          "type": "string",
+          "enum": ["wav", "mp3", "opus", "aac", "flac", "pcm"]
+        },
+        "extraBody": {
+          "type": "object",
+          "description": "合并进 POST /audio/speech 的额外字段（按本机服务文档填写，本仓库不预设键名）"
+        }
+      }
+    },
+    "slots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["narrator", "dialogue"],
+      "properties": {
+        "narrator": { "$ref": "#/$defs/voiceSlot" },
+        "dialogue": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/voiceSlot" }
+        }
+      }
+    },
+    "referenceAudio": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "bodyField": {
+          "type": "string",
+          "minLength": 1,
+          "description": "若本机服务用 JSON 字段传参考音频，填写字段名；不需要则省略整个 referenceAudio"
+        },
+        "encoding": {
+          "type": "string",
+          "enum": ["base64", "data_url"],
+          "description": "参考 wav 编码方式（以本机服务文档为准）"
+        }
+      },
+      "required": ["bodyField", "encoding"]
+    },
+    "gradeBands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "matchSubjectSubstrings",
+          "speed",
+          "cueGapSec",
+          "turnGapSec"
+        ],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "label": { "type": "string" },
+          "matchSubjectSubstrings": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string", "minLength": 1 },
+            "description": "与 exam.subjects / 题目 subject 子串匹配（任一命中即选用该档）"
+          },
+          "speed": {
+            "type": "number",
+            "minimum": 0.25,
+            "maximum": 4,
+            "description": "交给本机 TTS 的 speed；须对照北京该年级听力标定，禁止臆造"
+          },
+          "cueGapSec": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "题号/复听/听后问句前停顿（秒）"
+          },
+          "turnGapSec": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 6,
+            "description": "对话轮次/句间停顿（秒）"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "voiceSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["voice"],
+      "properties": {
+        "voice": {
+          "type": "string",
+          "minLength": 1,
+          "description": "本机服务中的 voice id（可对应已注册的克隆音色）"
+        },
+        "referenceWav": {
+          "type": "string",
+          "description": "相对项目根或绝对路径的参考 wav；仅当 endpoint 需要随请求传参考音频时填写"
+        },
+        "label": { "type": "string" }
+      }
+    }
+  }
+}

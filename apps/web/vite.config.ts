@@ -38,6 +38,8 @@ export default defineConfig({
      */
     optimizeDeps: {
       include: [
+        "katex",
+        "katex/contrib/mhchem",
         "cmdk",
         "@radix-ui/react-dialog",
         "@radix-ui/react-popover",
@@ -49,6 +51,10 @@ export default defineConfig({
         "seroval",
         "@tanstack/router-core",
       ],
+    },
+    resolve: {
+      /** mhchem 必须挂到 rehype-katex 同一份 katex，否则 \\ce 红字露源码 */
+      dedupe: ["katex"],
     },
     build: {
       /** exam 路由聚合 KaTeX 等，单体略大属预期 */

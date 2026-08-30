@@ -6,6 +6,7 @@
   "scripts": {
     "docker:ensure": "node scripts/ensure-docker.mjs",
     "doctor": "node scripts/check-dev-environment.mjs",
+    "devil": "node scripts/devil.mjs",
     "dev": "node scripts/first-run-env.mjs && npm run docker:ensure && npm run dev -w @zhixue/web",
     "dev:clean": "node scripts/first-run-env.mjs && npm run docker:ensure && npm run docker:api:detach && npm run dev:clean -w @zhixue/web",
     "dev:host": "node scripts/first-run-env.mjs && npm run docker:ensure && npm run docker:api:detach && MPG_GATEWAY_URL=http://127.0.0.1:8080 npm run dev -w @zhixue/web",
@@ -38,7 +39,14 @@
     "docker:api:mps:up": "docker compose -f infrastructure/docker/docker-compose.yml -f infrastructure/docker/docker-compose.api-only.yml -f infrastructure/docker/docker-compose.m1-mps.yml up -d",
     "got-ocr:download-model": "bash scripts/download-got-ocr-hf-model.sh",
     "got-ocr:native": "bash scripts/run-got-ocr-native-mps.sh",
-    "curriculum-catalog:import": "node scripts/import-curriculum-catalog.mjs"
+    "curriculum-catalog:import": "node scripts/import-curriculum-catalog.mjs",
+    "textbook-directory:shell": "npm run textbook-directory:shell -w @zhixue/web --",
+    "textbook-directory:validate": "npm run textbook-directory:validate -w @zhixue/web --",
+    "textbook-directory:grade-export": "npm run textbook-directory:grade-export -w @zhixue/web --",
+    "textbook-directory:grade-apply": "npm run textbook-directory:grade-apply -w @zhixue/web --",
+    "textbook-directory:toc-collection": "npm run textbook-directory:toc-collection -w @zhixue/web --",
+    "textbook-directory:crawl4ai:setup": "bash tools/crawl4ai-textbook/setup.sh",
+    "textbook-directory:crawl4ai": "bash tools/crawl4ai-textbook/run.sh"
   },
   "devDependencies": {
     "prettier": "^3.7.3"

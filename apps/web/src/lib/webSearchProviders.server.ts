@@ -139,7 +139,7 @@ export async function runWebSearch(
       results: [],
       provider: null,
       message:
-        "未配置外网检索：请在「设置 → 模型与接口」填写 Tavily / Brave API Key，或在服务端设置环境变量 MPG_TAVILY_API_KEY、MPG_BRAVE_SEARCH_API_KEY；可选 MPG_WEB_SEARCH_PROVIDER=tavily|brave|auto（默认 auto，优先 Tavily）。",
+        "未配置外网检索：请在「设置 → 模型与接口」填写检索服务密钥；运维也可在服务端环境变量中配置。",
     };
   }
 

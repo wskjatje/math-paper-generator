@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "trackByGroup": {
+    "regular": "grade_term",
+    "entrance": "entrance_outline",
+    "contest": "contest_outline"
+  }
+}

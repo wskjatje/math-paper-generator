@@ -290,16 +290,128 @@ function prepareClonedDocumentForHtml2Canvas(clonedDoc: Document, root: HTMLElem
 /**
  * 使用浏览器原生打印管线导出 PDF：在对话框中将打印机选为「另存为 PDF」。
  * 由 Chromium/WebKit 直接排版页面，文字与公式通常比 html2canvas 整页快照更清晰。
+ *
+ * 通过约 blank iframe 打印，避免页脚出现本页 localhost 长 URL。
+ * `documentTitle` 写入打印帧 <title>，供「另存为 PDF」默认文件名；请同时取消勾选「页眉和页脚」以免标题进纸边。
  */
-export function startExamPdfViaBrowserPrint(printRoot: HTMLElement | null): void {
-  if (typeof window === "undefined") return;
+export function startExamPdfViaBrowserPrint(
+  printRoot: HTMLElement | null,
+  opts?: { documentTitle?: string },
+): void {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
   if (!printRoot) return;
-  printRoot.scrollIntoView({ block: "start", behavior: "instant" });
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      window.setTimeout(() => window.print(), 80);
-    });
+
+  const exportTitle = (opts?.documentTitle ?? "").trim() || "试卷";
+  const prevTitle = document.title;
+  // 同步到顶层 title：部分浏览器「另存为 PDF」取的是 opener/顶层标题
+  document.title = exportTitle;
+
+  const iframe = document.createElement("iframe");
+  iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute("title", "print-frame");
+  Object.assign(iframe.style, {
+    position: "fixed",
+    right: "0",
+    bottom: "0",
+    width: "0",
+    height: "0",
+    border: "0",
+    opacity: "0",
+    pointerEvents: "none",
   });
+  document.body.appendChild(iframe);
+
+  const frameWin = iframe.contentWindow;
+  const frameDoc = iframe.contentDocument;
+  if (!frameWin || !frameDoc) {
+    printRoot.scrollIntoView({ block: "start", behavior: "instant" });
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        window.setTimeout(() => {
+          try {
+            window.print();
+          } finally {
+            document.title = prevTitle;
+          }
+        }, 80);
+      });
+    });
+    iframe.remove();
+    return;
+  }
+
+  const styleLinks = Array.from(
+    document.querySelectorAll('link[rel="stylesheet"], style'),
+  )
+    .map((node) => node.outerHTML)
+    .join("\n");
+
+  const clone = printRoot.cloneNode(true) as HTMLElement;
+  // 打印帧内不再需要站内调试/操作条
+  clone.querySelectorAll(".no-print").forEach((el) => el.remove());
+
+  frameDoc.open();
+  frameDoc.write(`<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<base href="${escapeHtmlAttr(window.location.origin)}/"/>
+<title>${escapeHtmlText(exportTitle)}</title>
+${styleLinks}
+<style>
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+  @page { size: A4 portrait; margin: 0; }
+  @media print {
+    .no-print { display: none !important; }
+  }
+</style>
+</head>
+<body class="exam-print-frame-body">
+${clone.outerHTML}
+</body>
+</html>`);
+  frameDoc.close();
+  try {
+    frameDoc.title = exportTitle;
+  } catch {
+    /* ignore */
+  }
+
+  const cleanup = () => {
+    document.title = prevTitle;
+    try {
+      iframe.remove();
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const runPrint = () => {
+    try {
+      frameWin.focus();
+      frameWin.print();
+    } catch {
+      window.print();
+    } finally {
+      // afterprint 在部分 WebKit 上不可靠：延迟回收 iframe
+      window.setTimeout(cleanup, 1000);
+    }
+  };
+
+  // 等样式与图片布局
+  window.setTimeout(runPrint, 200);
+}
+
+function escapeHtmlAttr(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function escapeHtmlText(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export async function downloadElementAsPdf(element: HTMLElement, fileName: string): Promise<void> {

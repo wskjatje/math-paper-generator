@@ -1,5 +1,6 @@
 # Agent 提示（本仓库）
 
+- **UI 规范**：正式前端在 `apps/web`；版心用 `PageShell` / `PageHeader` / `FormPanel`。禁止冗余提示常驻（`~/.cursor/rules/ui-no-redundant-copy.mdc`）；教材目录禁止硬编码全书，须走 `data/textbook-directory.json` / 远程同步（全量空壳与校验见 `docs/textbook-directory.md`：`npm run textbook-directory:shell` / `textbook-directory:validate`；全版本 TOC 采集表见 `docs/toc-collection.md`：`npm run textbook-directory:toc-collection`；可选授权页爬取见 `docs/textbook-directory-crawl4ai.md`：`npm run textbook-directory:crawl4ai:setup` / `textbook-directory:crawl4ai`）。
 - **流程与闸门**：命题与发布闭环见 `docs/workflow.md`；人工核对清单见 `docs/validation-checklist.md`。
 - **数据结构**：`schemas/v1/*.schema.json`；示例见 `examples/v1/` 与 `papers/2026/demo-2026-amc-style-01/`。
 - **校验**：修改 JSON 后运行 `make validate`。
@@ -8,7 +9,7 @@
 - **Electron 安装失败（`socket hang up`）**：仓库已含 `.npmrc` 指向 npmmirror 的 `electron_mirror`；若仍失败，删除 `node_modules/electron` 后重试 `npm install`，或临时执行 `export ELECTRON_MIRROR="https://npmmirror.com/mirrors/electron/"` 再安装。
 - **`vite preview` / Electron 白屏或 500**：构建后会复制 `dist/server/server.js`（与 TanStack 预览入口名一致）；服务端读写 `data/` 使用 `resolveProjectRoot()`（或环境变量 `MPG_PROJECT_ROOT`），避免 SSR 下 `cwd` 为 `/` 时误写 `/data`。
 - **听力 Piper（本地免费 TTS）**：配置 `MPG_PIPER_MODEL` 为 Piper `.onnx` 模型绝对路径；可选 `MPG_PIPER_BIN`（默认在 PATH 中查找 `piper`）。未配置且为 macOS 时仍用 `say`。安装步骤见 `docs/listening-piper-setup.md`。**听力稿格式（v3、`__WORD_GAP__`、题面区）：试卷为 `apps/web/public/audio/<卷ID>/listening-script.md`，同型例题为 `…/examples/listening-script.md`，见同文档第 6 节**。
-- **网上导入历年卷**：默认 `data/remote-paper-catalog.json` 可为空；真实试卷须自行维护清单（正文 `plainText` / `textUrl`），可选 `MPG_REMOTE_IMPORT_CATALOG_URL` 拉取合并。合规与字段说明见 `docs/remote-paper-catalog.md`。
+- **导入线下卷**：主路径为上传文件（PDF/Word/图片等）→ 导入队列 → 待确认/正式入库；「网上历年卷目录清单」能力已移除。
 - **教材章节目录（出版社分册）**：命题页章节可选数据源来自 MySQL 表 `curriculum_catalog_*`；定时由运维执行 `npm run curriculum-catalog:import`（或 cron 调用 `node scripts/import-curriculum-catalog.mjs`），从 `MPG_CURRICULUM_CATALOG_URL` 或 `data/curriculum-catalog.json` 写入。字段与 Cron 示例见 `docs/curriculum-catalog-import.md`。
 - **Open Notebook / 正文增强（可选）**：线下导入流程见导入页提示；松耦合 Open Notebook 与 `MPG_PLAINTEXT_EXTRACT_URL` 说明见 `docs/architecture/open-notebook-and-extract-integration.md`。
 - **微服务与编排（可选）**：`npm run docker:stack` 拉起网关 + Web + OCR/公式/视觉/Agent Stub；说明见 `docs/architecture/stack-docker.md`。K8s 示例见 `infrastructure/kubernetes/README.md`。

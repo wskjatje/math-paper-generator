@@ -20,6 +20,13 @@ export type PaperGenPayloadSnapshot = {
   target_track_id?: string;
   /** 校内同步：教材版本（可选） */
   textbook_edition_hint?: string;
+  /**
+   * 生效课件中的教材版本 id（可选；旧队列字段）。
+   * 与 `textbook_edition_hint` 并存：runner 优先 hint，缺省回退本字段。
+   */
+  textbook_edition?: string;
+  /** 校内同步：远程/本地教材目录单元 id（可选；空=该册全部） */
+  textbook_unit_ids?: string[];
   /** 校内同步：单元 / 章节侧重（可选）；由勾选目录 + 补充说明序列化 */
   chapter_focus?: string;
   /** 勾选的内置章节 id（可选，便于队列精确回填） */
@@ -53,6 +60,8 @@ export interface PaperGenJob {
   cancelRequested?: boolean;
   errorMessage?: string;
   examId?: string;
+  /** 模型已返回但校验/入库失败时的服务端恢复草稿 id（若生成链路写入草稿） */
+  recoveryDraftId?: string;
   payload: PaperGenPayloadSnapshot;
 }
 

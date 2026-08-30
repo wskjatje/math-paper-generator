@@ -1,8 +1,13 @@
 /**
  * 判断题目是否「扫描卷依赖位图」但当前数据中缺少可渲染的附图（Markdown `![](…)` 或结构化 raster_figures 中非空 URL）。
  * 与矢量 diagram_schema 无关：无真实卷面图时不应用 SVG「学科示意图」顶替。
+ *
+ * 「生成题图」写入的 `/figures/<examId>/…` 属重绘附件，见 {@link questionHasUsableGeneratedFigureAttachment}；
+ * 读卷展示与答案隐瞒策略在 `questionRendererPolicy` 中单独处理，避免生成成功后仍黄框藏答案。
  */
 import type { Question, QuestionType } from "@/lib/types";
+import { FIGURE_GENERATION, TEXT_NORMALIZATION } from "@/config/examDomain";
+import { isUnusableFigureUri } from "@/lib/figureSvg.shared";
 import {
   extractResolvableRasterUrlsFromMarkdown,
   isResolvableRasterAssetUrl,
@@ -12,6 +17,16 @@ import {
   parseVisualGeometryEvidenceV1,
   visualGeometryEvidenceHasSignals,
 } from "@/lib/visualGeometryEvidence.shared";
+
+/** 题目 attachments 中是否已有可展示的本地生成 SVG（`/figures/`，非 pending） */
+export function questionHasUsableGeneratedFigureAttachment(q: Question): boolean {
+  return (q.attachments ?? []).some((a) => {
+    if (a.kind !== "figure" && a.kind !== "image") return false;
+    const uri = String(a.uri ?? "").trim();
+    if (!uri || isUnusableFigureUri(uri)) return false;
+    return uri.startsWith("/figures/");
+  });
+}
 
 export type { RasterSupplyState } from "@/lib/rasterAssetUrl.shared";
 export { resolveStemRasterSupplyState } from "@/lib/rasterAssetUrl.shared";
@@ -172,4 +187,30 @@ export function shouldSuppressVectorDiagramSchemaForQuestion(
     return false;
   }
   return true;
+}
+
+/**
+ * 题干命中三角形形态时，若 diagram_schema 点集 >3，视为与题干形状冲突（常见：误推四点四边形）。
+ * 规则来自配置，禁止按题号硬编码；冲突时不猜正确图，只抑制错误矢量。
+ */
+export function diagramSchemaConflictsWithTriangleStem(
+  content: string,
+  schema: { points?: ReadonlyArray<{ id?: string }> } | null | undefined,
+): boolean {
+  if (!TEXT_NORMALIZATION.suppressNonTriangleDiagramWhenStemMentionsTriangle) {
+    return false;
+  }
+  if (!schema?.points || schema.points.length <= 3) return false;
+  const patterns = FIGURE_GENERATION.triangleTemplate.mentionPatterns;
+  const t = String(content ?? "");
+  for (const raw of patterns) {
+    const src = String(raw ?? "").trim();
+    if (!src) continue;
+    try {
+      if (new RegExp(src, "i").test(t)) return true;
+    } catch {
+      /* ignore bad pattern */
+    }
+  }
+  return false;
 }

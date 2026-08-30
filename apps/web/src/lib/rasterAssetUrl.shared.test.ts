@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 
 import {
   extractResolvableRasterUrlsFromMarkdown,
+  isPhantomImportFigureUrl,
   isPlaceholderRasterAssetUrl,
   isResolvableRasterAssetUrl,
   resolveStemRasterSupplyState,
+  stripPhantomImportFigureMarkdown,
 } from "@/lib/rasterAssetUrl.shared";
 
 describe("rasterAssetUrl (materialization gate)", () => {
@@ -13,6 +15,19 @@ describe("rasterAssetUrl (materialization gate)", () => {
     expect(isPlaceholderRasterAssetUrl("url")).toBe(true);
     expect(isPlaceholderRasterAssetUrl("")).toBe(true);
     expect(isPlaceholderRasterAssetUrl("###")).toBe(true);
+  });
+
+  it("isPhantomImportFigureUrl：裸文件假链 vs UUID batch", () => {
+    expect(isPhantomImportFigureUrl("/import-figures/3.png")).toBe(true);
+    expect(isPhantomImportFigureUrl("/import-figures/batch/q1.png")).toBe(true);
+    expect(
+      isPhantomImportFigureUrl(
+        "/import-figures/06803f4e-d427-4807-9dac-a3aa90915e0a/p0-图①.png",
+      ),
+    ).toBe(false);
+    expect(stripPhantomImportFigureMarkdown("长为![](/import-figures/3.png)。")).toBe(
+      "长为。",
+    );
   });
 
   it("isResolvableRasterAssetUrl：import-figures 与 https 有效", () => {

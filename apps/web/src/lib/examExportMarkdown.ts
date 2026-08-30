@@ -1,6 +1,5 @@
 import {
   DIFFICULTY_LABELS,
-  questionDisplayTypeLabel,
   type Difficulty,
   type Exam,
   type Example,
@@ -18,6 +17,18 @@ import {
   placeholderSolutionStepsWhenMcqAnswerWithheld,
   shouldWithholdMcqAnswerForMissingRasterFigures,
 } from "@/lib/questionRendererPolicy.shared";
+import {
+  formatSectionQuestionIndexLine,
+  formatSectionQuestionIndex,
+  formatSectionQuestionPoints,
+  formatSectionHeadingLine,
+  groupQuestionsBySection,
+} from "@/lib/examSections.shared";
+import {
+  applyInlinePointsToStem,
+  composePaperStemIndexPlain,
+  resolvePaperStemChrome,
+} from "@/lib/examPaperStemChrome.shared";
 
 /** 例题步骤常缺省 `step` 字段，与试卷共用序号回退，避免出现「undefined.」 */
 function solutionStepOrdinal(step: SolutionStep, index: number): number {
@@ -56,59 +67,83 @@ export function buildPaperMarkdown(exam: Exam, questions: Question[]): string {
     );
   }
 
-  questions.forEach((q, i) => {
-    if (shouldOmitListeningQuestionFromPaper(q, questions, exam)) {
-      lines.push(`\n## 第 ${i + 1} 题 (${questionDisplayTypeLabel(q)}, ${q.points} 分) · 听力\n`);
-      lines.push(
-        `\n> 题干与听力原文不在本书面稿印发；请依考场录音作答。详见 \`listening-script.md\`。\n`,
-      );
-      if (q.options?.length) {
-        lines.push(`\n**选项（书面印发）：**\n`);
-        const optionLines = q.options.map((o, idx) => {
-          const body = prepareExamTextForMarkdownExport(stripLeadingChoiceMarker(String(o)));
-          return `${choiceLetterFromIndex(idx)}. ${body}`;
-        });
-        lines.push(optionLines.join("\n"));
+  for (const { section, questions: sectionItems } of groupQuestionsBySection(
+    exam.sections ?? undefined,
+    questions,
+  )) {
+    lines.push(`\n## ${formatSectionHeadingLine(section)}\n`);
+
+    for (const { question: q, globalIndex: i } of sectionItems) {
+      const qHead = formatSectionQuestionIndexLine(i, q.points);
+      if (shouldOmitListeningQuestionFromPaper(q, questions, exam)) {
+        lines.push(`\n### ${qHead} · 听力\n`);
+        lines.push(
+          `\n> 题干与听力原文不在本书面稿印发；请依考场录音作答。详见 \`listening-script.md\`。\n`,
+        );
+        if (q.options?.length) {
+          lines.push(`\n**选项（书面印发）：**\n`);
+          const optionLines = q.options.map((o, idx) => {
+            const body = prepareExamTextForMarkdownExport(stripLeadingChoiceMarker(String(o)));
+            return `${choiceLetterFromIndex(idx)}. ${body}`;
+          });
+          lines.push(optionLines.join("\n"));
+        } else {
+          lines.push(`\n> 请听录音完成作答（本书面稿不印发题干；填空/解答等保留作答区）。\n`);
+        }
+        lines.push(`\n\n---`);
+        continue;
       }
-      lines.push(`\n\n---`);
-      return;
-    }
-    lines.push(`\n## 第 ${i + 1} 题 (${questionDisplayTypeLabel(q)}, ${q.points} 分)\n`);
-    if (q.knowledge_tags?.length) {
+      const stem = prepareExamTextForMarkdownExport(q.content);
+      const chrome = resolvePaperStemChrome({
+        indexLabel: formatSectionQuestionIndex(i),
+        pointsLabel: formatSectionQuestionPoints(q.points),
+        stem: String(q.content ?? ""),
+      });
+      const stemForLead = chrome.appendPointsInline
+        ? applyInlinePointsToStem(stem, formatSectionQuestionPoints(q.points))
+        : stem;
+      const lead = composePaperStemIndexPlain(formatSectionQuestionIndex(i), stemForLead);
+      if (chrome.showPointsAfterBlock) {
+        lines.push(`\n${lead}\n`);
+        lines.push(`\n${formatSectionQuestionPoints(q.points)}\n`);
+      } else {
+        lines.push(`\n${lead}\n`);
+      }
+      if (q.knowledge_tags?.length) {
+        lines.push(
+          `*知识点: ${q.knowledge_tags.map((t) => prepareExamTextForMarkdownExport(String(t))).join(", ")}*\n`,
+        );
+      }
+      if (q.options?.length) {
+        const optionLine = q.options
+          .map((o, idx) => {
+            const body = prepareExamTextForMarkdownExport(stripLeadingChoiceMarker(String(o)));
+            return `${choiceLetterFromIndex(idx)}. ${body}`;
+          })
+          .join("　");
+        lines.push(`\n**选项**：${optionLine}\n`);
+      }
+      const withholdAns = shouldWithholdMcqAnswerForMissingRasterFigures(q);
       lines.push(
-        `*知识点: ${q.knowledge_tags.map((t) => prepareExamTextForMarkdownExport(String(t))).join(", ")}*\n`,
+        `\n#### 答案\n\n${
+          withholdAns
+            ? prepareExamTextForMarkdownExport(MCQ_ANSWER_WITHHELD_FOR_MISSING_RASTER_MESSAGE)
+            : prepareExamTextForMarkdownExport(q.answer)
+        }\n`,
       );
+      lines.push(`\n#### 分步推导\n`);
+      const steps = withholdAns
+        ? placeholderSolutionStepsWhenMcqAnswerWithheld()
+        : (q.solution_steps as SolutionStep[]);
+      steps.forEach((s, si) => {
+        const ord = solutionStepOrdinal(s, si);
+        lines.push(`${ord}. ${prepareExamTextForMarkdownExport(s.description)}`);
+        if (s.reasoning) lines.push(`   - ${prepareExamTextForMarkdownExport(s.reasoning)}`);
+        if (s.formula) lines.push(`   - ${prepareExamTextForMarkdownExport(s.formula)}`);
+      });
+      lines.push("\n---");
     }
-    lines.push(prepareExamTextForMarkdownExport(q.content));
-    if (q.options?.length) {
-      const optionLine = q.options
-        .map((o, idx) => {
-          const body = prepareExamTextForMarkdownExport(stripLeadingChoiceMarker(String(o)));
-          return `${choiceLetterFromIndex(idx)}. ${body}`;
-        })
-        .join("　");
-      lines.push(`\n**选项**：${optionLine}\n`);
-    }
-    const withholdAns = shouldWithholdMcqAnswerForMissingRasterFigures(q);
-    lines.push(
-      `\n#### 答案\n\n${
-        withholdAns
-          ? prepareExamTextForMarkdownExport(MCQ_ANSWER_WITHHELD_FOR_MISSING_RASTER_MESSAGE)
-          : prepareExamTextForMarkdownExport(q.answer)
-      }\n`,
-    );
-    lines.push(`\n#### 分步推导\n`);
-    const steps = withholdAns
-      ? placeholderSolutionStepsWhenMcqAnswerWithheld()
-      : (q.solution_steps as SolutionStep[]);
-    steps.forEach((s, si) => {
-      const ord = solutionStepOrdinal(s, si);
-      lines.push(`${ord}. ${prepareExamTextForMarkdownExport(s.description)}`);
-      if (s.reasoning) lines.push(`   - ${prepareExamTextForMarkdownExport(s.reasoning)}`);
-      if (s.formula) lines.push(`   - ${prepareExamTextForMarkdownExport(s.formula)}`);
-    });
-    lines.push("\n---");
-  });
+  }
 
   lines.push(`\n*由 知学 Zhixue 生成 · CC-BY-SA 4.0*\n`);
   return lines.join("\n");

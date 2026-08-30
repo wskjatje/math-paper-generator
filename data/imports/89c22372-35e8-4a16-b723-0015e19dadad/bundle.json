@@ -1,0 +1,372 @@
+{
+  "version": 1,
+  "documentId": "89c22372-35e8-4a16-b723-0015e19dadad",
+  "createdAt": "2026-07-19T23:37:05.615937+00:00",
+  "sourceFilename": "微信图片_20260507084122_354_52.jpg",
+  "sourceMimeType": "image/jpeg",
+  "sourceSha256": "7e940b261a54e2c182b20de355777f2fbc0a888b706e7df72c47324c43966133",
+  "sourceFilePath": "data/imports/89c22372-35e8-4a16-b723-0015e19dadad/source/微信图片_20260507084122_354_52.jpg",
+  "quality": "high_fidelity",
+  "ocrRun": {
+    "id": "a1724fa9-00d1-49c8-b807-652e29a92ebb",
+    "engine": "docling",
+    "modelVersions": {
+      "docling": "unknown"
+    },
+    "startedAt": "2026-07-19T23:35:42.761783+00:00",
+    "finishedAt": "2026-07-19T23:37:05.615937+00:00",
+    "quality": "high_fidelity",
+    "warnings": []
+  },
+  "pages": [
+    {
+      "id": "89c22372-35e8-4a16-b723-0015e19dadad-p0",
+      "pageIndex": 0,
+      "width": 1000,
+      "height": 1000,
+      "blocks": [
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b1",
+          "pageIndex": 0,
+          "readingOrder": 1,
+          "type": "text",
+          "text": "（24）.（本小题10分）·",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 65.73387145996094,
+            "y0": 965.3359375,
+            "x1": 347.6975911458333,
+            "y1": 927.2533467610677
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b2",
+          "pageIndex": 0,
+          "readingOrder": 2,
+          "type": "text",
+          "text": "在平面直角坐标系中，O为原点，直角△AOB的顶点 A(O，S)，B(5√，0)，等边△ DEF 的顶点E(0,3)，F(-√3，0)，顶点D在第二象限.",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 68.61693827311198,
+            "y0": 893.7868347167969,
+            "x1": 1069.616943359375,
+            "y1": 776.0770060221355
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b3",
+          "pageIndex": 0,
+          "readingOrder": 3,
+          "type": "text",
+          "text": "（I）填空：如图①，LEFO的度数为 。，点D 的坐标为",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 130.8911336263021,
+            "y0": 745.4955444335938,
+            "x1": 907.5887044270834,
+            "y1": 707.9899495442708
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b4",
+          "pageIndex": 0,
+          "readingOrder": 4,
+          "type": "text",
+          "text": "（ⅡI）将等边△DEF 沿水平方向向右平移，得到等边△DEF'，点D，E，F的 对应点分别为D，E，F'，设EE'=，等边△DE'F'与直角三角形AOB的重叠部分的 面积为S.",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 64.58064778645833,
+            "y0": 687.7946370442708,
+            "x1": 1073.07666015625,
+            "y1": 537.1953125
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b5",
+          "pageIndex": 0,
+          "readingOrder": 5,
+          "type": "text",
+          "text": "①如图②，若边DF'与边OA相交于点G，当△DE'F'与△AOB重叠部分为四边形 EE'F'G时，试用含有t的式子表示S，并直接写出t的取值范围;",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 72.65322875976562,
+            "y0": 520.4620768229166,
+            "x1": 1071.9234212239583,
+            "y1": 432.7567138671875
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b6",
+          "pageIndex": 0,
+          "readingOrder": 6,
+          "type": "text",
+          "text": "V√3",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 176.44354248046875,
+            "y0": 411.984375,
+            "x1": 209.31048583984375,
+            "y1": 377.36385091145837
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b7",
+          "pageIndex": 0,
+          "readingOrder": 7,
+          "type": "text",
+          "text": "≤<13",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 199.508056640625,
+            "y0": 396.98213704427087,
+            "x1": 339.04840087890625,
+            "y1": 378.51786295572913
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b8",
+          "pageIndex": 0,
+          "readingOrder": 8,
+          "type": "text",
+          "text": "时，求S的取值范围（直接写出结果即可）.",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 329.2459716796875,
+            "y0": 393.52010091145837,
+            "x1": 835.5121256510416,
+            "y1": 364.66963704427087
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b9",
+          "pageIndex": 0,
+          "readingOrder": 9,
+          "type": "text",
+          "text": "2",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 184.5161336263021,
+            "y0": 364.66963704427087,
+            "x1": 201.81451416015625,
+            "y1": 341.58927408854163
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b10",
+          "pageIndex": 0,
+          "readingOrder": 10,
+          "type": "text",
+          "text": "2",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 289.4596761067708,
+            "y0": 366.97770182291663,
+            "x1": 308.4879150390625,
+            "y1": 342.16634114583337
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b11",
+          "pageIndex": 0,
+          "readingOrder": 11,
+          "type": "text",
+          "text": "A",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 236.9879150390625,
+            "y0": 297.15958658854163,
+            "x1": 253.1330769856771,
+            "y1": 274.65625
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b12",
+          "pageIndex": 0,
+          "readingOrder": 12,
+          "type": "text",
+          "text": "E",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 232.95161946614584,
+            "y0": 252.72989908854163,
+            "x1": 254.28629557291666,
+            "y1": 226.76448567708337
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b13",
+          "pageIndex": 0,
+          "readingOrder": 13,
+          "type": "text",
+          "text": "D'",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 649.8427327473959,
+            "y0": 248.11385091145837,
+            "x1": 677.5201822916666,
+            "y1": 227.91853841145837
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b14",
+          "pageIndex": 0,
+          "readingOrder": 14,
+          "type": "text",
+          "text": "E",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 700.008056640625,
+            "y0": 251.575927734375,
+            "x1": 717.883056640625,
+            "y1": 228.49552408854163
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b15",
+          "pageIndex": 0,
+          "readingOrder": 15,
+          "type": "text",
+          "text": "2",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 706.9274088541666,
+            "y0": 222.1484375,
+            "x1": 711.5403645833334,
+            "y1": 212.91634114583337
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b16",
+          "pageIndex": 0,
+          "readingOrder": 16,
+          "type": "text",
+          "text": "B",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 509.725830078125,
+            "y0": 128.67301432291663,
+            "x1": 529.3306477864584,
+            "y1": 106.169677734375
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b17",
+          "pageIndex": 0,
+          "readingOrder": 17,
+          "type": "text",
+          "text": "B",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 945.6451822916666,
+            "y0": 130.404052734375,
+            "x1": 967.5564778645834,
+            "y1": 106.74666341145837
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b18",
+          "pageIndex": 0,
+          "readingOrder": 18,
+          "type": "text",
+          "text": "图①",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 257.7459716796875,
+            "y0": 60.5859375,
+            "x1": 318.866943359375,
+            "y1": 23.65738932291663
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b19",
+          "pageIndex": 0,
+          "readingOrder": 19,
+          "type": "text",
+          "text": "第（24）题",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 486.6612955729167,
+            "y0": 55.39290364583337,
+            "x1": 625.0483805338541,
+            "y1": 19.04134114583337
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-b20",
+          "pageIndex": 0,
+          "readingOrder": 20,
+          "type": "text",
+          "text": "图②",
+          "latex": null,
+          "confidence": null,
+          "bbox": {
+            "x0": 731.7217610677084,
+            "y0": 61.16292317708337,
+            "x1": 788.2298177083334,
+            "y1": 23.65738932291663
+          }
+        },
+        {
+          "id": "89c22372-35e8-4a16-b723-0015e19dadad-pic0",
+          "pageIndex": 0,
+          "readingOrder": 21,
+          "type": "picture",
+          "text": "图1",
+          "bbox": {
+            "x0": 109.80536651611328,
+            "y0": 414.88812255859375,
+            "x1": 1001.786865234375,
+            "y1": 22.147705078125
+          },
+          "assetId": "0daf8995-3dfb-4a27-ae2b-fea62c3ebacc"
+        }
+      ]
+    }
+  ],
+  "regions": [
+    {
+      "id": "89c22372-35e8-4a16-b723-0015e19dadad-r-fig-0",
+      "pageIndex": 0,
+      "regionType": "figure",
+      "bbox": {
+        "x0": 109.80536651611328,
+        "y0": 414.88812255859375,
+        "x1": 1001.786865234375,
+        "y1": 22.147705078125
+      },
+      "readingOrder": 21,
+      "blockIds": [
+        "89c22372-35e8-4a16-b723-0015e19dadad-pic0"
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "id": "0daf8995-3dfb-4a27-ae2b-fea62c3ebacc",
+      "uri": "",
+      "mimeType": "image/png",
+      "role": "source_figure",
+      "pageIndex": 0
+    }
+  ],
+  "plainText": "（24）.（本小题10分）·\n\n在平面直角坐标系中，O为原点，直角△AOB的顶点 A(O，S)，B(5√，0)，等边△ DEF 的顶点E(0,3)，F(-√3，0)，顶点D在第二象限.\n\n- （I）填空：如图①，LEFO的度数为 。，点D 的坐标为\n- （ⅡI）将等边△DEF 沿水平方向向右平移，得到等边△DEF'，点D，E，F的 对应点分别为D，E，F'，设EE'=，等边△DE'F'与直角三角形AOB的重叠部分的 面积为S.\n\n①如图②，若边DF'与边OA相交于点G，当△DE'F'与△AOB重叠部分为四边形 EE'F'G时，试用含有t的式子表示S，并直接写出t的取值范围;\n\n<!-- image -->"
+}

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 8 304 193.23076923076923" width="304" height="193">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="8" y="8" width="304" height="193.23076923076923" fill="#fff"/>
+  <line x1="40" y1="150.76923076923077" x2="280" y2="150.76923076923077" stroke="#0f172a" stroke-width="2" marker-end="url(#mg-arrow)"/>
+  <line x1="169.23076923076923" y1="169.23076923076923" x2="169.23076923076923" y2="40" stroke="#0f172a" stroke-width="2" marker-end="url(#mg-arrow)"/>
+  <polygon points="169.23076923076923,58.46153846153846 169.23076923076923,150.76923076923077 261.53846153846155,150.76923076923077" fill="none" stroke="#0f172a" stroke-width="2"/>
+  <polygon points="169.23076923076923,95.38461538461539 58.46153846153846,95.38461538461539 113.84615384615384,150.76923076923077" fill="none" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="169.23076923076923" cy="150.76923076923077" r="3.2" fill="#0f172a"/>
+  <text x="180.23076923076923" y="139.76923076923077" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">O</text>
+  <circle cx="169.23076923076923" cy="58.46153846153846" r="3.2" fill="#0f172a"/>
+  <text x="180.23076923076923" y="47.46153846153846" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">A</text>
+  <circle cx="261.53846153846155" cy="150.76923076923077" r="3.2" fill="#0f172a"/>
+  <text x="272.53846153846155" y="139.76923076923077" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">B</text>
+  <circle cx="169.23076923076923" cy="95.38461538461539" r="3.2" fill="#0f172a"/>
+  <text x="158.23076923076923" y="84.38461538461539" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">D</text>
+  <circle cx="113.84615384615384" cy="150.76923076923077" r="3.2" fill="#0f172a"/>
+  <text x="113.84615384615384" y="135.36923076923077" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">F</text>
+  <circle cx="58.46153846153846" cy="95.38461538461539" r="3.2" fill="#0f172a"/>
+  <text x="69.46153846153845" y="84.38461538461539" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">E</text>
+  <text x="276.30769230769226" y="156.3076923076923" font-size="13" font-family="serif" fill="#0f172a">x</text>
+  <text x="163.69230769230768" y="43.69230769230769" font-size="13" font-family="serif" fill="#0f172a">y</text>
+</svg>

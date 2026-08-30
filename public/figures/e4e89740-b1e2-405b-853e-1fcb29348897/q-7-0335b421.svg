@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="16 16 132 132" width="132" height="132">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="16" y="16" width="132" height="132" fill="#fff"/>
+  <rect x="40" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="40" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="40" y="68" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="68" width="28" height="28" fill="#94a3b8" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="68" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="40" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="68" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <rect x="96" y="96" width="28" height="28" fill="#ffffff" stroke="#334155" stroke-width="1.2"/>
+  <circle cx="54" cy="54" r="3.2" fill="#0f172a"/>
+  <text x="65" y="43" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">起</text>
+  <circle cx="110" cy="110" r="3.2" fill="#0f172a"/>
+  <text x="121" y="99" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">终</text>
+</svg>

@@ -92,7 +92,7 @@ export function CanonicalizationForensicViewer({
   if (!trace) {
     return (
       <p className={cn("text-[11px] text-muted-foreground", className)}>
-        完成 OCR 抽取后将显示 educational compiler 分阶段 provenance。
+        完成识图抽取后将显示正文整理过程。
       </p>
     );
   }
@@ -101,11 +101,10 @@ export function CanonicalizationForensicViewer({
     <div className={cn("space-y-2 rounded-md border border-border/80 bg-muted/20 p-3", className)}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <p className="text-xs font-medium text-foreground">Educational compiler replay</p>
+          <p className="text-xs font-medium text-foreground">正文整理过程</p>
           <p className="text-[10px] text-muted-foreground leading-snug">
-            authority: {trace.authority}
-            {trace.coordinate_plane_detected ? " · 坐标系卷" : ""}
-            {previewEditedByUser ? " · 预览框已手改（trace 为抽取时 transport→canonical）" : ""}
+            {trace.coordinate_plane_detected ? "坐标系卷" : "普通卷面"}
+            {previewEditedByUser ? " · 预览框已手改" : ""}
           </p>
         </div>
         <Button
@@ -122,13 +121,13 @@ export function CanonicalizationForensicViewer({
           }
         >
           <Download className="h-3.5 w-3.5" aria-hidden />
-          导出 canonical text
+          导出整理正文
         </Button>
       </div>
 
       {transportRaw != null && transportRaw !== canonicalText && !previewEditedByUser ? (
         <p className="text-[10px] text-muted-foreground">
-          transport {transportRaw.length} 字 → canonical {trace.canonical_text_len} 字
+          原始 {transportRaw.length} 字 → 整理后 {trace.canonical_text_len} 字
         </p>
       ) : null}
 
@@ -149,15 +148,14 @@ export function CanonicalizationForensicViewer({
 
           <div className="mt-3 space-y-1 border-t border-dashed border-emerald-500/40 pt-3">
             <p className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
-              canonical_text（deterministic compiler 结束）
+              规则整理结束
             </p>
             <div className="border-t border-dashed border-amber-500/50 pt-2">
               <p className="text-[11px] font-semibold text-amber-800 dark:text-amber-300">
-                ─── AI structuring begins（probabilistic / generative）───
+                接下来由 AI 拆题与结构化
               </p>
               <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
-                整理入库、拆题、拓扑推断、语义改写仅允许消费上方 canonical text，不得回读 raw
-                OCR transport。
+                入库与拆题应基于上方整理后的正文，避免回读未清洗的原始识别稿。
               </p>
             </div>
           </div>
@@ -165,7 +163,7 @@ export function CanonicalizationForensicViewer({
 
         <TabsContent value="diff" className="mt-2 max-h-64 space-y-1.5 overflow-y-auto">
           {allEdits.length === 0 ? (
-            <p className="text-[10px] text-muted-foreground">无抽样 compiler diff</p>
+            <p className="text-[10px] text-muted-foreground">暂无对照差异</p>
           ) : (
             allEdits.map((edit, i) => <EditDiffRow key={`${edit.provenance}-${i}`} edit={edit} />)
           )}

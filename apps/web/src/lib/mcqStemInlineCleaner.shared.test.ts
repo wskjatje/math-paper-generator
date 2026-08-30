@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { cleanMcqStemInlineOptionResidue } from "@/lib/mcqStemInlineCleaner.shared";
+import {
+  cleanMcqStemInlineOptionResidue,
+  stripTrailingLetterDotOptionsBlock,
+} from "@/lib/mcqStemInlineCleaner.shared";
 
 describe("mcqStemInlineCleaner.shared", () => {
   it("removes inline (A)–(D) OCR tail after 应为", () => {
@@ -11,5 +14,11 @@ describe("mcqStemInlineCleaner.shared", () => {
     expect(cleanMcqStemInlineOptionResidue("下列结论正确的是 (A) (B) (C) (D)")).toBe(
       "下列结论正确的是",
     );
+  });
+
+  it("stripTrailingLetterDotOptionsBlock removes embedded A–D block", () => {
+    const stem =
+      "关于多项式 $P(x)$，下列正确的是\nA. 无实根\nB. 构成正方形\nC. 可分解\nD. 模之和为 $4\\sqrt2$";
+    expect(stripTrailingLetterDotOptionsBlock(stem)).toBe("关于多项式 $P(x)$，下列正确的是");
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildEducationalAstFromCanonical } from "@/lib/buildEducationalAstFromCanonical.shared";
-import { splitEducationalMathSegments } from "@/lib/educationalAstMathSegments.shared";
+import { splitEducationalMathSegments, segmentsToMathContentSource } from "@/lib/educationalAstMathSegments.shared";
 import { splitSubpartsFromSectionBody } from "@/lib/nestEducationalAst.shared";
 import { repairPresentationMathLatex } from "@/lib/educationalPresentationMathRepair.shared";
 
@@ -84,6 +84,14 @@ describe("splitEducationalMathSegments", () => {
   it("isolates triangle and angle tokens", () => {
     const segs = splitEducationalMathSegments("直角△AOB 的 ∠EFO");
     expect(segs.some((s) => s.kind === "math_inline" && s.raw.includes("△AOB"))).toBe(true);
+  });
+
+  it("segmentsToMathContentSource preserves inline math delimiters", () => {
+    const segs = splitEducationalMathSegments("求曲线 $y=f(x)$ 在点 $P(2,2)$ 处的切线方程。");
+    const joined = segmentsToMathContentSource(segs);
+    expect(joined).toContain("求曲线");
+    expect(joined).toMatch(/\$y=f\(x\)\$/);
+    expect(joined).toContain("处的切线方程");
   });
 });
 

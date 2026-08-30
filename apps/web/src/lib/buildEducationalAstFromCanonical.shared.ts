@@ -14,7 +14,21 @@ import {
   EPL_RUNTIME_ID,
 } from "@/lib/educationalAst.shared";
 import { splitEducationalMathSegments } from "@/lib/educationalAstMathSegments.shared";
+import {
+  formatNumericSubquestionLabelDisplay,
+  shouldElevateNumericParenToSection,
+} from "@/lib/examPaperSurfaceLayout.shared";
 import { nestEducationalAstNodes } from "@/lib/nestEducationalAst.shared";
+import {
+  collapseNewlinesInsideMathDelimiters,
+  collapseOverEscapedLatex,
+  demoteEmbeddedDisplayMath,
+  joinOrphanMathLines,
+  normalizeLatexDelimitersToDollar,
+  normalizeMalformedMarkdownImages,
+  tightenStemBlankLines,
+} from "@/lib/sanitizeExamMathDisplay";
+import { stripPhantomImportFigureMarkdown } from "@/lib/rasterAssetUrl.shared";
 
 const MARKDOWN_FIGURE_RE = /!\[([^\]]*)\]\(([^)]+)\)/g;
 
@@ -34,7 +48,7 @@ function extractFigureLabel(alt: string): string {
 export function insertEnumerationLineBreaks(text: string): string {
   let s = String(text ?? "");
   s = s.replace(/\s+（[IVⅠⅡ]+）/g, "\n$&");
-  s = s.replace(/\s+([（(]\s*[12]\s*[）)])/g, "\n$1");
+  s = s.replace(/\s+([（(]\s*\d+\s*[）)])/g, "\n$1");
   s = s.replace(/\s+(?<![图])([①②③④⑤⑥⑦⑧⑨])/g, "\n$1");
   s = s.replace(/\s+(图[①②③④](?!像))/g, "\n$1");
   return s.trim();
@@ -86,16 +100,17 @@ function classifyLine(line: string): {
     };
   }
 
-  const flat = t.match(/^[（(]\s*([12])\s*[）)]\s*(.*)$/);
+  const flat = t.match(/^[（(]\s*(\d+)\s*[）)]\s*(.*)$/);
   if (flat) {
-    const isMajor = flat[1] === "2" && /将|平移|重叠/.test(flat[2] ?? "");
-    const labelDisplay = `（${flat[1]}）`;
+    const body = flat[2] ?? "";
+    const isMajor = shouldElevateNumericParenToSection(flat[1]!, body);
+    const labelDisplay = formatNumericSubquestionLabelDisplay(flat[1]!);
     return {
       kind: isMajor ? "section" : "subquestion",
       depth: isMajor ? 1 : 2,
       label: flat[1]!,
-      labelDisplay: isMajor ? labelDisplay : flat[1]!,
-      body: flat[2] ?? "",
+      labelDisplay,
+      body,
     };
   }
 
@@ -195,12 +210,22 @@ export function buildEducationalAstFromCanonical(
   nodeSeq = 0;
   const figures: { label: string; src: string; alt: string }[] = [];
   let body = String(canonicalText ?? "");
+  // 拆段前：折叠过转义、定界/附图规范化（与卷面 sanitize 同源，避免 EPL 先 demote 双反斜杠定界）
+  body = collapseOverEscapedLatex(body);
+  body = normalizeMalformedMarkdownImages(body);
+  body = stripPhantomImportFigureMarkdown(body);
+  body = normalizeLatexDelimitersToDollar(body);
   body = body.replace(MARKDOWN_FIGURE_RE, (_full, alt: string, src: string) => {
     figures.push({ label: extractFigureLabel(alt), src, alt });
     return "";
   });
 
   body = insertEnumerationLineBreaks(body);
+  // 拆段前：短 display→行内，孤行公式并回正文（否则公式单独成 paragraph 节点）
+  body = demoteEmbeddedDisplayMath(body);
+  body = joinOrphanMathLines(body);
+  body = tightenStemBlankLines(body);
+  body = collapseNewlinesInsideMathDelimiters(body);
   const lines = body.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 
   const nodes: EducationalAstNodeV1[] = [];
@@ -242,7 +267,11 @@ export function buildEducationalAstFromCanonical(
         id: nextId("sub"),
         depth: 2,
         label: c.label ?? "①",
-        labelDisplay: c.labelDisplay ?? c.label ?? "①",
+        labelDisplay:
+          c.labelDisplay ??
+          (c.label && /^\d+$/.test(c.label)
+            ? formatNumericSubquestionLabelDisplay(c.label)
+            : (c.label ?? "①")),
         segments,
       };
       nodes.push(n);

@@ -115,13 +115,13 @@ export const getBundledMigrationSql = createServerFn({ method: "GET" }).handler(
 export const runBundledMigrationsOnServer = createServerFn({ method: "POST" }).handler(async () => {
   if (process.env.ALLOW_UI_DB_MIGRATIONS !== "true") {
     throw new Error(
-      "未允许从页面执行：请在 .env 中设置 ALLOW_UI_DB_MIGRATIONS=true，并配置 Supabase 的 DATABASE_URL（直连 Postgres）。",
+      "未允许从页面执行迁移。请在配库「高级」中开启页面迁移开关，并配置云端数据库直连。",
     );
   }
   const url = process.env.DATABASE_URL?.trim();
   if (!url) {
     throw new Error(
-      "缺少 DATABASE_URL。请在 Supabase 控制台 → Project Settings → Database 复制「Connection string」URI（不是 API URL）。",
+      "缺少云端数据库直连地址。请在配库「高级」中填写数据库连接串（非接口地址）。",
     );
   }
   const { applied } = await executeMigrationsWithDatabaseUrl(url);

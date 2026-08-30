@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "calibrated": false,
+  "calibrationNote": "复制为 calibration.json 后，对照近年北京英语听力真题听感填写各档 speed/cueGapSec/turnGapSec，再将 calibrated 设为 true。数字须实测，禁止照抄未验证网传语速。换机：提交本文件 + 用 listening-tts:pack-voices 打包样本。",
+  "gradeBands": [
+    {
+      "id": "primary_upper",
+      "label": "小学高段",
+      "matchSubjectSubstrings": ["小学", "五年级", "六年级"],
+      "speed": 1.0,
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4
+    },
+    {
+      "id": "junior",
+      "label": "初中/中考向",
+      "matchSubjectSubstrings": ["初一", "初二", "初三", "初中", "中考"],
+      "speed": 1.0,
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4
+    },
+    {
+      "id": "senior",
+      "label": "高中/衔接向",
+      "matchSubjectSubstrings": ["高一", "高二", "高三", "高中", "初升高"],
+      "speed": 1.0,
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4
+    }
+  ]
+}

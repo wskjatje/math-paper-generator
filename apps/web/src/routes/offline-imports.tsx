@@ -5,7 +5,6 @@ import {
   BookOpenCheck,
   Calendar,
   Cloud,
-  Globe,
   HardDrive,
   Loader2,
   RefreshCw,
@@ -13,14 +12,26 @@ import {
   Upload,
 } from "lucide-react";
 import { toast } from "sonner";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 
 import { ImportOfflineExamDialog } from "@/components/ImportOfflineExamDialog";
 import {
   ExamCardActionRow,
   EXAM_CARD_ACTION_LABEL_CLASS,
 } from "@/components/exam/ExamCardActionRow";
+import { ExamQualityStatusBadge } from "@/components/exam/ExamQualityStatusBadge";
+import { EXAM_QUALITY_REMEDIATION, GENERATE_DEFAULTS } from "@/config/examDomain";
+import {
+  examQualityValidateIsLocked,
+} from "@/lib/examQualityReport.shared";
+import {
+  suggestedActionsForIssues,
+  type ExamQualityActionId,
+} from "@/lib/examQualityRemediation.shared";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { PageShell } from "@/components/layout/PageShell";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -31,29 +42,39 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { FilterToolbar } from "@/components/ui/filter-chip";
 import { RemoteImportJobQueueControl } from "@/components/remoteImport/RemoteImportJobQueueControl";
+import { ImportReviewWorkbench } from "@/components/remoteImport/ImportReviewWorkbench";
+import {
+  EXAM_LIST_PAGE_SIZE,
+  SimplePager,
+  pageCountFor,
+  paginateSlice,
+} from "@/components/list/SimplePager";
 import {
   fetchAiSettingsFromDb,
   generateExamplesForExistingExam,
   getBackendCapabilities,
   listExamsForOfflineImports,
-  listRemotePaperCatalogEntries,
   promoteImportedExamFromStaging,
+  remediateExamQuality,
   softDeleteUserExam,
+  validateExamQuality,
 } from "@/lib/exam.functions.server";
 import {
   CURRICULUM_SUBJECT_OPTIONS,
   GRADE_LEVEL_OPTIONS,
   PAPER_KIND_OPTIONS,
-  curriculumOptionsForGrade,
+  curriculumSubjectIdsFromExamSubjects,
+  emptyQuestionComposition,
   paperKindLabel,
+  preferredGradeIdFromExamSubjects,
+  type PaperKindId,
 } from "@/lib/generateCatalog";
-import type { RemotePaperCatalogEntry } from "@/lib/remotePaperCatalog.server";
-import { loadRemoteImportJobs, upsertRemoteImportJob } from "@/lib/remoteImportJobsStorage";
-import { requestRemoteImportQueueDrain } from "@/lib/remoteImportQueueDrain";
 import { loadAiSettings, saveAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
 import { syncExamStoragePreferenceToCookie } from "@/lib/examStoragePreference";
 import { examProvenance, userExamSoftDeletable } from "@/lib/examProvenance";
+import { writePaperPrefillPayload } from "@/lib/generationJobsStorage";
 import {
   DIFFICULTY_LABELS,
   QUESTION_TYPE_LABELS,
@@ -86,6 +107,46 @@ function isQuestionType(t: string): t is QuestionType {
   return Object.prototype.hasOwnProperty.call(QUESTION_TYPE_LABELS, t);
 }
 
+function paperKindIdFromExam(exam: Exam): PaperKindId | undefined {
+  const tag = (exam.subjects ?? []).find((s) => s.startsWith("试卷场景:"));
+  if (!tag) return undefined;
+  const label = tag.slice("试卷场景:".length).trim();
+  const hit = PAPER_KIND_OPTIONS.find((o) => o.label === label);
+  return hit?.id as PaperKindId | undefined;
+}
+
+function prefillGenerateFromImportedExam(exam: Exam) {
+  const grade = preferredGradeIdFromExamSubjects(exam.subjects) ?? "";
+  const subjectIds = curriculumSubjectIdsFromExamSubjects(exam.subjects);
+  const subject = subjectIds[0] ?? "";
+  const paper_kind = paperKindIdFromExam(exam) ?? ("regular_daily" as PaperKindId);
+  const edition =
+    typeof exam.textbook_edition === "string" ? exam.textbook_edition.trim() : "";
+  const curriculumNote =
+    typeof exam.curriculum_version === "string" && exam.curriculum_version.trim()
+      ? `建议课件版本：${exam.curriculum_version.trim()}`
+      : "";
+  writePaperPrefillPayload({
+    title: `${exam.title}（仿照生成）`.slice(0, 120),
+    grade,
+    subject,
+    scopes: [],
+    competition_focus: [],
+    paper_kind,
+    difficulty: exam.difficulty,
+    duration_min: exam.duration_min || GENERATE_DEFAULTS.duration_min,
+    total_score: exam.total_score || GENERATE_DEFAULTS.total_score,
+    compositionPayload: [],
+    composition: emptyQuestionComposition(),
+    customCompositionSlots: [],
+    compositionRowOrder: [],
+    notes: curriculumNote,
+    allow_overlap_with_library_question_types: true,
+    textbook_edition_hint: edition || undefined,
+    textbook_edition: edition || undefined,
+  });
+}
+
 function OfflineImports() {
   const { exams: rawExams } = Route.useLoaderData();
   const { tab } = Route.useSearch();
@@ -98,6 +159,8 @@ function OfflineImports() {
   const fetchAiDbFn = useServerFn(fetchAiSettingsFromDb);
 
   const [q, setQ] = useState("");
+  const [formalPage, setFormalPage] = useState(1);
+  const [stagingPage, setStagingPage] = useState(1);
   const [persistEnabled, setPersistEnabled] = useState<boolean | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [examplesExam, setExamplesExam] = useState<Exam | null>(null);
@@ -106,25 +169,21 @@ function OfflineImports() {
   const [pickedTypes, setPickedTypes] = useState<QuestionType[]>([]);
   const [examplesLoading, setExamplesLoading] = useState(false);
 
-  const [listYear, setListYear] = useState<number | "">("");
-  const [listGradeId, setListGradeId] = useState("");
-  const [listSubjectId, setListSubjectId] = useState("");
-  const [listPaperKind, setListPaperKind] = useState("");
-  const [catalogBusy, setCatalogBusy] = useState(false);
-  const [catalogRows, setCatalogRows] = useState<RemotePaperCatalogEntry[]>([]);
-  /** 最近一次目录加载成功但条数为 0，用于页内提示（不用 toast 冒充报错） */
-  const [catalogNoMatch, setCatalogNoMatch] = useState(false);
   const [promoteBusyId, setPromoteBusyId] = useState<string | null>(null);
+  const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
   const [integrationCaps, setIntegrationCaps] = useState({
     openNotebook: false,
     plaintextExtract: false,
     ocrRepairLexiconPersistence: "local_file" as "supabase" | "mysql" | "local_file",
     importFiguresStorage: "local" as "supabase" | "local",
     importDualTrackGateEnabled: false,
+    gatewayOcrConfigured: false,
   });
 
-  const listCatalogFn = useServerFn(listRemotePaperCatalogEntries);
   const promoteFn = useServerFn(promoteImportedExamFromStaging);
+  const validateQualityFn = useServerFn(validateExamQuality);
+  const remediateQualityFn = useServerFn(remediateExamQuality);
+  const [qualityBusyId, setQualityBusyId] = useState<string | null>(null);
 
   useEffect(() => {
     syncExamStoragePreferenceToCookie();
@@ -140,6 +199,7 @@ function OfflineImports() {
         ocrRepairLexiconPersistence: c.ocrRepairLexiconPersistence ?? "local_file",
         importFiguresStorage: c.importFiguresStorage ?? "local",
         importDualTrackGateEnabled: c.importDualTrackGateEnabled === true,
+        gatewayOcrConfigured: c.gatewayOcrConfigured === true,
       });
     });
   }, [capsFn]);
@@ -177,11 +237,6 @@ function OfflineImports() {
     [importedOnly],
   );
 
-  const subjectOptionsForPicker = useMemo(
-    () => curriculumOptionsForGrade(listGradeId),
-    [listGradeId],
-  );
-
   const filterBySearch = useCallback(
     (list: Exam[]) => {
       if (!q.trim()) return list;
@@ -207,40 +262,21 @@ function OfflineImports() {
     );
   }, [importedStaging, filterBySearch]);
 
-  const yearOptions = useMemo(() => {
-    const ys: number[] = [];
-    for (let y = 2026; y >= 2010; y--) ys.push(y);
-    return ys;
-  }, []);
+  const pageFormal = useMemo(
+    () => paginateSlice(sortedFormal, formalPage, EXAM_LIST_PAGE_SIZE),
+    [sortedFormal, formalPage],
+  );
+  const pageStaging = useMemo(
+    () => paginateSlice(sortedStaging, stagingPage, EXAM_LIST_PAGE_SIZE),
+    [sortedStaging, stagingPage],
+  );
 
   useEffect(() => {
-    const id = window.setTimeout(() => {
-      void (async () => {
-        setCatalogBusy(true);
-        setCatalogNoMatch(false);
-        try {
-          const res = await listCatalogFn({
-            data: {
-              year: listYear === "" ? undefined : Number(listYear),
-              gradeId: listGradeId.trim() || undefined,
-              subjectId: listSubjectId.trim() || undefined,
-              paperKind: listPaperKind.trim() || undefined,
-            },
-          });
-          setCatalogRows(res.entries);
-          setCatalogNoMatch(res.entries.length === 0);
-        } catch (e: unknown) {
-          setCatalogRows([]);
-          setCatalogNoMatch(false);
-          toast.error(e instanceof Error ? e.message : "加载目录失败");
-        } finally {
-          setCatalogBusy(false);
-        }
-      })();
-    }, 350);
-    return () => window.clearTimeout(id);
-  }, [listYear, listGradeId, listSubjectId, listPaperKind, listCatalogFn]);
-
+    setFormalPage(1);
+  }, [q, importedFormal.length]);
+  useEffect(() => {
+    setStagingPage(1);
+  }, [q, importedStaging.length]);
   const toggleType = (t: QuestionType) => {
     setPickedTypes((prev) => (prev.includes(t) ? prev.filter((x) => x !== t) : [...prev, t]));
   };
@@ -262,7 +298,6 @@ function OfflineImports() {
       });
       const openedExamId = examplesExam.id;
       toast.success("例题生成完成", {
-        description: "可在试卷详情查看同型例题",
         action: {
           label: "打开试卷",
           onClick: () => void navigate({ to: "/exam/$id", params: { id: openedExamId } }),
@@ -271,7 +306,7 @@ function OfflineImports() {
       setExamplesExam(null);
       void router.invalidate();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "生成失败");
+      toast.error(toUserFacingErrorMessage(e, "生成失败"));
     } finally {
       setExamplesLoading(false);
     }
@@ -286,72 +321,78 @@ function OfflineImports() {
       setRemoveExam(null);
       void router.invalidate();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "删除失败");
+      toast.error(toUserFacingErrorMessage(e, "删除失败"));
     } finally {
       setRemoveBusy(false);
     }
-  };
-
-  const catalogEntryInFlight = (entryId: string) =>
-    loadRemoteImportJobs().some(
-      (j) =>
-        j.importSource !== "web" &&
-        j.catalogEntryId === entryId &&
-        (j.status === "queued" || j.status === "running"),
-    );
-
-  const enqueueRemoteImport = async (
-    entry: RemotePaperCatalogEntry,
-    opts?: { silent?: boolean },
-  ): Promise<boolean> => {
-    if (catalogEntryInFlight(entry.id)) {
-      if (!opts?.silent) {
-        toast.message("该试卷已在队列中", {
-          description: "请在网上导入队列中查看进度。",
-        });
-      }
-      return false;
-    }
-    const gradeLabel =
-      GRADE_LEVEL_OPTIONS.find((g) => g.id === entry.gradeId)?.label ?? entry.gradeId;
-    const subjectLabel =
-      CURRICULUM_SUBJECT_OPTIONS.find((s) => s.id === entry.subjectId)?.label ?? entry.subjectId;
-    const id = crypto.randomUUID();
-    const now = new Date().toISOString();
-    await upsertRemoteImportJob({
-      id,
-      importSource: "catalog",
-      catalogEntryId: entry.id,
-      title: entry.title,
-      year: entry.year,
-      gradeLabel,
-      subjectLabel,
-      paperSceneLabel: entry.paper_kind ? paperKindLabel(entry.paper_kind) : undefined,
-      status: "queued",
-      createdAt: now,
-      updatedAt: now,
-    });
-    requestRemoteImportQueueDrain();
-    if (!opts?.silent) {
-      toast.success("已加入网上导入队列", {
-        description: "同一时间仅执行 1 条任务；进度见右上角「网上导入队列」。",
-      });
-    }
-    return true;
   };
 
   const submitPromoteStaging = async (examId: string) => {
     setPromoteBusyId(examId);
     try {
       await promoteFn({ data: { examId } });
-      toast.success("已确认入库", {
-        description: "试卷已移入本页「正式库」标签，不会进入「试卷库」。",
-      });
+      toast.success("已确认入库");
       void router.invalidate();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "确认失败");
+      toast.error(toUserFacingErrorMessage(e, "确认失败"));
     } finally {
       setPromoteBusyId(null);
+    }
+  };
+
+  const runValidateExam = async (examId: string) => {
+    if (qualityBusyId) return;
+    setQualityBusyId(examId);
+    try {
+      const res = (await validateQualityFn({ data: { examId } })) as {
+        report: { issueCount: number };
+      };
+      await router.invalidate();
+      if (res.report.issueCount === 0) toast.success("验证通过");
+      else toast.message(`发现 ${res.report.issueCount} 项问题`);
+    } catch (e: unknown) {
+      toast.error(toUserFacingErrorMessage(e, "验证失败"));
+    } finally {
+      setQualityBusyId(null);
+    }
+  };
+
+  const runRepairExam = async (exam: Exam) => {
+    if (qualityBusyId) return;
+    if (examQualityValidateIsLocked(exam)) {
+      toast.message("已通过验证，无需修复");
+      return;
+    }
+    const issues = exam.quality_report?.issues ?? [];
+    let actions: ExamQualityActionId[] =
+      issues.length > 0
+        ? suggestedActionsForIssues(issues)
+        : ["regenerate_failing_questions"];
+    if (!actions.includes("regenerate_failing_questions")) {
+      actions = [...actions, "regenerate_failing_questions"];
+    }
+    setQualityBusyId(exam.id);
+    try {
+      if (!exam.quality_report || (exam.quality_report.issueCount ?? 0) === 0) {
+        await validateQualityFn({ data: { examId: exam.id } });
+      }
+      const ai = toAiRuntimePayload(loadAiSettings());
+      const res = (await remediateQualityFn({
+        data: {
+          examId: exam.id,
+          actions,
+          revalidate: true,
+          ai,
+        },
+      })) as { notes: string[]; report: { status?: string } | null };
+      await router.invalidate();
+      const summary = res.notes.join("；") || "已处置";
+      if (res.report?.status === "pass") toast.success(summary);
+      else toast.message(summary);
+    } catch (e: unknown) {
+      toast.error(toUserFacingErrorMessage(e, "修复失败"));
+    } finally {
+      setQualityBusyId(null);
     }
   };
 
@@ -378,10 +419,11 @@ function OfflineImports() {
               >
                 线下导入
               </span>
+              <ExamQualityStatusBadge exam={e} showUnknown />
               {staging ? (
                 <span
                   className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] text-amber-950 dark:text-amber-100"
-                  title="待核对草稿；确认后进入本页正式库（不进试卷库）"
+                  title="待核对，确认后入正式库"
                 >
                   待确认
                 </span>
@@ -396,13 +438,13 @@ function OfflineImports() {
                   )}
                   title={importParseRollup.summary_lines.join(" ")}
                 >
-                  质检·{importParseRollup.rollup_tier === "red" ? "红" : "黄"}
+                  版面·{importParseRollup.rollup_tier === "red" ? "红" : "黄"}
                 </span>
               ) : null}
               {e.storage_source === "local" ? (
                 <span
                   className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground"
-                  title="本地 data/local-exams"
+                  title="保存在本机"
                 >
                   <HardDrive className="h-3 w-3 shrink-0 opacity-80" />
                   本地
@@ -410,7 +452,7 @@ function OfflineImports() {
               ) : e.storage_source === "supabase" ? (
                 <span
                   className="inline-flex items-center gap-1 rounded-full border border-sky-500/25 bg-sky-500/10 px-2 py-0.5 text-[11px] text-sky-900 dark:text-sky-100"
-                  title="Supabase 云端"
+                  title="保存在云端"
                 >
                   <Cloud className="h-3 w-3 shrink-0 opacity-80" />
                   云端
@@ -457,7 +499,44 @@ function OfflineImports() {
               </div>
             )}
             {staging ? (
-              <div className="mt-4">
+              <div className="mt-4 space-y-2">
+                {e.source_document_id ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-9 w-full"
+                    onClick={() => setReviewDocumentId(e.source_document_id!)}
+                  >
+                    核对差异（原图对照）
+                  </Button>
+                ) : null}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-9"
+                    disabled={qualityBusyId != null || examQualityValidateIsLocked(e)}
+                    onClick={() => void runValidateExam(e.id)}
+                  >
+                    {qualityBusyId === e.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "验证"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-9"
+                    disabled={qualityBusyId != null || examQualityValidateIsLocked(e)}
+                    onClick={() => void runRepairExam(e)}
+                  >
+                    {EXAM_QUALITY_REMEDIATION.actionLabels.regenerate_failing_questions}
+                  </Button>
+                </div>
                 <Button
                   type="button"
                   size="sm"
@@ -475,7 +554,48 @@ function OfflineImports() {
                   )}
                 </Button>
               </div>
-            ) : null}
+            ) : (
+              <div className="mt-4 space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-9"
+                    disabled={qualityBusyId != null || examQualityValidateIsLocked(e)}
+                    onClick={() => void runValidateExam(e.id)}
+                  >
+                    {qualityBusyId === e.id ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "验证"
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-9"
+                    disabled={qualityBusyId != null || examQualityValidateIsLocked(e)}
+                    onClick={() => void runRepairExam(e)}
+                  >
+                    {EXAM_QUALITY_REMEDIATION.actionLabels.regenerate_failing_questions}
+                  </Button>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="h-9 w-full"
+                  onClick={() => {
+                    prefillGenerateFromImportedExam(e);
+                    void navigate({ to: "/generate" });
+                  }}
+                >
+                  仿照生成
+                </Button>
+              </div>
+            )}
             <ExamCardActionRow
               examId={e.id}
               canRemove={userExamSoftDeletable(e)}
@@ -514,12 +634,11 @@ function OfflineImports() {
 
   return (
     <>
-      <div className="container mx-auto px-4 py-12">
-        <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <div>
-            <h1 className="text-display text-4xl md:text-5xl">导入线下试卷</h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 self-start md:self-auto">
+      <PageShell size="full">
+        <PageHeader
+          title="导入线下试卷"
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
             <Button
               type="button"
               variant="outline"
@@ -539,9 +658,9 @@ function OfflineImports() {
               size="sm"
               className="gap-1.5"
               disabled={persistEnabled === false || persistEnabled === null}
-              title={
+                title={
                 persistEnabled === false
-                  ? "需配置 Supabase 或可写的 data/local-exams"
+                  ? "请先在设置中配置试卷保存位置"
                   : persistEnabled === null
                     ? "正在检测持久化…"
                     : undefined
@@ -551,235 +670,10 @@ function OfflineImports() {
               <Upload className="h-4 w-4" />
               导入线下卷
             </Button>
-          </div>
-        </div>
-
-        <Alert className="mb-6 border-border/80 bg-muted/25">
-          <AlertTitle className="text-sm">线下导入建议流程（零依赖）</AlertTitle>
-          <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
-            <ol className="mt-2 list-inside list-decimal space-y-1">
-              <li>
-                上传文件 → 在预览区核对正文（可选用 AI 语义修复 / 服务端配置的外部正文增强）。
-              </li>
-              <li>点「AI 整理并写入待确认」→ 草稿进入「待确认（临时库）」标签页。</li>
-              <li>
-                打开试卷核对题目与公式 → 满意后再点「确认入库（正式库）」；确认后仍在本页管理，<strong>不会</strong>进入「试卷库」。
-              </li>
-            </ol>
-            <p className="mt-2">
-              可选松耦合：单独部署 Open Notebook
-              时，在导入对话框可将同一预览正文同步为对方资料源（需服务端环境变量）；自建 HTTP
-              正文服务见{" "}
-              <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-                docs/architecture/open-notebook-and-extract-integration.md
-              </code>
-              。
-            </p>
-          </AlertDescription>
-        </Alert>
-
-        <div className="paper-card mb-6 flex flex-col gap-4 p-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Globe className="h-4 w-4 text-muted-foreground" aria-hidden />
-            <h2 className="text-sm font-semibold text-foreground">从网上获取历年试卷</h2>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            应用<strong className="font-medium text-foreground">不会</strong>
-            自动从任意网站爬取整套真题；真实试卷须由您在
-            <strong className="font-medium text-foreground">有权使用</strong>
-            的前提下，自行维护清单（正文见条目中的{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-              plainText
-            </code> 或托管的{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">textUrl</code>
-            纯文本）。清单来源：本地{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-              data/remote-paper-catalog.json
-            </code>
-            ，及可选环境变量{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-              MPG_REMOTE_IMPORT_CATALOG_URL
-            </code>
-            （HTTPS JSON，与本地合并）。字段{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">paper_kind</code>{" "}
-            与命题页试卷场景 id 一致。合规说明与流水线示例见{" "}
-            <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-              docs/remote-paper-catalog.md
-            </code>
-            。修改上方筛选后，系统会加载匹配清单；在表格中逐条「加入导入队列」（须已配置可写题库）。
-          </p>
-          <div className="flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-              年份
-              <select
-                value={listYear === "" ? "" : String(listYear)}
-                onChange={(ev) => {
-                  const v = ev.target.value;
-                  setListYear(v === "" ? "" : Number(v));
-                }}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm text-foreground"
-              >
-                <option value="">不限</option>
-                {yearOptions.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex min-w-[10rem] flex-col gap-1 text-xs text-muted-foreground">
-              年级
-              <select
-                value={listGradeId}
-                onChange={(ev) => {
-                  setListGradeId(ev.target.value);
-                  setListSubjectId("");
-                }}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm text-foreground"
-              >
-                <option value="">不限</option>
-                {GRADE_LEVEL_OPTIONS.map((g) => (
-                  <option key={g.id} value={g.id}>
-                    {g.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex min-w-[8rem] flex-col gap-1 text-xs text-muted-foreground">
-              学科
-              <select
-                value={listSubjectId}
-                onChange={(ev) => setListSubjectId(ev.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm text-foreground"
-              >
-                <option value="">不限</option>
-                {subjectOptionsForPicker.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex min-w-[11rem] flex-col gap-1 text-xs text-muted-foreground">
-              试卷场景
-              <select
-                value={listPaperKind}
-                onChange={(ev) => setListPaperKind(ev.target.value)}
-                className="rounded-md border border-input bg-background px-2 py-2 text-sm text-foreground"
-              >
-                <option value="">不限</option>
-                {PAPER_KIND_OPTIONS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {catalogBusy ? (
-              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground pb-2">
-                <Loader2 className="h-4 w-4 animate-spin shrink-0" aria-hidden />
-                加载清单…
-              </span>
-            ) : null}
-          </div>
-          {catalogNoMatch ? (
-            <div
-              role="status"
-              className="rounded-md border border-border bg-muted/30 px-3 py-3 text-sm text-muted-foreground"
-            >
-              <p className="font-medium text-foreground">当前筛选条件下没有目录条目</p>
-              <p className="mt-1.5 text-xs leading-relaxed">
-                默认仓库内清单可能为空：请在有权使用的试卷文本就绪后，编辑{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-                  data/remote-paper-catalog.json
-                </code>{" "}
-                或配置{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-                  MPG_REMOTE_IMPORT_CATALOG_URL
-                </code>
-                ，填写 <code className="rounded bg-muted px-1 py-0.5 text-[11px]">year</code>、
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">gradeId</code>、
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">subjectId</code>、
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">paper_kind</code>{" "}
-                及正文来源（
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">plainText</code> /{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">textUrl</code>
-                ）。也可放宽年份或学科为「不限」再试。详见{" "}
-                <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
-                  docs/remote-paper-catalog.md
-                </code>
-                。
-              </p>
             </div>
-          ) : null}
-          {catalogRows.length > 0 ? (
-            <div className="overflow-x-auto rounded-md border border-border/60">
-              <table className="w-full min-w-[680px] border-collapse text-sm">
-                <thead>
-                  <tr className="border-b border-border/60 bg-muted/40 text-left text-xs font-semibold text-muted-foreground">
-                    <th className="px-3 py-2">标题</th>
-                    <th className="px-3 py-2">年份</th>
-                    <th className="px-3 py-2">年级</th>
-                    <th className="px-3 py-2">学科</th>
-                    <th className="px-3 py-2">试卷场景</th>
-                    <th className="px-3 py-2 text-right">操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {catalogRows.map((row) => {
-                    const gLabel =
-                      GRADE_LEVEL_OPTIONS.find((g) => g.id === row.gradeId)?.label ?? row.gradeId;
-                    const sLabel =
-                      CURRICULUM_SUBJECT_OPTIONS.find((s) => s.id === row.subjectId)?.label ??
-                      row.subjectId;
-                    return (
-                      <tr key={row.id} className="border-b border-border/40 last:border-0">
-                        <td className="max-w-[240px] px-3 py-2 font-medium line-clamp-2">
-                          {row.title}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                          {row.year}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                          {gLabel}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                          {sLabel}
-                        </td>
-                        <td className="max-w-[160px] px-3 py-2 text-xs text-muted-foreground">
-                          {row.paper_kind ? paperKindLabel(row.paper_kind) : "—"}
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={persistEnabled === false || persistEnabled === null}
-                            onClick={() => void enqueueRemoteImport(row)}
-                          >
-                            加入导入队列
-                          </Button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </div>
+          }
+        />
 
-        <div className="paper-card mb-6 flex flex-col gap-3 p-4">
-          <div className="relative min-w-[12rem]">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="在当前标签页的列表中搜索标题、副标题、学科…"
-              className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
-        </div>
 
         <Tabs
           value={tab}
@@ -792,29 +686,39 @@ function OfflineImports() {
           }}
           className="w-full"
         >
-          <TabsList className="mb-4 flex h-auto w-full flex-wrap gap-1 rounded-md bg-muted/50 p-1 sm:w-fit">
-            <TabsTrigger value="formal" className="gap-1.5 rounded-sm">
-              正式导入
-              {importedFormal.length > 0 ? (
-                <span className="text-[10px] text-muted-foreground">({importedFormal.length})</span>
-              ) : null}
-            </TabsTrigger>
-            <TabsTrigger value="staging" className="gap-1.5 rounded-sm">
-              待确认（临时库）
-              {importedStaging.length > 0 ? (
-                <span className="text-[10px] text-muted-foreground">
-                  ({importedStaging.length})
-                </span>
-              ) : null}
-            </TabsTrigger>
-          </TabsList>
+          <FilterToolbar className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <TabsList
+              variant="portal"
+              className="border-border/50 bg-background/70"
+            >
+              <TabsTrigger variant="portal" value="formal">
+                正式导入
+                {importedFormal.length > 0 ? (
+                  <span className="text-[10px] opacity-80">({importedFormal.length})</span>
+                ) : null}
+              </TabsTrigger>
+              <TabsTrigger variant="portal" value="staging">
+                待确认（临时库）
+                {importedStaging.length > 0 ? (
+                  <span className="text-[10px] opacity-80">({importedStaging.length})</span>
+                ) : null}
+              </TabsTrigger>
+            </TabsList>
+            <div className="relative min-w-[12rem] w-full flex-1 sm:max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="搜索标题、副标题、学科…"
+                className="w-full rounded-lg border border-input bg-background py-2 pl-9 pr-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            </div>
+          </FilterToolbar>
           <TabsContent value="formal" className="mt-0">
             {sortedFormal.length === 0 ? (
-              <div className="paper-card p-16 text-center">
+              <div className="paper-card px-6 py-10 text-center">
                 <p className="text-muted-foreground">
-                  {importedFormal.length === 0
-                    ? "尚无已入库的线下导入试卷。可上传文件，或使用上方清单逐条加入「网上导入队列」。"
-                    : "没有符合搜索条件的试卷。"}
+                  {importedFormal.length === 0 ? "暂无已导入试卷" : "没有符合搜索的试卷"}
                 </p>
                 <Button type="button" className="mt-4" onClick={() => setImportOpen(true)}>
                   <Upload className="mr-2 h-4 w-4" />
@@ -822,24 +726,41 @@ function OfflineImports() {
                 </Button>
               </div>
             ) : (
-              renderExamGrid(sortedFormal, false)
+              <>
+                {renderExamGrid(pageFormal, false)}
+                <SimplePager
+                  page={formalPage}
+                  pageCount={pageCountFor(sortedFormal.length, EXAM_LIST_PAGE_SIZE)}
+                  total={sortedFormal.length}
+                  pageSize={EXAM_LIST_PAGE_SIZE}
+                  onPageChange={setFormalPage}
+                />
+              </>
             )}
           </TabsContent>
           <TabsContent value="staging" className="mt-0">
             {sortedStaging.length === 0 ? (
-              <div className="paper-card p-16 text-center">
+              <div className="paper-card px-6 py-10 text-center">
                 <p className="text-muted-foreground">
-                  {importedStaging.length === 0
-                    ? "临时库为空。完成「网上导入队列」中的任务后，试卷会出现在此处，核对后可确认入库。"
-                    : "没有符合搜索条件的待确认试卷。"}
+                  {importedStaging.length === 0 ? "暂无待确认试卷" : "没有符合搜索的试卷"}
                 </p>
               </div>
             ) : (
-              renderExamGrid(sortedStaging, true)
+              <>
+                {renderExamGrid(pageStaging, true)}
+                <SimplePager
+                  page={stagingPage}
+                  pageCount={pageCountFor(sortedStaging.length, EXAM_LIST_PAGE_SIZE)}
+                  total={sortedStaging.length}
+                  pageSize={EXAM_LIST_PAGE_SIZE}
+                  onPageChange={setStagingPage}
+                />
+              </>
             )}
           </TabsContent>
         </Tabs>
-      </div>
+      </PageShell>
+
 
       <ImportOfflineExamDialog
         open={importOpen}
@@ -912,7 +833,7 @@ function OfflineImports() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>按题型生成例题</DialogTitle>
-            <DialogDescription>按勾选的题型生成配套例题；入库后在试卷详情查看。</DialogDescription>
+            <DialogDescription className="sr-only">按题型生成例题</DialogDescription>
           </DialogHeader>
           {examplesExam && (
             <div className="space-y-3">
@@ -957,6 +878,26 @@ function OfflineImports() {
               ) : (
                 "开始生成"
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={reviewDocumentId !== null}
+        onOpenChange={(open) => {
+          if (!open) setReviewDocumentId(null);
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>核对差异</DialogTitle>
+            <DialogDescription className="sr-only">核对差异</DialogDescription>
+          </DialogHeader>
+          {reviewDocumentId ? <ImportReviewWorkbench documentId={reviewDocumentId} /> : null}
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReviewDocumentId(null)}>
+              关闭
             </Button>
           </DialogFooter>
         </DialogContent>

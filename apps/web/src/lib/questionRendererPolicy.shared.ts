@@ -3,8 +3,10 @@
  */
 import {
   questionHasConcreteVisualGeometryEvidence,
+  questionHasUsableGeneratedFigureAttachment,
   questionMissingExpectedRasterFigures,
   shouldSuppressVectorDiagramSchemaForQuestion,
+  diagramSchemaConflictsWithTriangleStem,
   stemExpectsScanStyleFigure,
   stemHasConcreteFigureSupply,
   type QuestionRasterFigureRuntimeOpts,
@@ -53,6 +55,10 @@ export function shouldSuppressVectorDiagramForDisplay(
   exam?: Pick<Exam, "source">,
 ): boolean {
   if (exam && shouldSuppressMisInferredVectorDiagram(exam, q, runtime)) return true;
+  const schema = safeParseGeometryDiagramSchema(q.diagram_schema);
+  if (diagramSchemaConflictsWithTriangleStem(String(q.content ?? ""), schema)) {
+    return true;
+  }
   return shouldSuppressVectorDiagramSchemaForQuestion(q, runtime);
 }
 
@@ -80,7 +86,12 @@ export function resolveQuestionStemDiagramRenderSource(
   q: Question,
   runtime?: QuestionRasterFigureRuntimeOpts,
 ): QuestionStemDiagramRenderSource {
-  const suppressVec = shouldSuppressVectorDiagramSchemaForQuestion(q, runtime);
+  const suppressVec =
+    shouldSuppressVectorDiagramSchemaForQuestion(q, runtime) ||
+    diagramSchemaConflictsWithTriangleStem(
+      String(q.content ?? ""),
+      safeParseGeometryDiagramSchema(q.diagram_schema),
+    );
   const schema = safeParseGeometryDiagramSchema(q.diagram_schema);
   const showVector = schema != null && !suppressVec;
   const hasStemVisual = stemHasConcreteFigureSupply(q, runtime);
@@ -101,7 +112,10 @@ export function shouldShowMissingRasterCallout(
   q: Question,
   runtime?: QuestionRasterFigureRuntimeOpts,
 ): boolean {
-  return questionMissingExpectedRasterFigures(q, runtime);
+  if (!questionMissingExpectedRasterFigures(q, runtime)) return false;
+  /** 已点「生成题图」落盘 `/figures/` 时改展示重绘图，不再挡黄框（原卷扫描仍可另导入） */
+  if (questionHasUsableGeneratedFigureAttachment(q)) return false;
+  return true;
 }
 
 /**
@@ -129,7 +143,10 @@ export function shouldWithholdMcqAnswerForMissingRasterFigures(
 ): boolean {
   const t = String(q.type ?? "") as QuestionType;
   if (t !== "multiple_choice" && t !== "multiple_choice_multi") return false;
-  return questionMissingExpectedRasterFigures(q, runtime);
+  if (!questionMissingExpectedRasterFigures(q, runtime)) return false;
+  /** 已有本地生成题图时允许展示答案（与黄框策略一致） */
+  if (questionHasUsableGeneratedFigureAttachment(q)) return false;
+  return true;
 }
 
 /** 与黄框「缺扫描图」策略一致：不展示占位为「猜中答案」的文本。 */

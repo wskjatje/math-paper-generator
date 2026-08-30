@@ -7,6 +7,7 @@ import {
   consumeGenerationScratch,
   generateExam,
   generateExamplesForExistingExam,
+  hasRecoverableGenerationDraft,
 } from "@/lib/exam.functions.server";
 import { finalizeGenerateExamClientResult } from "@/lib/generateExamRpc.shared";
 import { loadAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
@@ -27,6 +28,7 @@ import {
   recordGenerationSuccess,
 } from "@/lib/generationHabits";
 import { recordSuccessReplay } from "@/lib/successReplay";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 
 /** 无 UI：在根组件挂载，负责按 FIFO 串行执行命题 / 例题队列中的任务 */
 export function GenerationJobQueueRunner() {
@@ -35,6 +37,7 @@ export function GenerationJobQueueRunner() {
   const generateFn = useServerFn(generateExam);
   const consumeScratchFn = useServerFn(consumeGenerationScratch);
   const examplesFn = useServerFn(generateExamplesForExistingExam);
+  const hasDraftFn = useServerFn(hasRecoverableGenerationDraft);
 
   const executePaper = useCallback(
     async (jobId: string) => {
@@ -54,6 +57,11 @@ export function GenerationJobQueueRunner() {
       const trimmedTitle = p.title;
       const grade = p.grade;
       const subject = p.subject;
+      /** 新字段 hint 优先；兼容旧队列 payload.textbook_edition */
+      const editionHint =
+        p.textbook_edition_hint?.trim() ||
+        (typeof p.textbook_edition === "string" ? p.textbook_edition.trim() : "") ||
+        undefined;
 
       try {
         const habitHints = getQualityHintsForNextRequest();
@@ -64,7 +72,10 @@ export function GenerationJobQueueRunner() {
             subject,
             exam_track: p.exam_track ?? "school_sync",
             target_track_id: p.target_track_id?.trim() || undefined,
-            textbook_edition_hint: p.textbook_edition_hint?.trim() || undefined,
+            textbook_edition_hint: editionHint,
+            textbook_unit_ids: Array.isArray(p.textbook_unit_ids)
+              ? p.textbook_unit_ids.filter((id) => typeof id === "string" && id.trim())
+              : undefined,
             chapter_focus: p.chapter_focus?.trim() || undefined,
             scopes: scopesPayload,
             competition_focus: competitionPayload,
@@ -76,6 +87,7 @@ export function GenerationJobQueueRunner() {
             notes: notesPayload,
             quality_hints: habitHints || undefined,
             allow_overlap_with_library_question_types: allowOverlapPayload,
+            generation_request_id: jobId,
             ai: toAiRuntimePayload(loadAiSettings()),
           },
         });
@@ -116,31 +128,36 @@ export function GenerationJobQueueRunner() {
           writeExamSnapshot(examId, snapshot);
           downloadSnapshotBackup(snapshot);
           toast.message("命题已完成（未入库）", {
-            description: "已尝试下载快照备份；请在「命题队列」中打开试卷或导入 JSON。",
+            description: "已下载快照备份。",
             duration: 8000,
           });
         } else {
           void router.invalidate();
-          toast.message("命题已完成", {
-            description: "可在「命题队列」或试卷库打开试卷。",
-            duration: 6000,
-          });
+          toast.message("命题已完成");
         }
       } catch (e: unknown) {
         console.error(e);
-        const msg = e instanceof Error ? e.message : "生成失败，请重试";
+        const msg = toUserFacingErrorMessage(e, "生成失败，请重试");
+        let recoveryDraftId: string | undefined;
+        try {
+          const draft = await hasDraftFn({ data: { draftId: jobId } });
+          if (draft.available) recoveryDraftId = jobId;
+        } catch {
+          /* 草稿探测失败不覆盖原始错误 */
+        }
         const jobAfter = loadPaperJob(jobId);
         if (jobAfter?.status !== "cancelled" && !jobAfter?.cancelRequested) {
-          patchPaperJob(jobId, { status: "failed", errorMessage: msg });
+          patchPaperJob(jobId, {
+            status: "failed",
+            errorMessage: e instanceof Error ? e.message : msg,
+            recoveryDraftId,
+          });
         }
-        recordGenerationFailure(msg);
-        toast.error(msg, {
-          description: "详情见右上角「命题队列」。",
-          duration: 8000,
-        });
+        recordGenerationFailure(e instanceof Error ? e.message : msg);
+        toast.error(msg, { duration: 8000 });
       }
     },
-    [consumeScratchFn, generateFn, router],
+    [consumeScratchFn, generateFn, hasDraftFn, router],
   );
 
   const executeExample = useCallback(
@@ -168,7 +185,6 @@ export function GenerationJobQueueRunner() {
         patchExampleJob(jobId, { status: "success", cancelRequested: false });
 
         toast.success("例题生成完成", {
-          description: "同型例题与试卷正文分开展示；可打开试卷页使用「打印例题」等导出方式",
           action: {
             label: "打开试卷",
             onClick: () => void navigate({ to: "/exam/$id", params: { id: examId } }),

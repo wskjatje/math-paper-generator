@@ -5,6 +5,44 @@ import type { VisualGeometryEvidenceV1 } from "@/lib/visualGeometryEvidence.shar
 
 export type Difficulty = "beginner" | "intermediate" | "competition" | "advanced";
 
+/** 三端门户角色（运维 / 教师 / 学生） */
+export type UserRole = "admin" | "teacher" | "student";
+
+/** 题面附件角色：原卷图不可被派生 SVG 覆盖删除 */
+export type QuestionAttachmentRole =
+  | "source_figure"
+  | "page_crop"
+  | "page_image"
+  | "derived_diagram"
+  | "reference_table"
+  | "audio"
+  | "other";
+
+export type QuestionAttachment = {
+  kind: "image" | "figure" | "table" | "audio" | "file";
+  uri: string;
+  alt?: string;
+  role?: QuestionAttachmentRole;
+  asset_id?: string;
+  source_region_id?: string;
+  source_page?: number;
+  order_index?: number;
+  mime_type?: string;
+  figure_spec?: Record<string, unknown>;
+  figure_scene?: Record<string, unknown>;
+};
+
+/** 试卷大题分区（可选） */
+export type ExamSection = {
+  id: string;
+  title: string;
+  instructions?: string | null;
+  order_index?: number;
+  question_ids?: string[];
+  /** 0-based 题目下标（命题/分组用） */
+  question_indices?: number[];
+};
+
 export type QuestionType =
   | "multiple_choice"
   /** 多项选择题（至少 4 个选项，answer 可含多个正确项，建议用「A、B」或「A,B」） */
@@ -92,8 +130,12 @@ export interface Question {
    * 消费侧请经 `resolveFigureResources`，勿直接当 URL 列表使用。
    */
   figure_refs?: FigureRefV1[] | null;
+  /** 题面附件（原卷图 / 派生示意图 / 听力音轨等） */
+  attachments?: QuestionAttachment[] | null;
   /** 可选：导入可观测性 v1（与卷级 `import_parse_quality` 互补，便于按题定位 withhold 等工程原因） */
   import_quality?: QuestionImportQualityV1 | null;
+  /** 所属大题分区 id（与 exam.sections 对应；可缺省，读卷时按连续题型推断） */
+  section_id?: string | null;
 }
 
 export interface Exam {
@@ -124,15 +166,40 @@ export interface Exam {
    */
   import_review_status?: "staging" | "confirmed" | null;
   /**
+   * 线下导入：关联 `data/imports/<id>` 抽取 bundle，供「核对差异」工作台使用。
+   */
+  source_document_id?: string | null;
+  /** 抽取 bundle id（通常与 source_document_id 相同） */
+  extraction_id?: string | null;
+  /**
    * P7-1A：卷面图 registry（`figure_id` → 当前 `raster_url` 等）；与题目 `figure_refs` 配合。
    */
   figure_registry?: FigureRegistryItemV1[] | null;
+  /** 大题分区（可选） */
+  sections?: ExamSection[] | null;
+  /** 卷面排版模板（打印页眉页脚 / 分栏等），见 `paperTemplates` */
+  paper_template_id?: string | null;
+  /** 命题所用课件版本 id（生成卷）；导入卷可缺省 */
+  curriculum_version?: string | null;
+  /** 教材出版社版本 id / 文案（人教版等）；仿照生成回填用 */
+  textbook_edition?: string | null;
+  /** 试卷场景 id */
+  paper_kind?: string | null;
   /**
    * 仅导入卷：入库前由 `computeImportParseQualityRollup` 写入的质检 v1 对象（JSON），
    * 供待确认列表与详情页 HITL 提示；字段定义见 `importParseQuality.shared.ts`。
    * 使用 `Json` 以便与 DB / TanStack ServerFn 可序列化类型一致。
    */
   import_parse_quality?: import("@/integrations/supabase/types").Json | null;
+  /**
+   * 语义质量：unknown | pass | fail | needs_review（库内验证 / 生成入库）。
+   */
+  quality_status?: import("@/lib/examQualityReport.shared").ExamQualityStatus | null;
+  /** 最近一次验证报告（JSON） */
+  quality_report?: import("@/lib/examQualityReport.shared").ExamQualityReportV1 | null;
+  quality_checked_at?: string | null;
+  /** true 时教师布置作业不可选 */
+  quality_exclude_assign?: boolean | null;
 }
 
 /** 设置页 / 本地 data/local-exams 列表用 */
@@ -154,6 +221,8 @@ export interface Example {
   answer: string;
   solution_steps: SolutionStep[];
   difficulty: string;
+  knowledge_tags?: string[];
+  attachments?: QuestionAttachment[];
 }
 
 export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -211,4 +280,11 @@ export function questionDisplayTypeLabel(q: Pick<Question, "type" | "type_label"
   const raw = q.type_label?.trim();
   if (raw) return raw;
   return QUESTION_TYPE_LABELS[q.type as QuestionType] ?? String(q.type ?? "");
+}
+
+/** 仅题型 id → 展示名（名册错题统计等无 type_label 时） */
+export function questionTypeLabelFromId(typeId: string): string {
+  const key = String(typeId ?? "").trim();
+  if (!key || key === "unknown") return "未知题型";
+  return QUESTION_TYPE_LABELS[key as QuestionType] ?? key;
 }

@@ -3,17 +3,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Library, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { OfflineImportImageAnnotator } from "@/components/OfflineImportImageAnnotator";
 import { OfflineImportOcrStatusBanner } from "@/components/OfflineImportOcrStatusBanner";
 import { CanonicalizationForensicViewer } from "@/components/CanonicalizationForensicViewer";
@@ -26,7 +25,13 @@ import {
   type OfflineImportAnnotTool,
   type OfflineImportImageAnnotation,
 } from "@/lib/offlineImportAnnotation.shared";
-import { importOfflineExamFromDocument } from "@/lib/exam.functions.server";
+import {
+  importOfflineExamFromDocument,
+  persistImportDocumentExtract,
+} from "@/lib/exam.functions.server";
+import { upsertRemoteImportJob } from "@/lib/remoteImportJobsStorage";
+import { requestRemoteImportQueueDrain } from "@/lib/remoteImportQueueDrain";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 import {
   OFFLINE_IMPORT_DEFAULTS,
   resolveOfflineImportOcrOnlyNoPersistFigures,
@@ -34,10 +39,7 @@ import {
 } from "@/lib/offlineImportDefaults.shared";
 import { gatewayOcrJson } from "@/lib/gatewayOcr.functions.server";
 import { postGatewayOcrJsonFromBrowser } from "@/lib/gatewayOcrBrowser.shared";
-import {
-  GATEWAY_OCR_WARMUP_TOAST_DESCRIPTION,
-  isGatewayOcrTimeoutMessage,
-} from "@/lib/gatewayOcrWarmup.shared";
+import { isGatewayOcrTimeoutMessage } from "@/lib/gatewayOcrWarmup.shared";
 import {
   ensureGatewayOcrWarmup,
   getGatewayOcrWarmupSnapshot,
@@ -79,6 +81,17 @@ import { persistOfflineImportFigures } from "@/lib/offlineImportFigures.function
 import { collectDiagramCropDescriptors } from "@/lib/ocr/diagramCropDescriptors.shared";
 import { mergeStructuredOcrChunksForImport } from "@/lib/mergeStructuredOcrChunks.shared";
 
+async function fileToBase64(file: File): Promise<string> {
+  const buf = await file.arrayBuffer();
+  const bytes = new Uint8Array(buf);
+  let binary = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(binary);
+}
+
 const DIFF_OPTIONS: { id: Difficulty; label: string }[] = [
   { id: "beginner", label: "入门" },
   { id: "intermediate", label: "进阶" },
@@ -114,7 +127,7 @@ export function ImportOfflineExamDialog({
   integration,
   importDualTrackGateEnabled = false,
   ocrRepairLexiconPersistence = "local_file",
-  importFiguresStorage = "local",
+  importFiguresStorage: _importFiguresStorage = "local",
   gatewayOcrConfiguredOnServer = false,
 }: {
   open: boolean;
@@ -139,6 +152,7 @@ export function ImportOfflineExamDialog({
   gatewayOcrConfiguredOnServer?: boolean;
 }) {
   const importDocFn = useServerFn(importOfflineExamFromDocument);
+  const persistExtractFn = useServerFn(persistImportDocumentExtract);
   const gatewayOcrJsonFn = useServerFn(gatewayOcrJson);
   const enhanceExtractFn = useServerFn(enhanceOfflineExtractViaHttpService);
   const forwardOpenNotebookFn = useServerFn(forwardOfflinePreviewToOpenNotebook);
@@ -188,6 +202,12 @@ export function ImportOfflineExamDialog({
   const [ocrIngestSummary, setOcrIngestSummary] = useState<OfflineImportOcrIngestSummary | null>(
     null,
   );
+  /** 服务端落盘抽取 bundle id（核对差异） */
+  const [sourceDocumentId, setSourceDocumentId] = useState<string | undefined>();
+  /** Sidecar 保真档位；入队时写入任务，供审核对照 */
+  const [extractionQuality, setExtractionQuality] = useState<
+    "high_fidelity" | "basic_fallback" | undefined
+  >();
   const [docGrade, setDocGrade] = useState("");
   const [docSubject, setDocSubject] = useState("");
   const [docDifficulty, setDocDifficulty] = useState<Difficulty | "">("");
@@ -266,6 +286,8 @@ export function ImportOfflineExamDialog({
     setStructuredChunks([]);
     setExtractWarnings([]);
     setOcrIngestSummary(null);
+    setSourceDocumentId(undefined);
+    setExtractionQuality(undefined);
     setOcrRawBackup("");
     setUseExternalPlaintextEnhance(false);
     setImportDualTrackAck(false);
@@ -300,6 +322,10 @@ export function ImportOfflineExamDialog({
       toast.error("请先选择 pdf/docx/xlsx/csv/图片 等文件并完成正文抽取");
       return;
     }
+    if (!docSubject.trim()) {
+      toast.error("请选择学科");
+      return;
+    }
     setBusy(true);
     try {
       const textForImport = text;
@@ -316,6 +342,7 @@ export function ImportOfflineExamDialog({
       const res = await importDocFn({
         data: {
           text: textForImport,
+          sourceDocumentId,
           structured_ocr_json: (() => {
             if (structuredChunks.length === 0) return undefined;
             const merged = mergeStructuredOcrChunksForImport(structuredChunks);
@@ -357,22 +384,62 @@ export function ImportOfflineExamDialog({
         res.persisted === "supabase"
           ? "云端草稿已生成，请在「导入线下卷」页核对后再点「确认入库」"
           : res.persisted === "mysql"
-            ? "本地 MySQL 草稿已生成，请在「导入线下卷」页核对后再点「确认入库」"
-            : "本地目录草稿已生成，请在「导入线下卷」页核对后再点「确认入库」";
-      const diag = "import_pipeline_diagnostic" in res ? res.import_pipeline_diagnostic : undefined;
-      const diagSuffix =
-        diag != null
-          ? diag.layout_ast_file_written
-            ? " 已写入轨 B 占位文件：data/import-layout-stubs/<试卷 id>.json（需 MPG_IMPORT_LAYOUT_AST_PERSIST=1）。"
-            : " 双轨诊断已记录（未写 layout 文件：请设 MPG_IMPORT_LAYOUT_AST_PERSIST=1）。"
-          : "";
+            ? "本机数据库草稿已生成，请在「导入线下卷」页核对后再点「确认入库」"
+            : "本机草稿已生成，请在「导入线下卷」页核对后再点「确认入库」";
       toast.success("已写入「待确认」临时库", {
-        description: `${baseDesc}${diagSuffix}`,
+        description: baseDesc,
       });
       handleOpenChange(false);
       onImported?.(res);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "整理写入失败");
+      toast.error(toUserFacingErrorMessage(e, "整理写入失败"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** 旁路：加入导入队列（不走抽屉内直写）；OCR/正文已抽取后可后台串行整理 */
+  const enqueueDocument = async () => {
+    const text = docExtracted.trim();
+    if (text.length < 30) {
+      toast.error("请先选择 pdf/docx/xlsx/csv/图片 等文件并完成正文抽取");
+      return;
+    }
+    if (!docSubject.trim()) {
+      toast.error("请选择学科");
+      return;
+    }
+    setBusy(true);
+    try {
+      const now = new Date().toISOString();
+      const grade = GRADE_LEVEL_OPTIONS.find((item) => item.id === docGrade);
+      const subject = CURRICULUM_SUBJECT_OPTIONS.find((item) => item.id === docSubject);
+      const primaryName = docFileRef.current?.files?.[0]?.name?.trim();
+      await upsertRemoteImportJob({
+        id: crypto.randomUUID(),
+        importSource: "upload",
+        catalogEntryId: `upload:${crypto.randomUUID()}`,
+        documentText: text,
+        sourceDocumentId,
+        extractionQuality,
+        title: primaryName || "上传的线下试卷",
+        year: new Date().getFullYear(),
+        gradeId: docGrade || undefined,
+        subjectId: docSubject || undefined,
+        gradeLabel: grade?.label ?? "未指定",
+        subjectLabel: subject?.label ?? "未指定",
+        difficulty: docDifficulty || undefined,
+        durationMin: docDuration,
+        status: "queued",
+        createdAt: now,
+        updatedAt: now,
+      });
+      requestRemoteImportQueueDrain();
+      toast.success(sourceDocumentId ? "已加入导入队列（已关联来源文档）" : "已加入导入队列");
+      handleOpenChange(false);
+    } catch (e: unknown) {
+      const facing = toUserFacingErrorMessage(e, "加入导入队列失败");
+      toast.error(facing, { duration: 10_000 });
     } finally {
       setBusy(false);
     }
@@ -382,6 +449,8 @@ export function ImportOfflineExamDialog({
     if (!list?.length) return;
     const files = Array.from(list);
     setBusy(true);
+    setSourceDocumentId(undefined);
+    setExtractionQuality(undefined);
     reportExtractPhase("正在读取并解析文件…");
     try {
       const mod = await import("@/lib/offlineDocumentExtract");
@@ -429,7 +498,7 @@ export function ImportOfflineExamDialog({
           let gw: GatewayOcrJsonResult | undefined;
           if (gatewayOpt) {
             reportExtractPhase(
-              `GOT-OCR 识别：${displayName}（CPU 单页约 2–10 分钟，请勿关闭对话框）`,
+              `识别中：${displayName}`,
             );
             if (typeof window !== "undefined") {
               const browserGw = await postGatewayOcrJsonFromBrowser({
@@ -445,7 +514,7 @@ export function ImportOfflineExamDialog({
                   gatewayFailDetail = browserGw.message;
                 }
               } else {
-                gw = { ok: false, message: "无法解析浏览器网关 OCR 地址" };
+                gw = { ok: false, message: "无法解析浏览器识图服务地址" };
                 gatewayFailDetail = gw.message;
               }
             } else {
@@ -475,7 +544,7 @@ export function ImportOfflineExamDialog({
             if (candidate.length > 0) {
               blockBody = candidate;
               const eng = pipeline.structured.engine;
-              gatewaySuffix = eng ? ` （网关 OCR · ${eng} · 结构化）` : " （网关 OCR · 结构化）";
+              gatewaySuffix = eng ? ` （识图服务 · ${eng} · 结构化）` : " （识图服务 · 结构化）";
             } else {
               const meta = gw.raw.meta;
               const metaErr =
@@ -487,21 +556,21 @@ export function ImportOfflineExamDialog({
                   : "";
               if (metaErr) {
                 gatewayFailDetail = metaErr;
-                warnings.push(`${displayName}：GOT-OCR 未返回正文（${metaErr}）`);
+                warnings.push(`${displayName}：识图未返回正文（${metaErr}）`);
               }
             }
           } else if (!gw.ok) {
             const gwMsg = gw.message;
             gatewayFailDetail = gwMsg;
             if (!gwMsg.includes("未配置") && !isGatewayOcrTimeoutMessage(gwMsg)) {
-              warnings.push(`${displayName}：网关 GOT-OCR：${gwMsg}`);
+              warnings.push(`${displayName}：识图服务：${gwMsg}`);
             }
           }
         } catch (e: unknown) {
           gatewayFailDetail = e instanceof Error ? e.message : String(e);
           if (!isGatewayOcrTimeoutMessage(gatewayFailDetail)) {
             warnings.push(
-              `${displayName}：网关 GOT-OCR 调用失败（${gatewayFailDetail}）`,
+              `${displayName}：识图服务调用失败（${gatewayFailDetail}）`,
             );
           }
         }
@@ -510,20 +579,20 @@ export function ImportOfflineExamDialog({
         if (blockBody === null && gatewayTimedOut) {
           blockBody = "";
           warnings.push(
-            `${displayName}：网关 GOT-OCR 超时。请确认 npm run docker:api:detach 后重开导入对话框等待「已预热」，再重新上传。`,
+            `${displayName}：识图超时，请确认识图服务已就绪后重试。`,
           );
         } else if (blockBody === null) {
           blockBody = "";
           if (!gatewayFailDetail?.includes("未配置")) {
             warnings.push(
-              `${displayName}：未获得 GOT-OCR 正文。请执行 npm run docker:api:detach，打开对话框等待预热后重试。`,
+              `${displayName}：未识别到正文，请确认识图服务已就绪后重试。`,
             );
           }
         }
 
         if (!blockBody) {
           warnings.push(
-            `${displayName}：未提取到文字（请确认 Docker 网关 GOT-OCR 已就绪，或提高图片清晰度）`,
+            `${displayName}：未提取到文字，请换更清晰的图片后重试`,
           );
         }
 
@@ -618,7 +687,7 @@ export function ImportOfflineExamDialog({
             const t = (await mod.extractTextFromFile(file)).trim();
             if (!t) {
               warnings.push(
-                `${file.name}：未提取到文字（若是扫描版 PDF，可尝试导出为图片后单独上传做 OCR）`,
+                `${file.name}：未提取到文字（若是扫描版 PDF，可尝试导出为图片后单独上传识别）`,
               );
             }
             segments.push({ kind: "doc", text: `\n\n<<< 文件: ${file.name} >>>\n\n${t}` });
@@ -653,7 +722,7 @@ export function ImportOfflineExamDialog({
           figureUrls = pr.urls;
         } catch (e: unknown) {
           warnings.push(
-            `附图未能写入站点目录（${e instanceof Error ? e.message : String(e)}）；仍将导入 OCR 正文，卷面可能无图`,
+            `附图未能保存（${e instanceof Error ? e.message : String(e)}）；仍将导入识别正文，卷面可能无图`,
           );
           figureUrls = null;
         }
@@ -665,7 +734,7 @@ export function ImportOfflineExamDialog({
       let viGatewayPersistFailures = 0;
       let viGatewayUrlHits = 0;
       if (!skipPersistFigures && importFiguresBatchId && figureUrls?.length) {
-        reportExtractPhase("正在按 OCR 框裁剪小题配图…");
+        reportExtractPhase("正在按识别框裁剪小题配图…");
         for (let imgIdx = 0; imgIdx < imgSegs.length; imgIdx++) {
           const seg = imgSegs[imgIdx]!;
           if (!seg.ocrPipeline || !figureUrls[imgIdx]) continue;
@@ -790,11 +859,11 @@ export function ImportOfflineExamDialog({
       if (hadGatewayStructured && !hadAnyCropOutput) {
         if (skipPersistFigures) {
           warnings.push(
-            "已勾选「不保存原图仅 OCR」：未写入整页扫描图与小题裁剪图，合并正文仅含 OCR 文本。",
+            "已勾选「不保存原图仅识别」：未写入整页扫描图与小题裁剪图，合并正文仅含识别文本。",
           );
         } else {
           warnings.push(
-            "网关已返回结构化 OCR，但未检测到可裁剪的小题示意图（需 diagram_links 或 diagram 块 bbox）。导入正文仍会附带整页扫描图。",
+            "识图已完成，但未检测到可裁剪的小题示意图。导入正文仍会附带整页扫描图。",
           );
         }
       }
@@ -802,7 +871,7 @@ export function ImportOfflineExamDialog({
       const usedBrowserOcrOnly = imgSegs.length > 0 && imgSegs.every((s) => !s.gatewaySuffix);
       if (usedBrowserOcrOnly) {
         warnings.push(
-          "图片未走网关 GOT-OCR。请在「设置 → 模型与接口」配置网关并执行 npm run docker:api:detach，等待预热后再上传。",
+          "图片未走识图服务，请确认识图服务已就绪后重新上传。",
         );
       }
 
@@ -817,7 +886,7 @@ export function ImportOfflineExamDialog({
         imgOrdinal += 1;
         let imgMd: string;
         if (skipPersistFigures) {
-          imgMd = `\n\n> （${s.fileName}：未保存扫描原图，仅 OCR 文本）\n`;
+          imgMd = `\n\n> （${s.fileName}：未保存扫描原图，仅识别文本）\n`;
         } else if (skipFullPageFigure) {
           imgMd = "";
         } else if (url) {
@@ -931,7 +1000,7 @@ export function ImportOfflineExamDialog({
         buildOfflineImportOcrIngestSummary({
           gatewayBaseUrlResolved:
             gatewayBaseUrlResolved ??
-            (gatewayOcrConfiguredOnServer ? "（服务端 MPG_GATEWAY_URL）" : null),
+            (gatewayOcrConfiguredOnServer ? "（服务端已配置网关）" : null),
           files: ocrFileReports,
           extractQualityTier: quality.tier,
           extractQualityReasons: quality.reasons,
@@ -940,7 +1009,7 @@ export function ImportOfflineExamDialog({
       );
       if (quality.tier === "poor") {
         warnings.push(
-          `抽取质量偏弱：${quality.reasons.join("；")}。建议对照左侧原图手改正文，或配置网关 OCR 后重新上传。`,
+          `抽取质量偏弱：${quality.reasons.join("；")}。建议对照左侧原图手改正文，或配置识图服务后重新上传。`,
         );
       } else if (quality.tier === "weak") {
         warnings.push(`抽取质量提示：${quality.reasons.join("；")}`);
@@ -954,9 +1023,9 @@ export function ImportOfflineExamDialog({
         structuredAccum.length > 0 &&
         segments.some((s) => s.kind === "img" && s.gatewaySuffix.includes("网关"))
       ) {
-        toast.message("网关 OCR 已接入，但本页仍有乱码", {
+        toast.message("识图服务已接入，但本页仍有乱码", {
           description:
-            "常见原因：右侧坐标图被扫进正文。请对照左侧原图手改；下方 Compiler replay 可看 transport→canonical。",
+            "常见原因：右侧坐标图被扫进正文。请对照左侧原图手改。",
           duration: 14000,
         });
       }
@@ -969,12 +1038,39 @@ export function ImportOfflineExamDialog({
         setDocExtracted(mergedText);
         pipelinePreviewRef.current = mergedText;
         setPreviewEditedByUser(false);
+        /** 主文件落盘 + Sidecar，供待确认列表「核对差异」 */
+        try {
+          reportExtractPhase("正在落盘来源文档…");
+          const primary = files[0]!;
+          const contentBase64 = await fileToBase64(primary);
+          const persisted = await persistExtractFn({
+            data: {
+              filename: primary.name,
+              mimeType: primary.type || "application/octet-stream",
+              contentBase64,
+              clientPlainText: mergedText,
+            },
+          });
+          setSourceDocumentId(persisted.documentId);
+          if (
+            persisted.quality === "high_fidelity" ||
+            persisted.quality === "basic_fallback"
+          ) {
+            setExtractionQuality(persisted.quality);
+          }
+          if (persisted.warnings?.length) {
+            warnings.push(...persisted.warnings.slice(0, 3));
+            setExtractWarnings([...warnings]);
+          }
+        } catch (e: unknown) {
+          console.warn("[import] persistImportDocumentExtract:", e);
+        }
         toast.success(
-          `已抽取约 ${mergedText.length} 字符（canonical compiler，请对照 replay 与原图）`,
+          `已抽取约 ${mergedText.length} 字符，请对照原图核对`,
         );
       }
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "抽取失败");
+      toast.error(toUserFacingErrorMessage(e, "抽取失败"));
     } finally {
       setBusy(false);
       setExtractProgress(null);
@@ -982,27 +1078,31 @@ export function ImportOfflineExamDialog({
     }
   };
 
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-5xl">
-        <DialogHeader>
-          <DialogTitle>导入线下试卷</DialogTitle>
-          <DialogDescription>
-            上传 <strong>PDF / Word / Excel / CSV / 图片</strong>
-            。抽取正文为<strong className="font-medium text-foreground">GOT-OCR 原文</strong>
-            （不做教育符号/坐标系自动改写），请<strong className="font-medium text-foreground">对照左侧原图</strong>
-            在右侧手改后再整理入库。图片 OCR
-            建议在设置中配置网关。附图保存：
-            <span className="text-foreground">
-              {importFiguresStorage === "supabase"
-                ? "已配置 Supabase Storage 桶（MPG_IMPORT_FIGURES_BUCKET），优先云端 URL"
-                : "站点目录 public/import-figures（可在环境变量配置桶名以使用云端存储）"}
-            </span>
-            。
-          </DialogDescription>
-        </DialogHeader>
+  const sheetWide = previewImageUrls.length > 0;
 
-        <div className="space-y-4">
+  const gatewayStatusLine =
+    gatewayOcrWarmupState === "warming"
+      ? "识图服务预热中…"
+      : gatewayOcrWarmupState === "failed" || gatewayOcrWarmupState === "unavailable"
+        ? "识图服务未就绪"
+        : null;
+
+  return (
+    <Sheet open={open} onOpenChange={handleOpenChange}>
+      <SheetContent
+        side="right"
+        className={
+          sheetWide
+            ? "flex w-full flex-col sm:max-w-4xl"
+            : "flex w-full flex-col sm:max-w-lg"
+        }
+      >
+        <SheetHeader>
+          <SheetTitle>导入线下试卷</SheetTitle>
+          <SheetDescription className="sr-only">导入线下试卷</SheetDescription>
+        </SheetHeader>
+
+        <div className="mt-4 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
           <input
             ref={docFileRef}
             type="file"
@@ -1011,196 +1111,50 @@ export function ImportOfflineExamDialog({
             className="hidden"
             onChange={(ev) => void onPickDocumentFiles(ev.target.files)}
           />
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="gap-1.5 font-medium shadow-sm"
-            onClick={() => docFileRef.current?.click()}
-            disabled={busy}
-            aria-busy={busy}
-          >
-            <Upload className="h-4 w-4" />
-            选择文件（可多选）
-          </Button>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            PDF / Word（.docx）/ Excel（.xls .xlsx）/ CSV / 常见图片；老式 .doc 不支持请另存 .docx。
-          </p>
-
-          {gatewayOcrWarmupState === "warming" ? (
-            <Alert className="border-amber-500/50 bg-amber-500/10">
-              <AlertDescription className="flex items-start gap-2 text-xs leading-relaxed">
-                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-700 dark:text-amber-400" />
-                <span>
-                  <span className="font-medium text-foreground">正在预热网关 GOT-OCR…</span>
-                  <br />
-                  {GATEWAY_OCR_WARMUP_TOAST_DESCRIPTION}
-                  <br />
-                  <span className="text-muted-foreground">
-                    可暂时关闭本对话框；站点会在后台继续预热。上传前请等此处变为「已预热」。
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-2 h-7 text-[11px]"
-                    onClick={() => void syncGatewayOcrWarmupFromStatus()}
-                  >
-                    刷新预热状态
-                  </Button>
-                </span>
-              </AlertDescription>
-            </Alert>
-          ) : gatewayOcrWarmupState === "failed" || gatewayOcrWarmupState === "unavailable" ? (
-            <Alert className="border-destructive/50 bg-destructive/10">
-              <AlertDescription className="text-xs leading-relaxed">
-                <span className="font-medium text-foreground">
-                  {gatewayOcrWarmupState === "unavailable"
-                    ? "网关未连接"
-                    : "GOT-OCR 预热未完成"}
-                </span>
-                ：请确认已执行{" "}
-                <code className="rounded bg-muted px-0.5 text-[10px]">npm run docker:api:detach</code>
-                。{gatewayWarmup.message ? (
-                  <span className="mt-1 block text-foreground/90">{gatewayWarmup.message}</span>
-                ) : (
-                  <span className="mt-1 block">
-                    请执行 <code className="rounded bg-muted px-0.5 text-[10px]">npm run docker:api:detach</code>
-                    ；首次下载 HF 权重约 10–30 分钟。
-                  </span>
-                )}
-              </AlertDescription>
-            </Alert>
-          ) : gatewayOcrWarmupState === "ready" ? (
-            <Alert className="border-emerald-500/40 bg-emerald-500/10">
-              <AlertDescription className="text-xs text-emerald-900 dark:text-emerald-200">
-                网关 GOT-OCR 已预热，可以上传图片。本机 MPS 单页通常约 1–3 分钟；Docker CPU 可能 10 分钟以上。上传后请留意下方进度，勿重复点击。
-              </AlertDescription>
-            </Alert>
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => docFileRef.current?.click()}
+              disabled={busy}
+              aria-busy={busy}
+            >
+              <Upload className="h-4 w-4" />
+              选择文件（可多选）
+            </Button>
+            {gatewayStatusLine ? (
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => void syncGatewayOcrWarmupFromStatus()}
+              >
+                {gatewayOcrWarmupState === "warming" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                ) : null}
+                {gatewayStatusLine}
+              </button>
+            ) : null}
+          </div>
 
           {extractProgress ? (
-            <Alert className="border-sky-500/50 bg-sky-500/10">
-              <AlertDescription className="flex items-start gap-2 text-xs leading-relaxed">
-                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-sky-700 dark:text-sky-400" />
-                <span>
-                  <span className="font-medium text-foreground">{extractProgress.phase}</span>
-                  <br />
-                  <span className="text-muted-foreground">
-                    已等待 {formatExtractElapsed(extractElapsedSec)}。GOT-OCR 推理与预热不同，整页识别较慢属正常；PDF
-                    多页会逐页排队。
-                  </span>
-                </span>
-              </AlertDescription>
-            </Alert>
-          ) : null}
-
-          <Alert className="border-border/80 bg-muted/20">
-            <AlertDescription className="text-xs leading-relaxed text-muted-foreground">
-              <span className="font-medium text-foreground">导入策略</span>
-              ：忠实 OCR 预览 →
-              {ocrOnlyNoPersistFigures ? (
-                <span className="text-amber-800 dark:text-amber-300">
-                  {" "}
-                  纯 OCR（不落盘配图，无 authoritative figures）
-                </span>
-              ) : (
-                <span> 上传并持久化配图（可生成 figure registry）</span>
-              )}
-              → 题干矢量示意图 → 整理入库（共图大题自动整卷单次 AI）。以右侧正文为准。
-            </AlertDescription>
-          </Alert>
-
-          <label
-            htmlFor="offline-persist-import-figures"
-            className="flex cursor-pointer items-start gap-2 rounded-md border border-border/80 bg-muted/20 px-3 py-2"
-          >
-            <Checkbox
-              id="offline-persist-import-figures"
-              checked={!ocrOnlyNoPersistFigures}
-              onCheckedChange={(v) => setOcrOnlyNoPersistFigures(v !== true)}
-              disabled={busy}
-              className="mt-0.5"
-            />
-            <span className="text-xs leading-snug text-muted-foreground">
-              <span className="font-medium text-foreground">上传并持久化配图</span>
-              ：写入{" "}
-              <code className="rounded bg-muted px-0.5 text-[10px]">import-figures</code>{" "}
-              并参与裁图 / registry / ownership 物化链。取消勾选则为纯 OCR（
-              <strong className="text-foreground">不会</strong>
-              生成 authoritative figures）。
-            </span>
-          </label>
-
-          {!ocrOnlyNoPersistFigures ? null : (
-            <p className="text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
-              纯 OCR 模式：原图未上传服务端；Figure ownership 调试将显示{" "}
-              <code className="rounded bg-muted px-0.5">supply_state=missing</code> 属预期行为。
+            <p className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden />
+              {extractProgress.phase}
+              <span>· {formatExtractElapsed(extractElapsedSec)}</span>
             </p>
-          )}
-
-          {integration?.plaintextExtract ? (
-            <label
-              htmlFor="offline-plaintext-http"
-              className="flex cursor-pointer items-start gap-2 rounded-md border border-border/80 bg-muted/20 px-3 py-2"
-            >
-              <Checkbox
-                id="offline-plaintext-http"
-                checked={useExternalPlaintextEnhance}
-                onCheckedChange={(v) => setUseExternalPlaintextEnhance(v === true)}
-                disabled={busy}
-                className="mt-0.5"
-              />
-              <span className="text-xs leading-snug text-muted-foreground">
-                <span className="font-medium text-foreground">抽取后 HTTP 正文增强（可选）</span>
-                ：在 AI 语义修复之前，将合并正文 POST 到服务端配置的增强 URL（自建适配器）。须在本次
-                <strong className="text-foreground">选择文件前</strong>
-                勾选；下次上传生效。
-              </span>
-            </label>
-          ) : null}
-
-          {importDualTrackGateEnabled ? (
-            <label
-              htmlFor="offline-import-dual-track-ack"
-              className="flex cursor-pointer items-start gap-2 rounded-md border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2"
-            >
-              <Checkbox
-                id="offline-import-dual-track-ack"
-                checked={importDualTrackAck}
-                onCheckedChange={(v) => setImportDualTrackAck(v === true)}
-                disabled={busy}
-                className="mt-0.5"
-              />
-              <span className="text-xs leading-snug text-muted-foreground">
-                <span className="font-medium text-foreground">实验：双轨诊断（轨 B 占位）</span>
-                ：不改变当前「OCR 全文 → AI 整理」结果。勾选后服务端额外生成 layout AST 占位（blocks
-                为空，待接版面引擎）；若同时设置环境变量{" "}
-                <code className="rounded bg-muted px-0.5 text-[10px]">
-                  MPG_IMPORT_LAYOUT_AST_PERSIST=1
-                </code>
-                ，则写入{" "}
-                <code className="rounded bg-muted px-0.5 text-[10px]">
-                  data/import-layout-stubs/&lt;试卷 id&gt;.json
-                </code>
-                。需先在部署环境设置{" "}
-                <code className="rounded bg-muted px-0.5 text-[10px]">
-                  MPG_IMPORT_DUAL_TRACK_GATE=1
-                </code>{" "}
-                才显示本项。
-              </span>
-            </label>
           ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">年级标签（可选）</span>
+              <span className="text-xs text-muted-foreground">年级</span>
               <select
                 value={docGrade}
                 onChange={(e) => setDocGrade(e.target.value)}
                 className={SEL}
               >
-                <option value="">自动（默认）</option>
+                <option value="">请选择</option>
                 {GRADE_LEVEL_OPTIONS.map((g) => (
                   <option key={g.id} value={g.id}>
                     {g.label}
@@ -1209,13 +1163,13 @@ export function ImportOfflineExamDialog({
               </select>
             </label>
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">学科（可选）</span>
+              <span className="text-xs text-muted-foreground">学科</span>
               <select
                 value={docSubject}
                 onChange={(e) => setDocSubject(e.target.value)}
                 className={SEL}
               >
-                <option value="">自动（默认数学）</option>
+                <option value="">请选择</option>
                 {CURRICULUM_SUBJECT_OPTIONS.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.label}
@@ -1224,13 +1178,13 @@ export function ImportOfflineExamDialog({
               </select>
             </label>
             <label className="space-y-1">
-              <span className="text-xs text-muted-foreground">难度（可选）</span>
+              <span className="text-xs text-muted-foreground">难度</span>
               <select
                 value={docDifficulty}
                 onChange={(e) => setDocDifficulty((e.target.value || "") as Difficulty | "")}
                 className={SEL}
               >
-                <option value="">自动（默认进阶）</option>
+                <option value="">请选择</option>
                 {DIFF_OPTIONS.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.label}
@@ -1251,48 +1205,93 @@ export function ImportOfflineExamDialog({
             </label>
           </div>
 
+          <details className="rounded-md border border-border/70 bg-muted/15 px-3 py-2">
+            <summary className="cursor-pointer text-xs font-medium text-foreground">高级选项</summary>
+            <div className="mt-3 space-y-3">
+              <label
+                htmlFor="offline-persist-import-figures"
+                className="flex cursor-pointer items-start gap-2"
+              >
+                <Checkbox
+                  id="offline-persist-import-figures"
+                  checked={!ocrOnlyNoPersistFigures}
+                  onCheckedChange={(v) => setOcrOnlyNoPersistFigures(v !== true)}
+                  disabled={busy}
+                  className="mt-0.5"
+                />
+                <span className="text-xs text-foreground">保存配图</span>
+              </label>
+              {integration?.plaintextExtract ? (
+                <label
+                  htmlFor="offline-plaintext-http"
+                  className="flex cursor-pointer items-start gap-2"
+                >
+                  <Checkbox
+                    id="offline-plaintext-http"
+                    checked={useExternalPlaintextEnhance}
+                    onCheckedChange={(v) => setUseExternalPlaintextEnhance(v === true)}
+                    disabled={busy}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs text-foreground">抽取后正文增强</span>
+                </label>
+              ) : null}
+              {importDualTrackGateEnabled ? (
+                <label
+                  htmlFor="offline-import-dual-track-ack"
+                  className="flex cursor-pointer items-start gap-2"
+                >
+                  <Checkbox
+                    id="offline-import-dual-track-ack"
+                    checked={importDualTrackAck}
+                    onCheckedChange={(v) => setImportDualTrackAck(v === true)}
+                    disabled={busy}
+                    className="mt-0.5"
+                  />
+                  <span className="text-xs text-foreground">版面对照诊断</span>
+                </label>
+              ) : null}
+              {integration?.openNotebook ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={busy || notebookForwardBusy || docExtracted.trim().length < 30}
+                  onClick={() => {
+                    const t = docExtracted.trim();
+                    if (t.length < 30) return;
+                    setNotebookForwardBusy(true);
+                    void (async () => {
+                      try {
+                        const r = await forwardOpenNotebookFn({ data: { text: t } });
+                        if (r.ok) toast.success("已提交到外部笔记");
+                        else toast.error(r.message);
+                      } finally {
+                        setNotebookForwardBusy(false);
+                      }
+                    })();
+                  }}
+                >
+                  {notebookForwardBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <Library className="h-4 w-4" aria-hidden />
+                  )}
+                  同步到外部笔记
+                </Button>
+              ) : null}
+            </div>
+          </details>
+
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-foreground">抽取正文（忠实 OCR，可编辑）</span>
+              <span className="text-xs font-medium text-foreground">抽取正文预览</span>
               <span className="text-[11px] text-muted-foreground shrink-0">
                 {docExtracted.length} 字
-                {previewEditedByUser ? " · 已人工编辑" : ""}
+                {previewEditedByUser ? " · 已编辑" : ""}
               </span>
             </div>
-
-            {previewImageUrls.length > 0 ? (
-              <div
-                className="rounded-md border border-border/80 bg-muted/15 px-3 py-2 text-[11px] leading-relaxed text-muted-foreground"
-                role="note"
-              >
-                <p className="font-medium text-foreground">原卷对照（人工核对）</p>
-                {ocrOnlyNoPersistFigures ? (
-                  <p className="mt-1.5 text-amber-800 dark:text-amber-300">
-                    当前为「仅 OCR」导入：原图未上传服务端，下方标注不会写入试卷存储。
-                  </p>
-                ) : null}
-                <ul className="mt-1.5 list-disc space-y-1 pl-4">
-                  <li>
-                    <span className="text-foreground">抄错类</span>
-                    ：点名、边名、分数/整数、选项公式等与卷面不一致 — 可用左侧
-                    <strong className="text-foreground">「抄错框」</strong>
-                    标出后，在右侧正文改正。
-                  </li>
-                  <li>
-                    <span className="text-foreground">漏抄类</span>
-                    ：卷面上有字但正文缺句 — 用
-                    <strong className="text-foreground">「漏抄椭圆」</strong>
-                    圈出卷面位置，在正文遗漏处补上。
-                  </li>
-                  <li>
-                    <span className="text-foreground">颠倒/串意类</span>
-                    ：几何关系或整句逻辑被写反 — 用
-                    <strong className="text-foreground">「Z」</strong>
-                    打点标记，建议整段重写正文。
-                  </li>
-                </ul>
-              </div>
-            ) : null}
 
             <OfflineImportOcrStatusBanner summary={ocrIngestSummary} />
 
@@ -1308,7 +1307,6 @@ export function ImportOfflineExamDialog({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="text-[11px] font-medium text-muted-foreground">原图</span>
                     <div className="flex flex-wrap items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">标注</span>
                       <Button
                         type="button"
                         size="sm"
@@ -1363,7 +1361,7 @@ export function ImportOfflineExamDialog({
                         onClick={() => setPreviewImageAnnotations([])}
                         disabled={busy || previewImageAnnotations.length === 0}
                       >
-                        清除标注
+                        清除
                       </Button>
                     </div>
                   </div>
@@ -1396,9 +1394,6 @@ export function ImportOfflineExamDialog({
               <div className="space-y-2 min-w-0">
                 {previewImageUrls.length > 0 || docExtracted.trim().length > 0 ? (
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium text-muted-foreground">
-                      抽取正文
-                    </span>
                     <div className="flex rounded-md border border-border p-0.5 text-[11px]">
                       <button
                         type="button"
@@ -1439,8 +1434,8 @@ export function ImportOfflineExamDialog({
                       setDocExtracted(e.target.value);
                       setPreviewEditedByUser(true);
                     }}
-                    placeholder="选择文件后在此显示抽取结果，可直接修改正文再整理写入待确认…"
-                    rows={previewImageUrls.length > 0 ? 16 : 10}
+                    placeholder="选择文件后在此显示抽取结果，可检查后再入库…"
+                    rows={previewImageUrls.length > 0 ? 16 : 8}
                     spellCheck={false}
                     className="w-full min-h-[12rem] rounded-md border border-input bg-background px-3 py-2 font-mono text-[11px] leading-relaxed text-foreground md:min-h-[min(58vh,520px)]"
                   />
@@ -1448,126 +1443,73 @@ export function ImportOfflineExamDialog({
               </div>
             </div>
 
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              OCR 与 AI
-              修复均可能误读分数、几何点名或选项；请务必对照原卷核对，可直接在本框改正后再入库。拍照尽量平整清晰；有文字层的
-              PDF 识别更稳。
-              {previewImageUrls.length === 0 ? " 上传图片后左侧会显示原图，便于逐字对照。" : ""}
-            </p>
             {previewEditedByUser ? (
               <label
                 htmlFor="offline-persist-lexicon"
-                className="flex cursor-pointer items-start gap-2 rounded-md border border-emerald-500/25 bg-emerald-500/5 px-3 py-2"
+                className="flex cursor-pointer items-center gap-2 text-xs"
               >
                 <Checkbox
                   id="offline-persist-lexicon"
                   checked={persistLexiconLearn}
                   onCheckedChange={(v) => setPersistLexiconLearn(v === true)}
                   disabled={busy}
-                  className="mt-0.5"
                 />
-                <span className="text-xs leading-snug text-muted-foreground">
-                  <span className="font-medium text-foreground">记入服务端修复词典</span>
-                  ：把本次<strong className="text-foreground">手改稿</strong>
-                  与上一版流水线预览的逐行差异写入数据库（或本地{" "}
-                  <code className="rounded bg-muted px-1 text-[10px]">
-                    data/ocr-repair-lexicon.json
-                  </code>
-                  ），后续合并正文与 AI 修复后会
-                  <strong className="text-foreground">自动套用</strong>，无需写死在前端。
-                  当前写入位置：
-                  <span className="text-foreground">
-                    {ocrRepairLexiconPersistence === "supabase"
-                      ? "Supabase"
-                      : ocrRepairLexiconPersistence === "mysql"
-                        ? "MySQL"
-                        : "本地 data 文件"}
-                  </span>
-                  。
-                </span>
+                <span className="text-foreground">记入修复词典</span>
               </label>
             ) : null}
-            {extractWarnings.length > 0 && (
+            {extractWarnings.length > 0 ? (
               <p className="text-xs text-amber-700 dark:text-amber-400">
                 {extractWarnings.join(" · ")}
               </p>
-            )}
-            <CanonicalizationForensicViewer
-              trace={canonicalizationTrace}
-              canonicalText={docExtracted}
-              transportRaw={ocrTransportRaw}
-              previewEditedByUser={previewEditedByUser}
-            />
-            <StructuredOcrPreview chunks={structuredChunks} />
-          </div>
+            ) : null}
 
-          {integration?.openNotebook ? (
-            <div className="rounded-md border border-dashed border-border/80 bg-muted/15 px-3 py-2">
-              <p className="mb-2 text-xs font-medium text-foreground">
-                Open Notebook（可选 · 独立部署）
-              </p>
-              <p className="mb-2 text-[11px] leading-relaxed text-muted-foreground">
-                把当前预览正文作为文本来源提交到 Open Notebook，便于在其侧 RAG / Transformations；与
-                MPG「待确认 → 确认入库」流程相互独立。
-              </p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="gap-1.5"
-                disabled={busy || notebookForwardBusy || docExtracted.trim().length < 30}
-                onClick={() => {
-                  const t = docExtracted.trim();
-                  if (t.length < 30) return;
-                  setNotebookForwardBusy(true);
-                  void (async () => {
-                    try {
-                      const r = await forwardOpenNotebookFn({ data: { text: t } });
-                      if (r.ok) {
-                        toast.success("已提交到 Open Notebook", {
-                          description: `来源 id：${r.sourceId}（异步处理中，请在对方界面查看）`,
-                        });
-                      } else {
-                        toast.error(r.message);
-                      }
-                    } finally {
-                      setNotebookForwardBusy(false);
-                    }
-                  })();
-                }}
-              >
-                {notebookForwardBusy ? (
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                ) : (
-                  <Library className="h-4 w-4" aria-hidden />
-                )}
-                同步预览到 Open Notebook
-              </Button>
-            </div>
-          ) : null}
+            <details className="rounded-md border border-border/60 px-3 py-2">
+              <summary className="cursor-pointer text-xs text-muted-foreground">诊断</summary>
+              <div className="mt-2 space-y-2">
+                <CanonicalizationForensicViewer
+                  trace={canonicalizationTrace}
+                  canonicalText={docExtracted}
+                  transportRaw={ocrTransportRaw}
+                  previewEditedByUser={previewEditedByUser}
+                />
+                <StructuredOcrPreview chunks={structuredChunks} />
+              </div>
+            </details>
+          </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => handleOpenChange(false)}
-            disabled={busy}
-          >
-            取消
-          </Button>
-          <Button type="button" onClick={() => void submitDocument()} disabled={busy}>
-            {busy ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                AI 整理并写入待确认…
-              </>
-            ) : (
-              "AI 整理并写入待确认"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <SheetFooter className="mt-4 gap-2 border-t border-border/60 pt-4 sm:flex-col sm:space-x-0 sm:gap-2">
+          <div className="flex w-full flex-wrap justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleOpenChange(false)}
+              disabled={busy}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => void enqueueDocument()}
+              disabled={busy}
+              title="加入导入队列后后台处理"
+            >
+              加入导入队列
+            </Button>
+            <Button type="button" onClick={() => void submitDocument()} disabled={busy}>
+              {busy ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  AI 识别并入库…
+                </>
+              ) : (
+                "AI 识别并入库"
+              )}
+            </Button>
+          </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

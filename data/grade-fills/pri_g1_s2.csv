@@ -1,0 +1,16 @@
+bookId,editionId,subjectId,gradeBaseId,semester,title,unitLabels
+pep-chinese-pri_g1-s2,pep,chinese,pri_g1,s2,义务教育教科书·语文（人教版）小学一年级下册,春夏秋冬|姓氏歌|小青蛙|猜字谜|吃水不忘挖井人|我多想去看看|四个太阳|小公鸡和小鸭子|树和喜鹊|怎么都快乐|静夜思|夜色|端午粽|动物儿歌|古对今|操场上|人之初|古诗二首|浪花|荷叶圆圆|要下雨了|文具的家|一分钟|动物王国开大会|小猴子下山|棉花姑娘|咕咚|小壁虎借尾巴|语文园地|快乐读书吧
+jsph-chinese-pri_g1-s2,jsph,chinese,pri_g1,s2,义务教育教科书·语文（苏教版）小学一年级下册,
+bnup-math-pri_g1-s2,bnup,math,pri_g1,s2,义务教育教科书·数学（北师大版）小学一年级下册,
+jsph-math-pri_g1-s2,jsph,math,pri_g1,s2,义务教育教科书·数学（苏教版）小学一年级下册,
+pep-english-pri_g1-s2,pep,english,pri_g1,s2,义务教育教科书·英语（人教版）小学一年级下册,
+bnup-english-pri_g1-s2,bnup,english,pri_g1,s2,义务教育教科书·英语（北师大版）小学一年级下册,
+waiyan-english-pri_g1-s2,waiyan,english,pri_g1,s2,义务教育教科书·英语（外研版）小学一年级下册,
+yilin-english-pri_g1-s2,yilin,english,pri_g1,s2,义务教育教科书·英语（译林版）小学一年级下册,
+pep-science-pri_g1-s2,pep,science,pri_g1,s2,义务教育教科书·科学（人教版）小学一年级下册,
+jsph-science-pri_g1-s2,jsph,science,pri_g1,s2,义务教育教科书·科学（苏教版）小学一年级下册,
+kexue-science-pri_g1-s2,kexue,science,pri_g1,s2,义务教育教科书·科学（教科版）小学一年级下册,
+pep-morality-pri_g1-s2,pep,morality,pri_g1,s2,义务教育教科书·道德与法治（人教版）小学一年级下册,
+pep-pe-pri_g1-s2,pep,pe,pri_g1,s2,义务教育教科书·体育与健康（人教版）小学一年级下册,
+pep-music-pri_g1-s2,pep,music,pri_g1,s2,义务教育教科书·音乐（人教版）小学一年级下册,
+pep-art-pri_g1-s2,pep,art,pri_g1,s2,义务教育教科书·美术（人教版）小学一年级下册,

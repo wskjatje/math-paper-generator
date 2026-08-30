@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="8 8 304 329.6" width="304" height="330">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="8" y="8" width="304" height="329.6" fill="#fff"/>
+  <circle cx="160" cy="193.60000000000002" r="120" fill="none" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="193.60000000000002" x2="280" y2="193.60000000000002" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="193.60000000000002" x2="155.2" y2="40" stroke="#0f172a" stroke-width="2"/>
+  <line x1="232" y1="97.60000000000001" x2="155.2" y2="40" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="193.60000000000002" x2="232" y2="97.60000000000001" stroke="#0f172a" stroke-width="2"/>
+  <line x1="160" y1="193.60000000000002" x2="232" y2="97.60000000000001" stroke="#0f172a" stroke-width="2"/>
+  <line x1="280" y1="193.60000000000002" x2="232" y2="97.60000000000001" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="160" cy="193.60000000000002" r="3.2" fill="#0f172a"/>
+  <text x="149" y="182.60000000000002" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">O</text>
+  <circle cx="40" cy="193.60000000000002" r="3.2" fill="#0f172a"/>
+  <text x="29" y="182.60000000000002" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">A</text>
+  <circle cx="280" cy="193.60000000000002" r="3.2" fill="#0f172a"/>
+  <text x="291" y="182.60000000000002" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">B</text>
+  <circle cx="232" cy="97.60000000000001" r="3.2" fill="#0f172a"/>
+  <text x="247.4" y="97.60000000000001" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">C</text>
+  <circle cx="155.2" cy="40" r="3.2" fill="#0f172a"/>
+  <text x="170.6" y="40" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">D</text>
+  <circle cx="126.4" cy="78.4" r="3.2" fill="#0f172a"/>
+  <text x="115.4" y="67.4" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">E</text>
+</svg>

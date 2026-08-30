@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "note": "仅存目标语速（WPM）与结构停顿约定及出处。speed 乘数须由 npm run listening-tts:calibrate 对本机引擎实测后写入 calibration.json，禁止在源码里写死。",
+  "probeText": "Question one. Please listen carefully. Good morning. How are you today? I am fine, thank you. Where is the library? It is next to the school gate.",
+  "gradeBands": [
+    {
+      "id": "primary_upper",
+      "label": "小学高段",
+      "matchSubjectSubstrings": ["小学", "五年级", "六年级"],
+      "targetWpm": 120,
+      "targetWpmSource": "未见北京/全国小学听力录音官方 WPM；暂与考纲常见下沿 120 wpm 对齐（与 junior 同目标）。有据后改本字段并重跑 calibrate。",
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4,
+      "gapSource": "本仓库听力稿结构停顿约定：docs/listening-piper-setup.md（__WORD_GAP__ 默认 1.0s，__TURN_GAP__ 默认 0.4s），非北京真题静音实测。"
+    },
+    {
+      "id": "junior",
+      "label": "初中/中考向",
+      "matchSubjectSubstrings": ["初一", "初二", "初三", "初中", "中考"],
+      "targetWpm": 120,
+      "targetWpmSource": "《普通高等学校招生全国统一考试》英语科听力语速长期公开表述区间下沿约 120 wpm（多份考纲/考试说明转述）；未见北京市考试院公布「中考听力录音」独立官方 WPM。",
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4,
+      "gapSource": "本仓库听力稿结构停顿约定：docs/listening-piper-setup.md"
+    },
+    {
+      "id": "senior",
+      "label": "高中/衔接向",
+      "matchSubjectSubstrings": ["高一", "高二", "高三", "高中", "初升高"],
+      "targetWpm": 130,
+      "targetWpmSource": "同上公开表述区间上沿约 130 wpm（考试大纲常见转述 120–130）；近年部分全国卷实测更高，本档先取大纲区间上沿，可在复测后改 targets 再 calibrate。",
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4,
+      "gapSource": "本仓库听力稿结构停顿约定：docs/listening-piper-setup.md"
+    }
+  ]
+}

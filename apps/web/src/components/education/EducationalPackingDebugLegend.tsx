@@ -1,6 +1,6 @@
 "use client";
 
-/** Train 3 — transform attribution legend（`?packing_debug=1` / DEV；非 governance telemetry） */
+/** Train 3 — transform attribution legend（仅 `?packing_debug=1`；非 governance telemetry） */
 export function EducationalPackingDebugLegend() {
   return (
     <div className="no-print mb-3 rounded-md border border-dashed border-violet-500/50 bg-violet-500/[0.06] px-3 py-2 text-[11px] leading-relaxed text-muted-foreground">

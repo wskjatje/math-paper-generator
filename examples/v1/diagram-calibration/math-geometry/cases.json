@@ -1,0 +1,2039 @@
+[
+  {
+    "id": "sample-q1",
+    "content": "如图，大正方形内有四个相同的长方形和一个中央小正方形。若大正方形面积为 $100\\text{ cm}^2$，中央小正方形面积为 $16\\text{ cm}^2$，求长方形的长。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": -28,
+        "minY": -28,
+        "width": 256,
+        "height": 256
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "o0",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "point",
+          "id": "o1",
+          "x": 200,
+          "y": 0
+        },
+        {
+          "type": "point",
+          "id": "o2",
+          "x": 200,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "o3",
+          "x": 0,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "h0",
+          "x": 60,
+          "y": 60
+        },
+        {
+          "type": "point",
+          "id": "h1",
+          "x": 140,
+          "y": 60
+        },
+        {
+          "type": "point",
+          "id": "h2",
+          "x": 140,
+          "y": 140
+        },
+        {
+          "type": "point",
+          "id": "h3",
+          "x": 60,
+          "y": 140
+        },
+        {
+          "type": "point",
+          "id": "t1",
+          "x": 140,
+          "y": 0
+        },
+        {
+          "type": "point",
+          "id": "t3",
+          "x": 200,
+          "y": 140
+        },
+        {
+          "type": "point",
+          "id": "t5",
+          "x": 60,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "t7",
+          "x": 0,
+          "y": 60
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "o0",
+            "o1",
+            "o2",
+            "o3"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "h0",
+            "h1",
+            "h2",
+            "h3"
+          ],
+          "fill": "#e2e8f0"
+        },
+        {
+          "type": "segment",
+          "from": "o0",
+          "to": "o1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "o1",
+          "to": "o2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "o2",
+          "to": "o3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "o3",
+          "to": "o0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h0",
+          "to": "h1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h1",
+          "to": "h2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h2",
+          "to": "h3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h3",
+          "to": "h0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t1",
+          "to": "h1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t3",
+          "to": "h2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t5",
+          "to": "h3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t7",
+          "to": "h0",
+          "style": "solid"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q2",
+    "content": "如图，在梯形 $ABCD$ 中，$AD \\parallel BC$，对角线 $AC$ 与 $BD$ 相交于点 $O$。若 $\\triangle AOD$ 的面积为 $4\\text{ cm}^2$，$\\triangle BOC$ 的面积为 $9\\text{ cm}^2$，求梯形 $ABCD$ 的总面积。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 24,
+        "minY": 34,
+        "width": 292,
+        "height": 202
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 120,
+          "y": 70,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 60,
+          "y": 200,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 280,
+          "y": 200,
+          "label": "C"
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 220,
+          "y": 70,
+          "label": "D"
+        },
+        {
+          "type": "point",
+          "id": "O",
+          "x": 170,
+          "y": 110.625,
+          "label": "O"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B",
+          "to": "C",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "A",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "C",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "B",
+          "to": "D",
+          "style": "dashed"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q3",
+    "content": "如图，将一个 $4\\text{ cm} \\times 9\\text{ cm}$ 的长方形剪成完全相同的两块阶梯形，并拼成一个正方形。关于该剪拼过程，下列说法正确的有：",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 8,
+        "minY": 4,
+        "width": 344,
+        "height": 152
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "r0",
+          "x": 36,
+          "y": 48
+        },
+        {
+          "type": "point",
+          "id": "r1",
+          "x": 180,
+          "y": 48
+        },
+        {
+          "type": "point",
+          "id": "r2",
+          "x": 180,
+          "y": 112
+        },
+        {
+          "type": "point",
+          "id": "r3",
+          "x": 36,
+          "y": 112
+        },
+        {
+          "type": "point",
+          "id": "P0",
+          "x": 132,
+          "y": 112
+        },
+        {
+          "type": "point",
+          "id": "P1",
+          "x": 132,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "P2",
+          "x": 84,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "P3",
+          "x": 84,
+          "y": 48
+        },
+        {
+          "type": "point",
+          "id": "S0",
+          "x": 228,
+          "y": 32
+        },
+        {
+          "type": "point",
+          "id": "S1",
+          "x": 324,
+          "y": 32
+        },
+        {
+          "type": "point",
+          "id": "S2",
+          "x": 324,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "S3",
+          "x": 228,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "U0",
+          "x": 228,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "U1",
+          "x": 324,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "U2",
+          "x": 324,
+          "y": 96
+        },
+        {
+          "type": "point",
+          "id": "U3",
+          "x": 276,
+          "y": 96
+        },
+        {
+          "type": "point",
+          "id": "U4",
+          "x": 276,
+          "y": 64
+        },
+        {
+          "type": "point",
+          "id": "U5",
+          "x": 228,
+          "y": 64
+        },
+        {
+          "type": "point",
+          "id": "V0",
+          "x": 324,
+          "y": 96
+        },
+        {
+          "type": "point",
+          "id": "V1",
+          "x": 276,
+          "y": 96
+        },
+        {
+          "type": "point",
+          "id": "V2",
+          "x": 276,
+          "y": 64
+        },
+        {
+          "type": "point",
+          "id": "W0",
+          "x": 228,
+          "y": 64
+        },
+        {
+          "type": "point",
+          "id": "W1",
+          "x": 276,
+          "y": 64
+        },
+        {
+          "type": "point",
+          "id": "W2",
+          "x": 276,
+          "y": 96
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "U0",
+            "U1",
+            "U2",
+            "U3",
+            "U4",
+            "U5"
+          ],
+          "fill": "#e2e8f0"
+        },
+        {
+          "type": "segment",
+          "from": "r0",
+          "to": "r1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "r1",
+          "to": "r2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "r2",
+          "to": "r3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "r3",
+          "to": "r0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "P0",
+          "to": "P1",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "P1",
+          "to": "P2",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "P2",
+          "to": "P3",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "S0",
+          "to": "S1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "S1",
+          "to": "S2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "S2",
+          "to": "S3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "S3",
+          "to": "S0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "V0",
+          "to": "V1",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "V1",
+          "to": "V2",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "W0",
+          "to": "W1",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "W1",
+          "to": "W2",
+          "style": "dashed"
+        },
+        {
+          "type": "label",
+          "at": "r0",
+          "text": "9×4",
+          "dx": 40.32000000000001,
+          "dy": 35.2
+        },
+        {
+          "type": "label",
+          "at": "S0",
+          "text": "6×6",
+          "dx": 26.880000000000003,
+          "dy": -10
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q4",
+    "content": "如图，用等长的火柴棒拼成一排相邻的正方形。拼 $n$ 个正方形需要 $a_n$ 根火柴棒。下列关于火柴棒数量的选项中正确的有：",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 12,
+        "minY": 52,
+        "width": 200,
+        "height": 104
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "T0",
+          "x": 40,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "B0",
+          "x": 40,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "T1",
+          "x": 88,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "B1",
+          "x": 88,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "T2",
+          "x": 136,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "B2",
+          "x": 136,
+          "y": 128
+        },
+        {
+          "type": "point",
+          "id": "T3",
+          "x": 184,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "B3",
+          "x": 184,
+          "y": 128
+        },
+        {
+          "type": "segment",
+          "from": "T0",
+          "to": "B0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "T1",
+          "to": "B1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "T2",
+          "to": "B2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "T3",
+          "to": "B3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "T0",
+          "to": "T1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B0",
+          "to": "B1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "T1",
+          "to": "T2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B1",
+          "to": "B2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "T2",
+          "to": "T3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B2",
+          "to": "B3",
+          "style": "solid"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q5",
+    "content": "如图，用 4 个完全相同的长方形拼成一个大正方形，中间留有一个边长为 $2\\text{ cm}$ 的正方形空隙。已知大正方形的面积为 $100\\text{ cm}^2$。求：（1）长方形的长；（2）长方形的宽。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": -28,
+        "minY": -28,
+        "width": 256,
+        "height": 256
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "o0",
+          "x": 0,
+          "y": 0
+        },
+        {
+          "type": "point",
+          "id": "o1",
+          "x": 200,
+          "y": 0
+        },
+        {
+          "type": "point",
+          "id": "o2",
+          "x": 200,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "o3",
+          "x": 0,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "h0",
+          "x": 80,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "h1",
+          "x": 120,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "h2",
+          "x": 120,
+          "y": 120
+        },
+        {
+          "type": "point",
+          "id": "h3",
+          "x": 80,
+          "y": 120
+        },
+        {
+          "type": "point",
+          "id": "t1",
+          "x": 120,
+          "y": 0
+        },
+        {
+          "type": "point",
+          "id": "t3",
+          "x": 200,
+          "y": 120
+        },
+        {
+          "type": "point",
+          "id": "t5",
+          "x": 80,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "t7",
+          "x": 0,
+          "y": 80
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "o0",
+            "o1",
+            "o2",
+            "o3"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "h0",
+            "h1",
+            "h2",
+            "h3"
+          ],
+          "fill": "#e2e8f0"
+        },
+        {
+          "type": "segment",
+          "from": "o0",
+          "to": "o1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "o1",
+          "to": "o2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "o2",
+          "to": "o3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "o3",
+          "to": "o0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h0",
+          "to": "h1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h1",
+          "to": "h2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h2",
+          "to": "h3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "h3",
+          "to": "h0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t1",
+          "to": "h1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t3",
+          "to": "h2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t5",
+          "to": "h3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "t7",
+          "to": "h0",
+          "style": "solid"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q6",
+    "content": "如图，有两个大小不同的正方形。已知大正方形的边长比小正方形多 $4\\text{ cm}$，大正方形的面积比小正方形多 $80\\text{ cm}^2$。求：（1）小正方形的边长；（2）大正方形的面积。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 4,
+        "minY": 4,
+        "width": 296,
+        "height": 192
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "a0",
+          "x": 40,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "a1",
+          "x": 160,
+          "y": 40
+        },
+        {
+          "type": "point",
+          "id": "a2",
+          "x": 160,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "a3",
+          "x": 40,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "b0",
+          "x": 184,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "b1",
+          "x": 264,
+          "y": 80
+        },
+        {
+          "type": "point",
+          "id": "b2",
+          "x": 264,
+          "y": 160
+        },
+        {
+          "type": "point",
+          "id": "b3",
+          "x": 184,
+          "y": 160
+        },
+        {
+          "type": "segment",
+          "from": "a0",
+          "to": "a1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "a1",
+          "to": "a2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "a2",
+          "to": "a3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "a3",
+          "to": "a0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "b0",
+          "to": "b1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "b1",
+          "to": "b2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "b2",
+          "to": "b3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "b3",
+          "to": "b0",
+          "style": "solid"
+        },
+        {
+          "type": "label",
+          "at": "a0",
+          "text": "12",
+          "dx": 42,
+          "dy": -8
+        },
+        {
+          "type": "label",
+          "at": "b0",
+          "text": "8",
+          "dx": 20,
+          "dy": -8
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q7",
+    "content": "如图，在平行四边形 $ABCD$ 中，过对角线 $AC$ 上一点 $O$ 作两组对边的平行线，将原平行四边形分成四个小平行四边形。已知其中两个不相邻的平行四边形面积分别为 $15\\text{ cm}^2$ 和 $25\\text{ cm}^2$。求：（1）另外两个平行四边形面积的关系；（2）若整个平行四边形 $ABCD$ 的面积为 $80\\text{ cm}^2$，求另外两个平行四边形的面积。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 24,
+        "minY": 54,
+        "width": 282,
+        "height": 182
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 60,
+          "y": 200,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 220,
+          "y": 200,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 270,
+          "y": 90,
+          "label": "C"
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 110,
+          "y": 90,
+          "label": "D"
+        },
+        {
+          "type": "point",
+          "id": "O",
+          "x": 154.5,
+          "y": 150.5,
+          "label": "O"
+        },
+        {
+          "type": "point",
+          "id": "pAD",
+          "x": 82.5,
+          "y": 150.5
+        },
+        {
+          "type": "point",
+          "id": "pBC",
+          "x": 242.5,
+          "y": 150.5
+        },
+        {
+          "type": "point",
+          "id": "pAB",
+          "x": 132,
+          "y": 200
+        },
+        {
+          "type": "point",
+          "id": "pDC",
+          "x": 182,
+          "y": 90
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B",
+          "to": "C",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "A",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "C",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "pAD",
+          "to": "pBC",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "pAB",
+          "to": "pDC",
+          "style": "dashed"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q8",
+    "content": "如图，在一个 $3 \\times 3$ 的方格网中：\n（1）图中一共有多少个矩形（包括正方形）？\n（2）若将左上角第一个 $1 \\times 1$ 的小正方形涂上阴影，求不包含阴影的矩形个数。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "grid",
+          "origin_x": 40,
+          "origin_y": 40,
+          "cell": 28,
+          "rows": 3,
+          "cols": 3,
+          "shade": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q9",
+    "content": "如图，在平行四边形 $ABCD$ 中，$E$ 是 $BC$ 的中点，连接 $AE$ 并延长交 $DC$ 的延长线于点 $F$。证明：$\\triangle ABE$ 的面积等于 $\\triangle FCE$ 的面积。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 20,
+        "minY": 50,
+        "width": 450,
+        "height": 190
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 60,
+          "y": 200,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 220,
+          "y": 200,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 270,
+          "y": 90,
+          "label": "C"
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 110,
+          "y": 90,
+          "label": "D"
+        },
+        {
+          "type": "point",
+          "id": "E",
+          "x": 245,
+          "y": 145,
+          "label": "E"
+        },
+        {
+          "type": "point",
+          "id": "F",
+          "x": 430,
+          "y": 90,
+          "label": "F"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B",
+          "to": "C",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "D",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "A",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "E",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "E",
+          "to": "F",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "F",
+          "style": "dashed"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q10",
+    "content": "如图，在 $\\triangle ABC$ 中，$D, E$ 分别在 $AB, AC$ 上且 $DE \\parallel BC$。已知 $S_{\\triangle ADE} = 4\\text{ cm}^2$，$S_{\\triangle BDE} = 6\\text{ cm}^2$。证明：（1）$\\triangle CDE$ 的面积为 $6\\text{ cm}^2$；（2）$\\triangle ABC$ 的面积为 $25\\text{ cm}^2$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 4,
+        "minY": 4,
+        "width": 352,
+        "height": 252
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 180,
+          "y": 40,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 40,
+          "y": 220,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 320,
+          "y": 220,
+          "label": "C"
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 124,
+          "y": 112,
+          "label": "D"
+        },
+        {
+          "type": "point",
+          "id": "E",
+          "x": 236,
+          "y": 112,
+          "label": "E"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "B",
+          "to": "C",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "A",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "D",
+          "to": "E",
+          "style": "solid"
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "sample-q11",
+    "content": "如图所示，在密闭化学反应容器中，气体 A 与 B 反应生成气体 C。反应过程中 A 和 C 的体积变化均符合数学中的等差数列规律。在 $t=0$ 分钟时，$V_A = 12\\text{ L}$，$V_C = 0\\text{ L}$；$t=1$ 分钟时，$V_A = 9\\text{ L}$，$V_C = 4\\text{ L}$；$t=2$ 分钟时，$V_A = 6\\text{ L}$，$V_C = 8\\text{ L}$。求：（1）A 气体体积与时间 $t$（分钟）的数学关系式；（2）当 A 气体完全反应完时，生成的 C 气体体积是多少。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "viewBox": {
+        "minX": 28,
+        "minY": 6,
+        "width": 308,
+        "height": 270
+      },
+      "elements": [
+        {
+          "type": "point",
+          "id": "origin",
+          "x": 64,
+          "y": 240
+        },
+        {
+          "type": "point",
+          "id": "Xt",
+          "x": 300,
+          "y": 240
+        },
+        {
+          "type": "point",
+          "id": "Yv",
+          "x": 64,
+          "y": 42
+        },
+        {
+          "type": "point",
+          "id": "xt0",
+          "x": 64,
+          "y": 240
+        },
+        {
+          "type": "point",
+          "id": "xtt0",
+          "x": 64,
+          "y": 235
+        },
+        {
+          "type": "point",
+          "id": "xt1",
+          "x": 164,
+          "y": 240
+        },
+        {
+          "type": "point",
+          "id": "xtt1",
+          "x": 164,
+          "y": 235
+        },
+        {
+          "type": "point",
+          "id": "xt2",
+          "x": 264,
+          "y": 240
+        },
+        {
+          "type": "point",
+          "id": "xtt2",
+          "x": 264,
+          "y": 235
+        },
+        {
+          "type": "point",
+          "id": "yv0",
+          "x": 64,
+          "y": 183.33333333333334
+        },
+        {
+          "type": "point",
+          "id": "yve0",
+          "x": 69,
+          "y": 183.33333333333334
+        },
+        {
+          "type": "point",
+          "id": "yv1",
+          "x": 64,
+          "y": 155
+        },
+        {
+          "type": "point",
+          "id": "yve1",
+          "x": 69,
+          "y": 155
+        },
+        {
+          "type": "point",
+          "id": "yv2",
+          "x": 64,
+          "y": 126.66666666666667
+        },
+        {
+          "type": "point",
+          "id": "yve2",
+          "x": 69,
+          "y": 126.66666666666667
+        },
+        {
+          "type": "point",
+          "id": "yv3",
+          "x": 64,
+          "y": 112.5
+        },
+        {
+          "type": "point",
+          "id": "yve3",
+          "x": 69,
+          "y": 112.5
+        },
+        {
+          "type": "point",
+          "id": "yv4",
+          "x": 64,
+          "y": 70
+        },
+        {
+          "type": "point",
+          "id": "yve4",
+          "x": 69,
+          "y": 70
+        },
+        {
+          "type": "point",
+          "id": "a0",
+          "x": 64,
+          "y": 70
+        },
+        {
+          "type": "point",
+          "id": "a1",
+          "x": 164,
+          "y": 112.5
+        },
+        {
+          "type": "point",
+          "id": "a2",
+          "x": 264,
+          "y": 155
+        },
+        {
+          "type": "point",
+          "id": "c0",
+          "x": 64,
+          "y": 240
+        },
+        {
+          "type": "point",
+          "id": "c1",
+          "x": 164,
+          "y": 183.33333333333334
+        },
+        {
+          "type": "point",
+          "id": "c2",
+          "x": 264,
+          "y": 126.66666666666667
+        },
+        {
+          "type": "segment",
+          "from": "xt0",
+          "to": "xtt0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "xt1",
+          "to": "xtt1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "xt2",
+          "to": "xtt2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "yv0",
+          "to": "yve0",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "yv1",
+          "to": "yve1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "yv2",
+          "to": "yve2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "yv3",
+          "to": "yve3",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "yv4",
+          "to": "yve4",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "a0",
+          "to": "a1",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "a1",
+          "to": "a2",
+          "style": "solid"
+        },
+        {
+          "type": "segment",
+          "from": "c0",
+          "to": "c1",
+          "style": "dashed"
+        },
+        {
+          "type": "segment",
+          "from": "c1",
+          "to": "c2",
+          "style": "dashed"
+        },
+        {
+          "type": "arrow",
+          "from": "origin",
+          "to": "Xt"
+        },
+        {
+          "type": "arrow",
+          "from": "origin",
+          "to": "Yv"
+        },
+        {
+          "type": "label",
+          "at": "Xt",
+          "text": "t/min",
+          "dx": 4,
+          "dy": 16
+        },
+        {
+          "type": "label",
+          "at": "Yv",
+          "text": "V/L",
+          "dx": -28,
+          "dy": 4
+        },
+        {
+          "type": "label",
+          "at": "xt0",
+          "text": "0",
+          "dx": -3,
+          "dy": 16
+        },
+        {
+          "type": "label",
+          "at": "xt1",
+          "text": "1",
+          "dx": -3,
+          "dy": 16
+        },
+        {
+          "type": "label",
+          "at": "xt2",
+          "text": "2",
+          "dx": -3,
+          "dy": 16
+        },
+        {
+          "type": "label",
+          "at": "yv0",
+          "text": "4",
+          "dx": -22,
+          "dy": 4
+        },
+        {
+          "type": "label",
+          "at": "yv1",
+          "text": "6",
+          "dx": -22,
+          "dy": 4
+        },
+        {
+          "type": "label",
+          "at": "yv2",
+          "text": "8",
+          "dx": -22,
+          "dy": 4
+        },
+        {
+          "type": "label",
+          "at": "yv3",
+          "text": "9",
+          "dx": -22,
+          "dy": 4
+        },
+        {
+          "type": "label",
+          "at": "yv4",
+          "text": "12",
+          "dx": -22,
+          "dy": 4
+        },
+        {
+          "type": "label",
+          "at": "a0",
+          "text": "V_A",
+          "dx": 8,
+          "dy": -6
+        },
+        {
+          "type": "label",
+          "at": "c2",
+          "text": "V_C",
+          "dx": 8,
+          "dy": -6
+        }
+      ]
+    },
+    "expectOk": true,
+    "source": "sample-exam-scene"
+  },
+  {
+    "id": "tri-abc",
+    "content": "如图，$\\triangle ABC$ 中，$AB=AC$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 120,
+          "y": 40,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 40,
+          "y": 160,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 200,
+          "y": 160,
+          "label": "C"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C"
+          ],
+          "fill": "none"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        },
+        {
+          "type": "segment",
+          "from": "B",
+          "to": "C"
+        },
+        {
+          "type": "segment",
+          "from": "C",
+          "to": "A"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "seg-ab",
+    "content": "如图，线段 $AB$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 20,
+          "y": 80,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 180,
+          "y": 80,
+          "label": "B"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "B"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "circle-o",
+    "content": "如图，圆 $O$ 与点 $A$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "O",
+          "x": 100,
+          "y": 100,
+          "label": "O"
+        },
+        {
+          "type": "point",
+          "id": "A",
+          "x": 160,
+          "y": 100,
+          "label": "A"
+        },
+        {
+          "type": "circle",
+          "center": "O",
+          "r": 60
+        },
+        {
+          "type": "segment",
+          "from": "O",
+          "to": "A"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "grid-3x4",
+    "content": "如图，在 3×4 的网格中涂色。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "grid",
+          "rows": 3,
+          "cols": 4,
+          "shade": [
+            [
+              0,
+              0
+            ],
+            [
+              1,
+              1
+            ]
+          ]
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "rect-abcd",
+    "content": "如图，矩形 $ABCD$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 40,
+          "y": 40,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 200,
+          "y": 40,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 200,
+          "y": 140,
+          "label": "C"
+        },
+        {
+          "type": "point",
+          "id": "D",
+          "x": 40,
+          "y": 140,
+          "label": "D"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C",
+            "D"
+          ],
+          "fill": "none"
+        }
+      ]
+    },
+    "expectOk": true
+  },
+  {
+    "id": "neg-missing-point-D",
+    "content": "如图，点 $D$ 在 $BC$ 上，$\\triangle ABC$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 120,
+          "y": 40,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 40,
+          "y": 160,
+          "label": "B"
+        },
+        {
+          "type": "point",
+          "id": "C",
+          "x": 200,
+          "y": 160,
+          "label": "C"
+        },
+        {
+          "type": "polygon",
+          "points": [
+            "A",
+            "B",
+            "C"
+          ],
+          "fill": "none"
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-bad-ref",
+    "content": "如图，线段 $AB$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 10,
+          "y": 10,
+          "label": "A"
+        },
+        {
+          "type": "segment",
+          "from": "A",
+          "to": "Z"
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-wrong-grid",
+    "content": "如图，在 3×4 的网格中涂色。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "grid",
+          "rows": 2,
+          "cols": 2,
+          "shade": [
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-empty-elements",
+    "content": "如图，三角形。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": []
+    },
+    "expectOk": false
+  },
+  {
+    "id": "neg-wrong-pack",
+    "content": "如图，$\\triangle ABC$。",
+    "figure_scene": {
+      "pack": "math.function",
+      "version": 1,
+      "elements": [
+        {
+          "type": "axes",
+          "id": "ax1",
+          "x": {
+            "min": -1,
+            "max": 1
+          },
+          "y": {
+            "min": -1,
+            "max": 1
+          }
+        },
+        {
+          "type": "sampled_curve",
+          "id": "f1",
+          "axes": "ax1",
+          "expr": "x",
+          "domain": {
+            "min": -1,
+            "max": 1
+          }
+        }
+      ]
+    },
+    "expectOk": false
+  },
+  {
+    "id": "arrow-ab",
+    "content": "如图，有向线段从 $A$ 到 $B$。",
+    "figure_scene": {
+      "pack": "math.geometry",
+      "version": 1,
+      "elements": [
+        {
+          "type": "point",
+          "id": "A",
+          "x": 40,
+          "y": 100,
+          "label": "A"
+        },
+        {
+          "type": "point",
+          "id": "B",
+          "x": 200,
+          "y": 100,
+          "label": "B"
+        },
+        {
+          "type": "arrow",
+          "from": "A",
+          "to": "B"
+        }
+      ]
+    },
+    "expectOk": true
+  }
+]

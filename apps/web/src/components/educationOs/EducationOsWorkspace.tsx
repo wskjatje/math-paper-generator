@@ -31,6 +31,7 @@ import {
   isValidLocalEducationUserId,
 } from "@/lib/educationOs/localEducationUser.shared";
 import { syncExamStoragePreferenceToCookie } from "@/lib/examStoragePreference";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 import { QUESTION_V1_DEMO } from "@/lib/educationOs/samples/questionV1Demo";
 import { safeParseQuestionSchemaV1 } from "@/lib/educationOs/questionSchema.zod";
 import { getBackendCapabilities } from "@/lib/exam.functions.server";
@@ -205,10 +206,10 @@ export function EducationOsWorkspace() {
             : "尚无档案行，请稍后点击刷新（注册后触发器应已写入）。",
         );
       } else if (res.reason === "no_mysql") {
-        toast.error("MySQL 未连接或未建表；请在设置中配置并执行 zhixue_schema（含教育 OS 表）。");
+        toast.error("本机数据库未就绪；请在设置中配置并完成建表。");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setProfileLoading(false);
     }
@@ -236,13 +237,13 @@ export function EducationOsWorkspace() {
       ]);
       if (d.ok) setDocs(d.rows);
       else if (d.reason === "no_mysql") {
-        toast.error("MySQL 未就绪，无法列出题库。");
+        toast.error("本机数据库未就绪，无法列出题库。");
       }
       if (w.ok) setWrongs(w.rows);
       if (t.ok) setTutors(t.rows);
       if (a.ok) setAgents(a.rows);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setListsLoading(false);
     }
@@ -285,10 +286,10 @@ export function EducationOsWorkspace() {
       });
       if (res.ok) toast.success("档案已更新");
       else if (res.reason === "no_mysql") {
-        toast.error("MySQL 未就绪，无法更新档案。");
+        toast.error("本机数据库未就绪，无法更新档案。");
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     }
   };
 
@@ -300,7 +301,7 @@ export function EducationOsWorkspace() {
         toast.error(r.error.issues.map((x) => x.message).join("；"));
         return;
       }
-      toast.success("JSON 符合 QuestionSchemaV1");
+      toast.success("题目 JSON 格式正确");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "JSON 语法错误");
     }
@@ -328,9 +329,9 @@ export function EducationOsWorkspace() {
         toast.success(`已保存，文档 id：${res.id}`);
         void refreshLists();
       } else if (res.reason === "unauthorized") toast.error("未授权");
-      else if (res.reason === "no_mysql") toast.error("MySQL 未就绪，无法保存。");
+      else if (res.reason === "no_mysql") toast.error("本机数据库未就绪，无法保存。");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setSaveBusy(false);
     }
@@ -358,10 +359,10 @@ export function EducationOsWorkspace() {
       if (res.ok) {
         setOcrText(res.text);
         setOcrConfidence(typeof res.confidence === "number" ? res.confidence : null);
-        toast.success("OCR 完成（开源 Tesseract）");
+        toast.success("图片识别完成");
       } else toast.error("图像无效或过短");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setOcrBusy(false);
     }
@@ -390,7 +391,7 @@ export function EducationOsWorkspace() {
         void refreshLists();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setWrongBusy(false);
     }
@@ -415,7 +416,7 @@ export function EducationOsWorkspace() {
         void refreshLists();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setTutorBusy(false);
     }
@@ -435,7 +436,7 @@ export function EducationOsWorkspace() {
         void refreshLists();
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setAgentBusy(false);
     }
@@ -447,7 +448,7 @@ export function EducationOsWorkspace() {
     try {
       payload = JSON.parse(eventPayloadJson) as Record<string, unknown>;
     } catch {
-      toast.error("学习事件 payload 须为合法 JSON 对象");
+      toast.error("学习事件内容须为合法 JSON 对象");
       return;
     }
     setEventBusy(true);
@@ -458,7 +459,7 @@ export function EducationOsWorkspace() {
       });
       toast.success("事件已记录");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setEventBusy(false);
     }
@@ -467,13 +468,9 @@ export function EducationOsWorkspace() {
   if (!isLocalUnifiedPlane && !auth.configured) {
     return (
       <div className="container mx-auto max-w-3xl px-4 py-10">
-        <FormPanel title="教育 AI OS" subtitle="云端一体模式需配置 Supabase 前端环境变量">
+        <FormPanel title="教育 AI OS">
           <p className="text-sm text-muted-foreground">
-            当前试卷存储未选「本地 MySQL」，教育 OS 与试卷均走云端，需在{" "}
-            <code className="rounded bg-muted px-1">.env</code> 中设置{" "}
-            <code className="rounded bg-muted px-1">VITE_SUPABASE_URL</code> 与{" "}
-            <code className="rounded bg-muted px-1">VITE_SUPABASE_PUBLISHABLE_KEY</code>
-            。若希望全部数据在本地，请在设置中将试卷库改为「本地 MySQL」并配置数据库。
+            云端模式需完成账号服务配置，或在设置中改用本机数据库。
           </p>
         </FormPanel>
       </div>
@@ -497,39 +494,45 @@ export function EducationOsWorkspace() {
         <h1 className="text-display text-2xl font-semibold text-foreground">教育 AI OS</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {isLocalUnifiedPlane
-            ? "本地一体模式：档案与题目协议、错题、Tutor、Agent、学习事件均写入当前 MySQL（与试卷同一库）。身份为本机生成的匿名 UUID，适用于单机或内网。"
-            : "云端一体模式：账号与档案走 Supabase Auth；题目协议与错题等数据走 Supabase（RLS）。"}
+            ? "本机模式：档案、题库、错题与学习记录写入本机数据库，适用于单机或内网。"
+            : "云端模式：账号与档案走云端登录；题库与错题等数据保存在云端。"}
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={setTab} className="gap-4">
-        <TabsList className="flex h-auto flex-wrap justify-start gap-1 bg-muted/40 p-1">
-          <TabsTrigger value="account">账号</TabsTrigger>
-          <TabsTrigger value="ocr">开源 OCR</TabsTrigger>
-          <TabsTrigger value="question">题目入库</TabsTrigger>
-          <TabsTrigger value="library">我的题库</TabsTrigger>
-          <TabsTrigger value="wrongbook">错题本</TabsTrigger>
-          <TabsTrigger value="tutor">Tutor</TabsTrigger>
-          <TabsTrigger value="agents">Agent</TabsTrigger>
-          <TabsTrigger value="events">学习事件</TabsTrigger>
+        <TabsList variant="portal">
+          <TabsTrigger variant="portal" value="account">
+            账号
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="ocr">
+            图片识别
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="question">
+            题目入库
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="library">
+            我的题库
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="wrongbook">
+            错题本
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="tutor">
+            Tutor
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="agents">
+            Agent
+          </TabsTrigger>
+          <TabsTrigger variant="portal" value="events">
+            学习事件
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="account">
-          <FormPanel
-            title={isLocalUnifiedPlane ? "本地档案" : "登录与档案"}
-            subtitle={
-              isLocalUnifiedPlane
-                ? `本地一体 · 用户 id：${localEduUserId?.slice(0, 8)}…（仅存于本机浏览器）`
-                : auth.user?.email
-                  ? `当前：${auth.user.email}`
-                  : "使用邮箱与密码（Supabase Auth）"
-            }
-          >
+          <FormPanel title={isLocalUnifiedPlane ? "本地档案" : "登录与档案"}>
             {isLocalUnifiedPlane ? (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  未使用 Supabase 登录。展示名与下列数据均保存在{" "}
-                  <code className="rounded bg-muted px-1">edu_profiles</code> 等本地表中。
+                  当前为本机档案模式，展示名与下列数据保存在本机数据库中。
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Button
@@ -661,10 +664,7 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="ocr">
-          <FormPanel
-            title="开源 OCR（Tesseract）"
-            subtitle="服务端识别；与「导入线下卷」里浏览器端 OCR 互补。扫描 PDF 请先导出为图片。"
-          >
+          <FormPanel title="图片识别">
             <div className="grid gap-3 sm:max-w-lg">
               <div>
                 <Label htmlFor="eos-ocr-lang">语言包</Label>
@@ -725,10 +725,7 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="question">
-          <FormPanel
-            title="题目协议入库"
-            subtitle="校验 Zod 后写入 os_question_documents（云端 Supabase 或本地 MySQL，与试卷存储偏好一致）"
-          >
+          <FormPanel title="题目协议入库">
             <div className="mb-2 flex flex-wrap gap-2">
               <Button
                 type="button"
@@ -761,7 +758,7 @@ export function EducationOsWorkspace() {
                 onClick={() => void onSaveQuestion()}
               >
                 {saveBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                {isLocalUnifiedPlane ? "保存到本地 MySQL" : "保存到云端"}
+                {isLocalUnifiedPlane ? "保存到本机数据库" : "保存到云端"}
               </Button>
             </div>
             <Textarea
@@ -774,14 +771,7 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="library">
-          <FormPanel
-            title="我的题库"
-            subtitle={
-              isLocalUnifiedPlane
-                ? "题目协议文档列表（本地 MySQL：本人创建 + visibility=public）"
-                : "题目协议文档列表（RLS：本人 + public）"
-            }
-          >
+          <FormPanel title="我的题库">
             <div className="mb-2 flex gap-2">
               <Button
                 type="button"
@@ -810,8 +800,8 @@ export function EducationOsWorkspace() {
                     <span className="text-xs text-muted-foreground">{row.created_at}</span>
                   </div>
                   <div className="mt-1 text-xs text-muted-foreground">
-                    {row.source} · {row.visibility} · {row.schema_version}
-                    {row.question_id ? ` · 题 id：${row.question_id}` : ""}
+                    {row.source} · {row.visibility === "private" ? "私有" : row.visibility === "public" ? "公开" : row.visibility}
+                    {row.question_id ? ` · 题号：${row.question_id}` : ""}
                   </div>
                   {row.stem_preview ? (
                     <p className="mt-1 text-foreground">{row.stem_preview}</p>
@@ -826,10 +816,10 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="wrongbook">
-          <FormPanel title="错题本" subtitle="列表与手动登记">
+          <FormPanel title="错题本">
             <div className="mb-4 grid gap-2 rounded-lg border border-border/60 bg-muted/20 p-3 sm:grid-cols-2">
               <div className="sm:col-span-2">
-                <Label>题目文档 UUID（可选）</Label>
+                <Label>题目文档编号（可选）</Label>
                 <Input
                   value={wrongDocId}
                   onChange={(e) => setWrongDocId(e.target.value)}
@@ -838,7 +828,7 @@ export function EducationOsWorkspace() {
                 />
               </div>
               <div className="sm:col-span-2">
-                <Label>试卷 UUID（可选）</Label>
+                <Label>试卷编号（可选）</Label>
                 <Input
                   value={wrongExamId}
                   onChange={(e) => setWrongExamId(e.target.value)}
@@ -903,7 +893,7 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="tutor">
-          <FormPanel title="Tutor 会话" subtitle="占位会话，后续可接多轮讲题">
+          <FormPanel title="Tutor 会话">
             <div className="mb-4 flex flex-wrap gap-2 rounded-lg border border-border/60 bg-muted/20 p-3">
               <Input
                 value={tutorTitle}
@@ -914,7 +904,7 @@ export function EducationOsWorkspace() {
               <Input
                 value={tutorExamId}
                 onChange={(e) => setTutorExamId(e.target.value)}
-                placeholder="关联试卷 UUID（可选）"
+                placeholder="关联试卷编号（可选）"
                 className={cn(FIELD, "max-w-xs")}
               />
               <Button
@@ -952,7 +942,7 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="agents">
-          <FormPanel title="Agent 槽位" subtitle="为 Teacher / Tutor / Learning 等编排预留">
+          <FormPanel title="Agent 槽位">
             <div className="mb-4 flex flex-wrap items-end gap-2 rounded-lg border border-border/60 bg-muted/20 p-3">
               <div>
                 <Label className="text-xs">类型</Label>
@@ -1006,7 +996,7 @@ export function EducationOsWorkspace() {
         </TabsContent>
 
         <TabsContent value="events">
-          <FormPanel title="学习事件" subtitle="写入 learning_events，供后续 Learning Engine 聚合">
+          <FormPanel title="学习事件">
             <div className="grid gap-3 sm:max-w-lg">
               <div>
                 <Label htmlFor="eos-ev-kind">事件类型</Label>
@@ -1018,7 +1008,7 @@ export function EducationOsWorkspace() {
                 />
               </div>
               <div>
-                <Label htmlFor="eos-ev-payload">Payload（JSON 对象）</Label>
+                <Label htmlFor="eos-ev-payload">事件内容（JSON）</Label>
                 <Textarea
                   id="eos-ev-payload"
                   value={eventPayloadJson}

@@ -1,0 +1,199 @@
+{
+  "version": 1,
+  "assignments": [
+    {
+      "id": "bcdb8095-1eb9-4a13-82ea-946f8c0c45df",
+      "exam_id": "6feb26c6-2813-4ebb-8b0e-d2c02b36c4db",
+      "teacher_label": "管理员",
+      "title": "测试",
+      "class_name": "X202601",
+      "due_at": null,
+      "hide_answers": true,
+      "created_at": "2026-07-30T03:51:14.775Z",
+      "teacher_user_id": "00000000-0000-4000-8000-000000000001",
+      "grade_id": "pri_g4_s1",
+      "class_id": "bd964df1-b274-407b-a3fb-eb415c8de50d",
+      "target_student_ids": [
+        "d5e45fd3-eb86-42dd-ae39-96960b25a995"
+      ]
+    }
+  ],
+  "submissions": [
+    {
+      "id": "f1c40f74-0d3d-4f8b-8edf-a655df5f97e0",
+      "assignment_id": "bcdb8095-1eb9-4a13-82ea-946f8c0c45df",
+      "student_label": "张三",
+      "answer_payload": {
+        "version": 1,
+        "answers": {
+          "dae36ca3-e215-4f6e-9a54-d11de0b5e37b": {
+            "value": "D"
+          },
+          "806c51b2-e494-4565-b64f-e7eb539877cc": {
+            "value": "B"
+          },
+          "32b7208d-1f6f-4b12-a320-4627ff7a5601": {
+            "value": "A,B,C,D"
+          },
+          "15257e2c-e579-4eb7-bdd0-704e204b2064": {
+            "value": "A,B"
+          },
+          "27e607b1-7019-4792-9fd7-8da88f74e827": {
+            "value": ""
+          },
+          "ce37bac7-ff4d-4877-82d6-9a23885237ce": {
+            "value": ""
+          },
+          "db82f2d3-342a-4797-bbe9-bff663f63768": {
+            "value": ""
+          },
+          "624e13f3-a785-4deb-83af-237f76b96d51": {
+            "value": ""
+          },
+          "21743800-47af-4b8e-9d25-b640e8ac8ec4": {
+            "value": ""
+          },
+          "a033ef6c-d52f-4858-9a11-b4d49c3ead86": {
+            "value": ""
+          },
+          "f1761e8d-0151-4a10-9c87-2feff44b0674": {
+            "value": ""
+          }
+        }
+      },
+      "student_user_id": "d5e45fd3-eb86-42dd-ae39-96960b25a995",
+      "started_at": "2026-07-30T03:51:35.720Z",
+      "submitted_at": "2026-07-30T03:51:50.968Z",
+      "grade_result": {
+        "version": 1,
+        "gradedAt": "2026-07-30T03:51:50.968Z",
+        "score": 9,
+        "maxScore": 110,
+        "ungradedCount": 0,
+        "questions": [
+          {
+            "questionId": "dae36ca3-e215-4f6e-9a54-d11de0b5e37b",
+            "orderIndex": 0,
+            "type": "multiple_choice",
+            "points": 8,
+            "studentValue": "D",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "B"
+          },
+          {
+            "questionId": "806c51b2-e494-4565-b64f-e7eb539877cc",
+            "orderIndex": 1,
+            "type": "multiple_choice",
+            "points": 8,
+            "studentValue": "B",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "C"
+          },
+          {
+            "questionId": "32b7208d-1f6f-4b12-a320-4627ff7a5601",
+            "orderIndex": 2,
+            "type": "multiple_choice_multi",
+            "points": 9,
+            "studentValue": "A,B,C,D",
+            "verdict": "correct",
+            "earnedPoints": 9
+          },
+          {
+            "questionId": "15257e2c-e579-4eb7-bdd0-704e204b2064",
+            "orderIndex": 3,
+            "type": "multiple_choice_multi",
+            "points": 9,
+            "studentValue": "A,B",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "A,B,C,D"
+          },
+          {
+            "questionId": "27e607b1-7019-4792-9fd7-8da88f74e827",
+            "orderIndex": 4,
+            "type": "calculation",
+            "points": 10,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "（1）6 cm；（2）4 cm"
+          },
+          {
+            "questionId": "ce37bac7-ff4d-4877-82d6-9a23885237ce",
+            "orderIndex": 5,
+            "type": "calculation",
+            "points": 10,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "（1）8 cm；（2）144 cm²"
+          },
+          {
+            "questionId": "db82f2d3-342a-4797-bbe9-bff663f63768",
+            "orderIndex": 6,
+            "type": "short_answer",
+            "points": 10,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "（1）面积相等；（2）均为 20 cm²"
+          },
+          {
+            "questionId": "624e13f3-a785-4deb-83af-237f76b96d51",
+            "orderIndex": 7,
+            "type": "short_answer",
+            "points": 10,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "（1）36 个；（2）27 个"
+          },
+          {
+            "questionId": "21743800-47af-4b8e-9d25-b640e8ac8ec4",
+            "orderIndex": 8,
+            "type": "proof",
+            "points": 11,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "证明见解析"
+          },
+          {
+            "questionId": "a033ef6c-d52f-4858-9a11-b4d49c3ead86",
+            "orderIndex": 9,
+            "type": "proof",
+            "points": 11,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "（1）证明见解析；（2）证明见解析"
+          },
+          {
+            "questionId": "f1761e8d-0151-4a10-9c87-2feff44b0674",
+            "orderIndex": 10,
+            "type": "cross_math_chemistry",
+            "points": 14,
+            "studentValue": "",
+            "verdict": "wrong",
+            "earnedPoints": 0,
+            "correctAnswer": "（1）V_A = 12 - 3t (0 ⩽ t ⩽ 4)；（2）16 L"
+          }
+        ],
+        "wrongQuestionIds": [
+          "dae36ca3-e215-4f6e-9a54-d11de0b5e37b",
+          "806c51b2-e494-4565-b64f-e7eb539877cc",
+          "15257e2c-e579-4eb7-bdd0-704e204b2064",
+          "27e607b1-7019-4792-9fd7-8da88f74e827",
+          "ce37bac7-ff4d-4877-82d6-9a23885237ce",
+          "db82f2d3-342a-4797-bbe9-bff663f63768",
+          "624e13f3-a785-4deb-83af-237f76b96d51",
+          "21743800-47af-4b8e-9d25-b640e8ac8ec4",
+          "a033ef6c-d52f-4858-9a11-b4d49c3ead86",
+          "f1761e8d-0151-4a10-9c87-2feff44b0674"
+        ]
+      }
+    }
+  ]
+}

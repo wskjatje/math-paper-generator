@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "note": "autoCrawl 默认开启；显式 jobs 仅用于覆盖/补充个别册次 URL。",
+  "autoCrawl": {
+    "enabled": true,
+    "tocCollectionPath": "data/grade-fills/toc-collection-all-slots.csv",
+    "smarteduCatalogPath": "data/smartedu-materials/catalog.json",
+    "applyTocUnitLabels": true,
+    "crawlFromTocSourceUrl": true,
+    "crawlFromSmarteduCatalog": true
+  },
+  "defaults": {
+    "markdownHeadingLevels": [2, 3],
+    "unitLineRegex": null,
+    "minUnits": 1,
+    "maxUnits": 80,
+    "rejectPlaceholderUnits": true
+  },
+  "jobs": []
+}

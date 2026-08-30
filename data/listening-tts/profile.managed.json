@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "calibrated": false,
+  "calibrationNote": "由 npm run listening-tts:ensure 根据 profile.managed.json + calibration.json 生成。语速须写入可提交的 calibration.json（对照北京听力实测），禁止把占位 1.0 当作北京标定。",
+  "endpoint": {
+    "baseUrl": "http://127.0.0.1:7778/v1",
+    "apiKey": "",
+    "model": "chatterbox",
+    "responseFormat": "wav",
+    "extraBody": {}
+  },
+  "slots": {
+    "narrator": {
+      "voice": "narrator",
+      "referenceWav": "data/listening-tts/samples/narrator.wav",
+      "label": "旁白（题号/复听提示）"
+    },
+    "dialogue": [
+      {
+        "voice": "dialogue-a",
+        "referenceWav": "data/listening-tts/samples/dialogue-a.wav",
+        "label": "对话角色槽 0（按材料 Name: 出现顺序映射）"
+      },
+      {
+        "voice": "dialogue-b",
+        "referenceWav": "data/listening-tts/samples/dialogue-b.wav",
+        "label": "对话角色槽 1"
+      }
+    ]
+  },
+  "gradeBands": [
+    {
+      "id": "primary_upper",
+      "label": "小学高段",
+      "matchSubjectSubstrings": ["小学", "五年级", "六年级"],
+      "speed": 1.0,
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4
+    },
+    {
+      "id": "junior",
+      "label": "初中/中考向",
+      "matchSubjectSubstrings": ["初一", "初二", "初三", "初中", "中考"],
+      "speed": 1.0,
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4
+    },
+    {
+      "id": "senior",
+      "label": "高中/衔接向",
+      "matchSubjectSubstrings": ["高一", "高二", "高三", "高中", "初升高"],
+      "speed": 1.0,
+      "cueGapSec": 1.0,
+      "turnGapSec": 0.4
+    }
+  ]
+}

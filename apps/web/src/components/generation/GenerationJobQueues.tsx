@@ -1,4 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { ClipboardList } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -6,12 +7,26 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   Sheet,
   SheetContent,
   SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  SimplePager,
+  TABLE_LIST_PAGE_SIZE,
+  pageCountFor,
+  paginateSlice,
+} from "@/components/list/SimplePager";
 import {
   useExampleGenJobs,
   useHasRunningGenerationJob,
@@ -27,10 +42,21 @@ import {
   patchPaperJob,
   clearCompletedExampleJobs,
   clearCompletedPaperJobs,
+  clearFailedExampleJobs,
+  clearFailedPaperJobs,
   forceFailAllRunningGenerationJobs,
 } from "@/lib/generationJobsStorage";
 import { requestGenerationQueueDrain } from "@/lib/generationQueueDrain";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 import { cn } from "@/lib/utils";
+import { consumeGenerationScratch, recoverGeneratedExamDraft } from "@/lib/exam.functions.server";
+import { finalizeGenerateExamClientResult } from "@/lib/generateExamRpc.shared";
+import { loadAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
+import {
+  downloadSnapshotBackup,
+  writeExamSnapshot,
+  type SessionExamSnapshot,
+} from "@/lib/examSession";
 
 function statusLabel(s: GenJobStatus): string {
   switch (s) {
@@ -66,95 +92,172 @@ function statusBadgeClass(s: GenJobStatus): string {
   }
 }
 
+function JobStatus({
+  status,
+  errorMessage,
+  title,
+}: {
+  status: GenJobStatus;
+  errorMessage?: string;
+  title: string;
+}) {
+  const badge = (
+    <Badge
+      variant="outline"
+      className={cn("font-normal", statusBadgeClass(status), status === "failed" && "cursor-pointer")}
+    >
+      {statusLabel(status)}
+    </Badge>
+  );
+  if (status !== "failed") return badge;
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className="rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          aria-label={`查看“${title}”的失败原因`}
+          title="点击查看失败原因"
+        >
+          {badge}
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>生成失败原因</DialogTitle>
+          <DialogDescription>{title}</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-[60vh] overflow-y-auto rounded-md border border-destructive/20 bg-destructive/[0.04] p-4">
+          <p className="text-sm leading-6 text-foreground">
+            {toUserFacingErrorMessage(errorMessage, "生成失败，请稍后重试或调整设置")}
+          </p>
+          {errorMessage?.includes("可恢复草稿") || errorMessage?.includes("已保留可恢复") ? (
+            <p className="mt-3 text-xs text-muted-foreground">
+              若「恢复草稿」不可用，请使用「重新生成」。
+            </p>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PaperJobTable({
   jobs,
   onCancel,
   onRegenerate,
+  onRecover,
+  recoveringId,
 }: {
   jobs: PaperGenJob[];
   onCancel: (id: string) => void;
   onRegenerate: (job: PaperGenJob) => void;
+  onRecover: (job: PaperGenJob) => void;
+  recoveringId: string | null;
 }) {
+  const [page, setPage] = useState(1);
+  const pageJobs = useMemo(
+    () => paginateSlice(jobs, page, TABLE_LIST_PAGE_SIZE),
+    [jobs, page],
+  );
+  const pageCount = pageCountFor(jobs.length, TABLE_LIST_PAGE_SIZE);
+
   return (
-    <div className="overflow-x-auto rounded-md border border-border/60">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <th className="px-3 py-2.5">试卷名称</th>
-            <th className="px-3 py-2.5">年级</th>
-            <th className="px-3 py-2.5">学科</th>
-            <th className="px-3 py-2.5">状态</th>
-            <th className="px-3 py-2.5 text-right">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {jobs.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
-                暂无命题记录；提交「生成试卷」后将出现在此。
-              </td>
+    <>
+      <div className="overflow-x-auto rounded-md border border-border/60">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2.5">试卷名称</th>
+              <th className="px-3 py-2.5">年级</th>
+              <th className="px-3 py-2.5">学科</th>
+              <th className="px-3 py-2.5">状态</th>
+              <th className="px-3 py-2.5 text-right">操作</th>
             </tr>
-          ) : (
-            jobs.map((j) => (
-              <tr key={j.id} className="border-b border-border/40 last:border-0">
-                <td className="max-w-[200px] px-3 py-2 font-medium text-foreground">
-                  <span className="line-clamp-2" title={j.title}>
-                    {j.title}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                  {j.gradeLabel}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                  {j.subjectLabel}
-                </td>
-                <td className="px-3 py-2">
-                  <Badge
-                    variant="outline"
-                    className={cn("font-normal", statusBadgeClass(j.status))}
-                  >
-                    {statusLabel(j.status)}
-                  </Badge>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <div className="flex flex-wrap justify-end gap-1.5">
-                    {(j.status === "running" || j.status === "queued") && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => onCancel(j.id)}
-                      >
-                        取消
-                      </Button>
-                    )}
-                    {(j.status === "failed" || j.status === "cancelled") && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => onRegenerate(j)}
-                      >
-                        重新生成
-                      </Button>
-                    )}
-                    {j.status === "success" && j.examId && (
-                      <Button asChild size="sm" className="h-8">
-                        <Link to="/exam/$id" params={{ id: j.examId }}>
-                          查看
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
+          </thead>
+          <tbody>
+            {jobs.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                  暂无命题记录。
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+            ) : (
+              pageJobs.map((j) => (
+                <tr key={j.id} className="border-b border-border/40 last:border-0">
+                  <td className="max-w-[200px] px-3 py-2 font-medium text-foreground">
+                    <span className="line-clamp-2" title={j.title}>
+                      {j.title}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                    {j.gradeLabel}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                    {j.subjectLabel}
+                  </td>
+                  <td className="px-3 py-2">
+                    <JobStatus status={j.status} errorMessage={j.errorMessage} title={j.title} />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      {(j.status === "running" || j.status === "queued") && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => onCancel(j.id)}
+                        >
+                          取消
+                        </Button>
+                      )}
+                      {(j.status === "failed" || j.status === "cancelled") && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => onRegenerate(j)}
+                        >
+                          重新生成
+                        </Button>
+                      )}
+                      {j.status === "failed" && j.recoveryDraftId && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8"
+                          disabled={recoveringId === j.id}
+                          onClick={() => onRecover(j)}
+                        >
+                          {recoveringId === j.id ? "处理中…" : "使用已生成草稿"}
+                        </Button>
+                      )}
+                      {j.status === "success" && j.examId && (
+                        <Button asChild size="sm" className="h-8">
+                          <Link to="/exam/$id" params={{ id: j.examId }}>
+                            查看
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <SimplePager
+        page={page}
+        pageCount={pageCount}
+        total={jobs.length}
+        pageSize={TABLE_LIST_PAGE_SIZE}
+        onPageChange={setPage}
+        className="mt-3"
+      />
+    </>
   );
 }
 
@@ -167,86 +270,102 @@ function ExampleJobTable({
   onCancel: (id: string) => void;
   onRegenerate: (job: ExampleGenJob) => void;
 }) {
+  const [page, setPage] = useState(1);
+  const pageJobs = useMemo(
+    () => paginateSlice(jobs, page, TABLE_LIST_PAGE_SIZE),
+    [jobs, page],
+  );
+  const pageCount = pageCountFor(jobs.length, TABLE_LIST_PAGE_SIZE);
+
   return (
-    <div className="overflow-x-auto rounded-md border border-border/60">
-      <table className="w-full min-w-[640px] border-collapse text-sm">
-        <thead>
-          <tr className="border-b border-border/60 bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <th className="px-3 py-2.5">试卷名称</th>
-            <th className="px-3 py-2.5">年级</th>
-            <th className="px-3 py-2.5">学科</th>
-            <th className="px-3 py-2.5">状态</th>
-            <th className="px-3 py-2.5 text-right">操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          {jobs.length === 0 ? (
-            <tr>
-              <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
-                暂无例题生成记录；在卡片上生成例题后将出现在此。
-              </td>
+    <>
+      <div className="overflow-x-auto rounded-md border border-border/60">
+        <table className="w-full min-w-[640px] border-collapse text-sm">
+          <thead>
+            <tr className="border-b border-border/60 bg-muted/40 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2.5">试卷名称</th>
+              <th className="px-3 py-2.5">年级</th>
+              <th className="px-3 py-2.5">学科</th>
+              <th className="px-3 py-2.5">状态</th>
+              <th className="px-3 py-2.5 text-right">操作</th>
             </tr>
-          ) : (
-            jobs.map((j) => (
-              <tr key={j.id} className="border-b border-border/40 last:border-0">
-                <td className="max-w-[200px] px-3 py-2 font-medium text-foreground">
-                  <span className="line-clamp-2" title={j.examTitle}>
-                    {j.examTitle}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                  {j.gradeLabel}
-                </td>
-                <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
-                  {j.subjectLabel}
-                </td>
-                <td className="px-3 py-2">
-                  <Badge
-                    variant="outline"
-                    className={cn("font-normal", statusBadgeClass(j.status))}
-                  >
-                    {statusLabel(j.status)}
-                  </Badge>
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <div className="flex flex-wrap justify-end gap-1.5">
-                    {(j.status === "running" || j.status === "queued") && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => onCancel(j.id)}
-                      >
-                        取消
-                      </Button>
-                    )}
-                    {(j.status === "failed" || j.status === "cancelled") && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="h-8"
-                        onClick={() => onRegenerate(j)}
-                      >
-                        重新生成
-                      </Button>
-                    )}
-                    {j.status === "success" && j.examId && (
-                      <Button asChild size="sm" className="h-8">
-                        <Link to="/exam/$id" params={{ id: j.examId }}>
-                          查看
-                        </Link>
-                      </Button>
-                    )}
-                  </div>
+          </thead>
+          <tbody>
+            {jobs.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-3 py-8 text-center text-muted-foreground">
+                  暂无例题记录。
                 </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
+            ) : (
+              pageJobs.map((j) => (
+                <tr key={j.id} className="border-b border-border/40 last:border-0">
+                  <td className="max-w-[200px] px-3 py-2 font-medium text-foreground">
+                    <span className="line-clamp-2" title={j.examTitle}>
+                      {j.examTitle}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                    {j.gradeLabel}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">
+                    {j.subjectLabel}
+                  </td>
+                  <td className="px-3 py-2">
+                    <JobStatus
+                      status={j.status}
+                      errorMessage={j.errorMessage}
+                      title={j.examTitle}
+                    />
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      {(j.status === "running" || j.status === "queued") && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => onCancel(j.id)}
+                        >
+                          取消
+                        </Button>
+                      )}
+                      {(j.status === "failed" || j.status === "cancelled") && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="h-8"
+                          onClick={() => onRegenerate(j)}
+                        >
+                          重新生成
+                        </Button>
+                      )}
+                      {j.status === "success" && j.examId && (
+                        <Button asChild size="sm" className="h-8">
+                          <Link to="/exam/$id" params={{ id: j.examId }}>
+                            查看
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <SimplePager
+        page={page}
+        pageCount={pageCount}
+        total={jobs.length}
+        pageSize={TABLE_LIST_PAGE_SIZE}
+        onPageChange={setPage}
+        className="mt-3"
+      />
+    </>
   );
 }
 
@@ -254,10 +373,17 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
   const jobs = usePaperGenJobs();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [recoveringId, setRecoveringId] = useState<string | null>(null);
   const hasRunningGlobal = useHasRunningGenerationJob();
+  const recoverDraftFn = useServerFn(recoverGeneratedExamDraft);
+  const consumeScratchFn = useServerFn(consumeGenerationScratch);
 
   const activeCount = useMemo(
     () => jobs.filter((j) => j.status === "running" || j.status === "queued").length,
+    [jobs],
+  );
+  const failedCount = useMemo(
+    () => jobs.filter((j) => j.status === "failed").length,
     [jobs],
   );
 
@@ -278,6 +404,52 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
       }
     },
     [navigate],
+  );
+
+  const onRecover = useCallback(
+    async (job: PaperGenJob) => {
+      if (!job.recoveryDraftId || recoveringId) return;
+      setRecoveringId(job.id);
+      try {
+        const raw = await recoverDraftFn({
+          data: {
+            draftId: job.recoveryDraftId,
+            ai: toAiRuntimePayload(loadAiSettings()),
+          },
+        });
+        const finalized = await finalizeGenerateExamClientResult(raw, consumeScratchFn);
+        patchPaperJob(job.id, {
+          status: "success",
+          examId: finalized.examId,
+          recoveryDraftId: undefined,
+          errorMessage: undefined,
+        });
+        if (!finalized.persisted && finalized.snapshot) {
+          writeExamSnapshot(finalized.examId, finalized.snapshot);
+          downloadSnapshotBackup(finalized.snapshot);
+        }
+        toast.success("已处理模型返回的试卷，未重新生成整卷", {
+          description: finalized.persisted
+            ? "试卷已保存，可直接查看。"
+            : "当前保存位置不可用，已恢复为会话试卷并下载备份。",
+        });
+        setOpen(false);
+        void navigate({
+          to: "/exam/$id",
+          params: { id: finalized.examId },
+          search: { tab: "paper" },
+        });
+      } catch (error) {
+        const message = toUserFacingErrorMessage(error, "使用已生成草稿失败");
+        patchPaperJob(job.id, {
+          errorMessage: error instanceof Error ? error.message : message,
+        });
+        toast.error(message, { duration: 10000 });
+      } finally {
+        setRecoveringId(null);
+      }
+    },
+    [consumeScratchFn, navigate, recoverDraftFn, recoveringId],
   );
 
   return (
@@ -305,14 +477,16 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
         <SheetContent side="right" className="flex w-full flex-col sm:max-w-3xl">
           <SheetHeader>
             <SheetTitle>命题任务队列</SheetTitle>
-            <SheetDescription>
-              本机浏览器记录；换设备或清缓存会丢失。可连续提交多份，同一时间仅执行 1
-              个任务，其余「排队中」；执行中或排队可取消；失败或已取消可重新生成并带入表单。
-              若异常退出导致任务长期停在「生成中」，系统在继续排队时会自动超时标记失败；也可手动「释放卡住任务」。
-            </SheetDescription>
+            <SheetDescription className="sr-only">命题任务队列</SheetDescription>
           </SheetHeader>
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-            <PaperJobTable jobs={jobs} onCancel={onCancel} onRegenerate={onRegenerate} />
+            <PaperJobTable
+              jobs={jobs}
+              onCancel={onCancel}
+              onRegenerate={onRegenerate}
+              onRecover={onRecover}
+              recoveringId={recoveringId}
+            />
           </div>
           <div className="mt-4 flex flex-wrap items-center justify-end gap-2 border-t border-border/60 pt-4">
             <Button
@@ -336,13 +510,25 @@ export function PaperGenerationJobQueueControl({ className }: { className?: stri
                   toast.message("没有处于生成中的任务");
                   return;
                 }
-                toast.success(`已标记 ${n} 条任务为失败`, {
-                  description: "排队任务将随后自动开始",
-                });
+                toast.success(`已标记 ${n} 条任务为失败`);
                 requestGenerationQueueDrain();
               }}
             >
               释放卡住任务
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              disabled={failedCount === 0}
+              onClick={() => {
+                if (!window.confirm(`确定清除命题队列中的 ${failedCount} 条失败任务吗？`)) return;
+                const removed = clearFailedPaperJobs();
+                toast.success(`已清除 ${removed} 条失败任务`);
+              }}
+            >
+              清除失败任务{failedCount > 0 ? `（${failedCount}）` : ""}
             </Button>
             <Button
               type="button"
@@ -368,6 +554,10 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
 
   const activeCount = useMemo(
     () => jobs.filter((j) => j.status === "running" || j.status === "queued").length,
+    [jobs],
+  );
+  const failedCount = useMemo(
+    () => jobs.filter((j) => j.status === "failed").length,
     [jobs],
   );
 
@@ -417,11 +607,7 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
         <SheetContent side="right" className="flex w-full flex-col sm:max-w-3xl">
           <SheetHeader>
             <SheetTitle>例题生成队列</SheetTitle>
-            <SheetDescription>
-              本机浏览器记录。可连续加入多条例题任务，同一时间仅执行 1
-              个，其余「排队中」。重新生成将把试卷与题型选项写回「生成例题」对话框（请在试卷库页面确认后提交）。
-              若异常退出导致长期「生成中」，系统会在继续排队时自动超时标记失败；也可手动「释放卡住任务」（与命题队列共用）。
-            </SheetDescription>
+            <SheetDescription className="sr-only">例题生成队列</SheetDescription>
           </SheetHeader>
           <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
             <ExampleJobTable jobs={jobs} onCancel={onCancel} onRegenerate={onRegenerate} />
@@ -448,13 +634,25 @@ export function ExampleGenerationJobQueueControl({ className }: { className?: st
                   toast.message("没有处于生成中的任务");
                   return;
                 }
-                toast.success(`已标记 ${n} 条任务为失败`, {
-                  description: "排队任务将随后自动开始",
-                });
+                toast.success(`已标记 ${n} 条任务为失败`);
                 requestGenerationQueueDrain();
               }}
             >
               释放卡住任务
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-destructive"
+              disabled={failedCount === 0}
+              onClick={() => {
+                if (!window.confirm(`确定清除例题队列中的 ${failedCount} 条失败任务吗？`)) return;
+                const removed = clearFailedExampleJobs();
+                toast.success(`已清除 ${removed} 条失败任务`);
+              }}
+            >
+              清除失败任务{failedCount > 0 ? `（${failedCount}）` : ""}
             </Button>
             <Button
               type="button"

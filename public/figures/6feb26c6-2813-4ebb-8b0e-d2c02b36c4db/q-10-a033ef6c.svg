@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 4 352 252" width="352" height="252">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="4" y="4" width="352" height="252" fill="#fff"/>
+  <polygon points="180,40 40,220 320,220" fill="none" stroke="#0f172a" stroke-width="2"/>
+  <line x1="180" y1="40" x2="40" y2="220" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="220" x2="320" y2="220" stroke="#0f172a" stroke-width="2"/>
+  <line x1="320" y1="220" x2="180" y2="40" stroke="#0f172a" stroke-width="2"/>
+  <line x1="124" y1="112" x2="236" y2="112" stroke="#0f172a" stroke-width="2"/>
+  <circle cx="180" cy="40" r="3.2" fill="#0f172a"/>
+  <text x="195.4" y="40" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">A</text>
+  <circle cx="40" cy="220" r="3.2" fill="#0f172a"/>
+  <text x="29" y="209" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">B</text>
+  <circle cx="320" cy="220" r="3.2" fill="#0f172a"/>
+  <text x="331" y="209" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">C</text>
+  <circle cx="124" cy="112" r="3.2" fill="#0f172a"/>
+  <text x="113" y="101" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">D</text>
+  <circle cx="236" cy="112" r="3.2" fill="#0f172a"/>
+  <text x="247" y="101" font-size="14" font-family="serif" fill="#0f172a" text-anchor="middle" dominant-baseline="middle">E</text>
+</svg>

@@ -35,14 +35,35 @@ import {
 import {
   DEFAULT_CLOUD_MODEL,
   normalizeSubjectIdForModelMap,
+  openAiCompatChatCompletionsUrl,
+  resolveEffectiveAiRuntime,
   resolveLocalInferenceModel,
+  usesOpenAiCompatEndpoint,
   type AiRuntimePayload,
   type LocalModelResolveOptions,
 } from "@/lib/aiRuntime.shared";
 import type { Json } from "@/integrations/supabase/types";
 import { jsonrepair } from "jsonrepair";
 import { collectParsedQuestionsIssues } from "@/lib/examQuestionValidation";
-import { buildRetryQualityHintsFromIssues } from "@/lib/generationQuality.shared";
+import type { ExamSemanticValidationContext } from "@/lib/examQuestionValidation";
+import { generationPassQualityFields } from "@/lib/examQualityReport.shared";
+import { maybeDedupeMcqOptions } from "@/lib/examMcqOptions.shared";
+import {
+  EXAM_PAPER_NO_UI_META_PROMPT_RULE,
+  stripExamPaperUiMetaInstructions,
+} from "@/lib/examPaperSurfaceText.shared";
+import { healParsedQuestionFigureAttachments } from "@/lib/diagram/healParsedQuestionFigures.shared";
+import {
+  buildRetryQualityHintsFromIssues,
+  categorizeValidationIssue,
+} from "@/lib/generationQuality.shared";
+import {
+  buildActiveGenerationLearningHintsSync,
+  composePromptWithApprovedExamLearningHints,
+  recordGenerationLearningIssuesSync,
+} from "@/lib/generationLearning.server";
+import { saveGenerationDraft, type StoredGenerationDraft } from "@/lib/generationDraft.server";
+import { AI_RUNTIME_PROBE, IMPORT_DEFAULTS } from "@/config/examDomain";
 import {
   collectSemiBuiltinsOnlyFromRawQuestions,
   refreshExamMathRepairMergedRules,
@@ -86,6 +107,8 @@ function resolveExamAiMaxOutputTokens(attempt: number): number {
 }
 
 export interface GenerationConfig {
+  /** 客户端队列任务 id；用于关联可恢复草稿，不参与模型提示。 */
+  generation_request_id?: string;
   title: string;
   grade: string;
   subject: string;
@@ -105,8 +128,12 @@ export interface GenerationConfig {
   target_track_id?: string;
   /** 校内同步：教材版本说明（可选） */
   textbook_edition_hint?: string;
+  /** 校内同步：教材目录单元 id（可选；服务端 enrich 时过滤注入纲要） */
+  textbook_unit_ids?: string[];
   /** 校内同步：单元 / 章节侧重（可选） */
   chapter_focus?: string;
+  /** 服务端注入：远程教材目录单元纲要（勿由客户端伪造） */
+  textbook_directory_prompt?: string;
   /** 竞赛 / 高阶：本学科内竞赛侧重（可多选） */
   competition_focus?: string[];
   notes?: string;
@@ -114,6 +141,35 @@ export interface GenerationConfig {
   quality_hints?: string;
   /** 来自前端设置：云端 Lovable 网关或本地 OpenAI 兼容接口 */
   ai?: AiRuntimePayload;
+}
+
+function generationDraftSafeConfig(config: GenerationConfig): Record<string, unknown> {
+  const { ai: _ai, ...safe } = config;
+  return safe as unknown as Record<string, unknown>;
+}
+
+async function saveGenerationDraftBestEffort(input: {
+  config: GenerationConfig;
+  parsed: Record<string, unknown>;
+  phase: "model_returned" | "validation_failed" | "validated";
+  issues?: string[];
+}): Promise<void> {
+  const id = input.config.generation_request_id?.trim();
+  if (!id) return;
+  try {
+    await saveGenerationDraft({
+      id,
+      phase: input.phase,
+      config: generationDraftSafeConfig(input.config),
+      parsed: input.parsed,
+      issues: input.issues,
+    });
+  } catch (error) {
+    console.warn(
+      "[generation-draft] 保存失败，不阻断命题:",
+      error instanceof Error ? error.message : error,
+    );
+  }
 }
 
 /** 模型输出的 JSON 常有缺逗号、尾逗号、未转义换行等；先标准 parse，失败则用 jsonrepair 再 parse */
@@ -447,7 +503,7 @@ function pickMcqSyntheticStemFromOptions(raw: Record<string, unknown>): string {
   if (strs.length < 4) return "";
   const letters = ["A", "B", "C", "D", "E", "F"].slice(0, strs.length);
   const lines = strs.map((s, i) => `${letters[i]}. ${s}`);
-  return `请阅读下列选项，选择正确答案。\n${lines.join("\n")}`;
+  return `下列各选项中，正确的是：\n${lines.join("\n")}`;
 }
 
 /**
@@ -995,9 +1051,16 @@ function polishMcqImportQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
  * 在 assertParsedQuestionsComplete 之前调用。
  */
 function normalizeParsedQuestionsMcq(questions: ParsedAiQuestion[]): ParsedAiQuestion[] {
-  return questions.map((q) =>
-    maybeDemoteSpuriousMultiSelect(polishMcqImportQuestion(normalizeSingleMcqQuestion(q))),
-  );
+  return questions.map((q) => {
+    const next = maybeDemoteSpuriousMultiSelect(
+      polishMcqImportQuestion(normalizeSingleMcqQuestion(q)),
+    );
+    if (!Array.isArray(next.options)) return next;
+    return {
+      ...next,
+      options: maybeDedupeMcqOptions(next.options, "normalize") as typeof next.options,
+    };
+  });
 }
 
 function mcqNonEmptyOptionCount(q: ParsedAiQuestion): number {
@@ -1118,8 +1181,50 @@ function normalizeSingleMcqQuestion(q: ParsedAiQuestion): ParsedAiQuestion {
   };
 }
 
-function assertParsedQuestionsComplete(questions: ParsedAiQuestion[]): void {
-  const problems = collectParsedQuestionsIssues(questions);
+function semanticValidationContextFromConfig(
+  config: GenerationConfig,
+): ExamSemanticValidationContext {
+  const focusIds = config.competition_focus ?? [];
+  return {
+    title: config.title,
+    gradeId: config.grade,
+    gradeLabel: gradeLevelLabel(config.grade),
+    subjectId: config.subject,
+    subjectLabel: curriculumSubjectLabel(config.subject),
+    difficulty: config.difficulty,
+    paperKindId: config.paper_kind,
+    paperKindLabel: paperKindLabel(config.paper_kind),
+    examTrackId: config.exam_track,
+    examTrackLabel: examTrackLabel(config.exam_track ?? "school_sync"),
+    competitionFocusLabels: focusIds.map((id) =>
+      competitionFocusLabelById(config.subject, id),
+    ),
+    subjectTags: buildStoredSubjectTags(config),
+  };
+}
+
+function semanticValidationContextFromImportHints(
+  hints?: ImportDocumentHints,
+): ExamSemanticValidationContext | undefined {
+  if (!hints) return undefined;
+  const grade = hints.grade?.trim();
+  const subject = hints.subject?.trim();
+  return {
+    gradeId: grade,
+    gradeLabel: grade ? gradeLevelLabel(grade) : undefined,
+    subjectId: subject,
+    subjectLabel: subject ? curriculumSubjectLabel(subject) : undefined,
+    difficulty: hints.difficulty,
+    paperKindId: hints.paper_kind,
+    paperKindLabel: paperKindLabel(hints.paper_kind),
+  };
+}
+
+function assertParsedQuestionsComplete(
+  questions: ParsedAiQuestion[],
+  ctx?: ExamSemanticValidationContext,
+): void {
+  const problems = collectParsedQuestionsIssues(questions, ctx);
   if (problems.length > 0) {
     const head = problems.slice(0, 10).join("；");
     const tail = problems.length > 10 ? ` …等共 ${problems.length} 项问题` : "";
@@ -1147,10 +1252,12 @@ function schoolSyncTextbookChapterPromptBlock(config: GenerationConfig): string 
   if (!isSchoolSyncExamTrack(et)) return "";
   const ed = config.textbook_edition_hint?.trim();
   const ch = config.chapter_focus?.trim();
-  if (!ed && !ch) return "";
+  const dir = config.textbook_directory_prompt?.trim();
+  if (!ed && !ch && !dir) return "";
   let s = "";
   if (ed) s += `【教材版本 / 教参】${ed}\n`;
   if (ch) s += `【单元 / 章节侧重】${ch}\n`;
+  if (dir) s += `${dir}\n`;
   return s;
 }
 
@@ -1382,6 +1489,70 @@ function isCompositionCountMismatchFailure(e: unknown): boolean {
   return /题目数量与「题型组成」不一致/.test(msg) || /要求共 \d+ 道，模型返回 \d+ 道/.test(msg);
 }
 
+function replaceQuestionsInParsedPayload(
+  parsed: Record<string, unknown>,
+  questions: ParsedAiQuestion[],
+): void {
+  const keys = ["questions", "problems", "items", "question_list", "exam_questions"] as const;
+  for (const k of keys) {
+    if (Array.isArray(parsed[k])) {
+      parsed[k] = questions;
+      return;
+    }
+  }
+  const exam = parsed.exam;
+  if (exam && typeof exam === "object") {
+    const e = exam as Record<string, unknown>;
+    for (const k of keys) {
+      if (Array.isArray(e[k])) {
+        e[k] = questions;
+        return;
+      }
+    }
+  }
+  parsed.questions = questions;
+}
+
+/** 校验前：scene 校验或题干事实解算补 figure_scene（禁止关键词模板） */
+function healAndCollectParsedIssues(
+  questions: ParsedAiQuestion[],
+  ctx?: ExamSemanticValidationContext,
+): {
+  questions: ParsedAiQuestion[];
+  issues: string[];
+} {
+  const healed = healParsedQuestionFigureAttachments(
+    normalizeParsedQuestionsMcq(questions),
+  ) as unknown as ParsedAiQuestion[];
+  const issues = collectParsedQuestionsIssues(healed, ctx);
+  logFigureGateDiagnostics(healed, issues);
+  return { questions: healed, issues };
+}
+
+/** 图闸门被拒时把该题 attachments 原样落日志，定位模型实际返回（不影响流程） */
+function logFigureGateDiagnostics(questions: ParsedAiQuestion[], issues: string[]): void {
+  const figureIssueIdx = new Set(
+    issues
+      .map((s) => /^第 (\d+) 题：.*figure_scene/.exec(s)?.[1])
+      .filter(Boolean)
+      .map((n) => Number(n) - 1),
+  );
+  if (figureIssueIdx.size === 0) return;
+  for (const i of figureIssueIdx) {
+    const q = questions[i] as (ParsedAiQuestion & { attachments?: unknown }) | undefined;
+    if (!q) continue;
+    let att = "";
+    try {
+      att = JSON.stringify(q.attachments ?? null);
+    } catch {
+      att = String(q.attachments);
+    }
+    console.warn(
+      `[figure-gate] 第 ${i + 1} 题被拒。题干片段: ${String(q.content ?? "").slice(0, 80)} | attachments: ${att.slice(0, 800)}`,
+    );
+  }
+}
+
 /**
  * 命题完成后做一次与入库一致的校验；失败则合并「紧急修正」提示再跑一轮完整 resilient（仅多一次，避免费用循环）。
  * 题型组成展开后的总题数必须与 AI 返回的 questions 条数完全一致（否则自定义题型名无法对齐）。
@@ -1389,11 +1560,29 @@ function isCompositionCountMismatchFailure(e: unknown): boolean {
 async function runExamAiGenerationWithValidationRetryInner(
   config: GenerationConfig,
 ): Promise<Record<string, unknown>> {
-  let parsed = await runExamAiGenerationResilient(config);
+  const runId = crypto.randomUUID();
+  const approvedLearningHints = buildActiveGenerationLearningHintsSync({
+    stage: "exam",
+    subject: config.subject,
+  });
+  const effectiveConfig: GenerationConfig = {
+    ...config,
+    quality_hints: [config.quality_hints?.trim(), approvedLearningHints]
+      .filter(Boolean)
+      .join("\n\n")
+      .slice(0, 6000),
+  };
+  let parsed = await runExamAiGenerationResilient(effectiveConfig);
+  await saveGenerationDraftBestEffort({
+    config: effectiveConfig,
+    parsed,
+    phase: "model_returned",
+  });
   let rawQs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
   if (rawQs.length === 0) return parsed;
 
-  const expected = expectedQuestionCountFromComposition(config.composition);
+  const expected = expectedQuestionCountFromComposition(effectiveConfig.composition);
+  const semCtx = semanticValidationContextFromConfig(effectiveConfig);
 
   function mergeCompositionCountIssue(issues: string[]): void {
     if (rawQs.length !== expected) {
@@ -1403,18 +1592,60 @@ async function runExamAiGenerationWithValidationRetryInner(
     }
   }
 
-  const issues = collectParsedQuestionsIssues(rawQs);
-  mergeCompositionCountIssue(issues);
-  if (issues.length === 0) return parsed;
+  {
+    const healed = healAndCollectParsedIssues(rawQs, semCtx);
+    rawQs = healed.questions;
+    replaceQuestionsInParsedPayload(parsed, rawQs);
+    const issues = [...healed.issues];
+    mergeCompositionCountIssue(issues);
+    if (issues.length === 0) {
+      await saveGenerationDraftBestEffort({
+        config: effectiveConfig,
+        parsed,
+        phase: "validated",
+      });
+      return parsed;
+    }
+    await saveGenerationDraftBestEffort({
+      config: effectiveConfig,
+      parsed,
+      phase: "validation_failed",
+      issues,
+    });
+    recordGenerationLearningIssuesSync({
+      runId,
+      scope: { stage: "exam", subject: effectiveConfig.subject },
+      issues,
+      outcome: "observed",
+    });
 
-  const retryHint = buildRetryQualityHintsFromIssues(issues);
-  const merged = [config.quality_hints?.trim(), retryHint]
-    .filter(Boolean)
-    .join("\n\n")
-    .slice(0, 6000);
-  const retryConfig: GenerationConfig = { ...config, quality_hints: merged || retryHint };
-  parsed = await runExamAiGenerationResilient(retryConfig);
-  rawQs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
+    if (effectiveConfig.generation_request_id) {
+      const head = issues.slice(0, 8).join("；");
+      const tail = issues.length > 8 ? ` …等共 ${issues.length} 项` : "";
+      throw new Error(
+        `模型已返回试卷，但未通过入库前校验：${head}${tail}。已保留可恢复草稿；请在命题队列点击“处理已返回试卷”，系统不会重新生成整卷。`,
+      );
+    }
+
+    const retryHint = buildRetryQualityHintsFromIssues(issues);
+    const figureRetryHint =
+      "【如图硬约束】submit_exam 参数里 attachments 必须是对象数组；如图题每个 attachment 都要带完整 figure_scene 嵌套对象，不要只写 pending://figure。";
+    const merged = [effectiveConfig.quality_hints?.trim(), retryHint, figureRetryHint]
+      .filter(Boolean)
+      .join("\n\n")
+      .slice(0, 6000);
+    const retryConfig: GenerationConfig = {
+      ...effectiveConfig,
+      quality_hints: merged || retryHint,
+    };
+    parsed = await runExamAiGenerationResilient(retryConfig);
+    await saveGenerationDraftBestEffort({
+      config: effectiveConfig,
+      parsed,
+      phase: "model_returned",
+    });
+    rawQs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
+  }
 
   if (rawQs.length === 0) {
     throw new Error(`重试后仍无法解析出非空题目列表。${describeParsedPayloadKeys(parsed)}`);
@@ -1425,15 +1656,37 @@ async function runExamAiGenerationWithValidationRetryInner(
     );
   }
 
-  const issuesAfterRetry = collectParsedQuestionsIssues(rawQs);
-  if (issuesAfterRetry.length > 0) {
-    const head = issuesAfterRetry.slice(0, 10).join("；");
-    const tail = issuesAfterRetry.length > 10 ? ` …等共 ${issuesAfterRetry.length} 项` : "";
-    throw new Error(
-      `重试后试卷仍未通过校验：${head}${tail}。\n\n${SUBMIT_EXAM_FIELD_CHEATSHEET}\n\n请调整题型或更换模型后重新生成。`,
-    );
+  {
+    const healed = healAndCollectParsedIssues(rawQs, semCtx);
+    rawQs = healed.questions;
+    replaceQuestionsInParsedPayload(parsed, rawQs);
+    const issuesAfterRetry = healed.issues;
+    if (issuesAfterRetry.length > 0) {
+      await saveGenerationDraftBestEffort({
+        config: effectiveConfig,
+        parsed,
+        phase: "validation_failed",
+        issues: issuesAfterRetry,
+      });
+      recordGenerationLearningIssuesSync({
+        runId,
+        scope: { stage: "exam", subject: effectiveConfig.subject },
+        issues: issuesAfterRetry,
+        outcome: "failed",
+      });
+      const head = issuesAfterRetry.slice(0, 10).join("；");
+      const tail = issuesAfterRetry.length > 10 ? ` …等共 ${issuesAfterRetry.length} 项` : "";
+      throw new Error(
+        `重试后试卷仍未通过校验：${head}${tail}。\n\n${SUBMIT_EXAM_FIELD_CHEATSHEET}\n\n请调整题型或更换模型后重新生成。`,
+      );
+    }
   }
 
+  await saveGenerationDraftBestEffort({
+    config: effectiveConfig,
+    parsed,
+    phase: "validated",
+  });
   return parsed;
 }
 
@@ -1484,13 +1737,14 @@ async function generateQuestionsForOneCompositionRow(
     composition: [{ ...row, count: n }],
     notes: sectionNotes,
   };
+  const semCtx = semanticValidationContextFromConfig(config);
 
   let parsed = await runExamAiGenerationResilient(segBase);
   let qs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
   if (qs.length > n) {
     qs = normalizeParsedQuestionsMcq(qs.slice(0, n));
   }
-  let segIssues = [...collectParsedQuestionsIssues(qs)];
+  let segIssues = [...collectParsedQuestionsIssues(qs, semCtx)];
   if (qs.length !== n) {
     segIssues.push(`本节须恰好 ${n} 道题，当前 ${qs.length} 道。`);
   }
@@ -1506,7 +1760,7 @@ async function generateQuestionsForOneCompositionRow(
   if (qs.length > n) {
     qs = normalizeParsedQuestionsMcq(qs.slice(0, n));
   }
-  segIssues = [...collectParsedQuestionsIssues(qs)];
+  segIssues = [...collectParsedQuestionsIssues(qs, semCtx)];
   if (qs.length !== n) {
     segIssues.push(`本节须恰好 ${n} 道题，当前 ${qs.length} 道。`);
   }
@@ -1537,7 +1791,7 @@ async function generateQuestionsForOneCompositionRow(
     if (mq.length > 1) {
       mq = normalizeParsedQuestionsMcq(mq.slice(0, 1));
     }
-    let mi = [...collectParsedQuestionsIssues(mq)];
+    let mi = [...collectParsedQuestionsIssues(mq, semCtx)];
     if (mq.length !== 1) {
       mi.push(`须恰好 1 道题，当前 ${mq.length} 道。`);
     }
@@ -1552,7 +1806,7 @@ async function generateQuestionsForOneCompositionRow(
       if (mq.length > 1) {
         mq = normalizeParsedQuestionsMcq(mq.slice(0, 1));
       }
-      mi = [...collectParsedQuestionsIssues(mq)];
+      mi = [...collectParsedQuestionsIssues(mq, semCtx)];
       if (mq.length !== 1) {
         mi.push(`须恰好 1 道题，当前 ${mq.length} 道。`);
       }
@@ -1563,7 +1817,7 @@ async function generateQuestionsForOneCompositionRow(
         `分段命题失败：板块「${typeLabel}」第 ${i + 1}/${n} 题未通过校验（${mi.slice(0, 3).join("；")}）。请换模型或降低单次题量后重试。`,
       );
     }
-    assertParsedQuestionsComplete(mq);
+    assertParsedQuestionsComplete(mq, semCtx);
     out.push(mq[0]!);
   }
   return out;
@@ -1590,7 +1844,7 @@ async function mergeCompositionSegmented(
       `分段命题合并后题量仍不一致：期望 ${expected} 道，实际 ${normalized.length} 道。`,
     );
   }
-  assertParsedQuestionsComplete(normalized);
+  assertParsedQuestionsComplete(normalized, semanticValidationContextFromConfig(config));
 
   return {
     title: config.title,
@@ -1612,8 +1866,14 @@ async function runExamAiGenerationWithValidationRetry(
   try {
     parsed = await runExamAiGenerationWithValidationRetryInner(config);
   } catch (e) {
+    if (config.generation_request_id) throw e;
     if (!isCompositionCountMismatchFailure(e)) throw e;
     parsed = await mergeCompositionSegmented(config);
+    await saveGenerationDraftBestEffort({
+      config,
+      parsed,
+      phase: "validated",
+    });
   }
   return applyCompositionQuestionTypeCoercionToParsed(parsed, config.composition);
 }
@@ -1855,7 +2115,10 @@ export async function runImportDocumentAiGenerationPerQuestion(
   }
 
   const { getImportLearningPromptPrefix } = await import("@/lib/importLearning.server");
-  const learningPrefix = await getImportLearningPromptPrefix();
+  const learningPrefix = composePromptWithApprovedExamLearningHints(
+    await getImportLearningPromptPrefix(),
+    opts?.subjectId,
+  );
   const sections = parseImportDocumentSections(trimmed);
 
   const mergedQuestions: ParsedAiQuestion[] = [];
@@ -1946,7 +2209,10 @@ export async function runImportDocumentAiGeneration(
       : trimmed;
 
   const { getImportLearningPromptPrefix } = await import("@/lib/importLearning.server");
-  const learningPrefix = await getImportLearningPromptPrefix();
+  const learningPrefix = composePromptWithApprovedExamLearningHints(
+    await getImportLearningPromptPrefix(),
+    opts?.subjectId,
+  );
 
   const userPrompt = `${learningPrefix}${OFFLINE_IMPORT_FIDELITY_HINT}
 
@@ -2040,12 +2306,38 @@ export async function buildImportedExamSnapshotFromAiParsed(
     throw new Error("文档识别后未得到有效题目，请检查正文清晰度或更换模型后重试");
   }
   /** 导入专用：批量 AI 易漏 answer / 分步，再纠正误标选择题（命题路径勿用）。 */
-  const gateQs = applyImportQuestionStructureAutocorrect(
+  let gateQs = applyImportQuestionStructureAutocorrect(
     applyImportExamQuestionMinimalRepair(rawQs) as ParsedAiQuestion[],
     hints?.sourcePlainText,
     hints?.chunkTexts ?? null,
   ) as ParsedAiQuestion[];
-  assertParsedQuestionsComplete(gateQs);
+
+  const runId = crypto.randomUUID();
+  const learningScope = {
+    stage: "exam" as const,
+    subject: hints?.subject,
+  };
+  {
+    const healed = healAndCollectParsedIssues(
+      gateQs,
+      semanticValidationContextFromImportHints(hints),
+    );
+    gateQs = healed.questions;
+    if (healed.issues.length > 0) {
+      recordGenerationLearningIssuesSync({
+        runId,
+        scope: learningScope,
+        issues: healed.issues,
+        outcome: "failed",
+      });
+      const head = healed.issues.slice(0, 10).join("；");
+      const tail =
+        healed.issues.length > 10 ? ` …等共 ${healed.issues.length} 项问题` : "";
+      throw new Error(
+        `AI 返回的试卷存在不完整题目，已拒绝保存：${head}${tail}。\n\n${SUBMIT_EXAM_FIELD_CHEATSHEET}\n\n请重新生成；或在「特别要求」中写明选择题 options 至少 4 条；仍失败可更换支持函数调用的模型。`,
+      );
+    }
+  }
 
   await refreshExamMathRepairMergedRules();
   await scanBuiltinFixedFragmentsAndLearnRulesAsync(
@@ -2070,8 +2362,10 @@ export async function buildImportedExamSnapshotFromAiParsed(
       order_index: i,
       type: q.type as Question["type"],
       subject: q.subject,
-      content: fixed.content,
-      options: Array.isArray(fixed.options) ? fixed.options.map((o) => String(o)) : null,
+      content: stripExamPaperUiMetaInstructions(fixed.content),
+      options: Array.isArray(fixed.options)
+        ? fixed.options.map((o) => stripExamPaperUiMetaInstructions(String(o)))
+        : null,
       answer: fixed.answer,
       solution_steps: (Array.isArray(fixed.solution_steps)
         ? fixed.solution_steps
@@ -2274,18 +2568,23 @@ export async function generateExamplesForQuestionSet(
   return runExampleGenerationForReps(examId, reps, ai);
 }
 
-/** 未配置 Supabase 时：生成完整快照供前端 sessionStorage + localStorage 或本地文件 */
-export async function buildSessionExamBundle(
-  config: GenerationConfig,
-  opts?: { persistStyle?: "session" | "uuid" },
-): Promise<{
+export type GeneratedExamBundle = {
   examId: string;
   exam: Exam;
   questions: Question[];
   examples: Example[];
-}> {
-  const started = Date.now();
-  const parsed = await runExamAiGenerationWithValidationRetry(config);
+};
+
+/**
+ * 将已经返回并解析的 submit_exam 结果转换为试卷快照。
+ * 此函数不调用整卷模型；草稿恢复必须走这里，避免重复命题。
+ */
+export async function buildExamBundleFromParsedPayload(
+  config: GenerationConfig,
+  parsed: Record<string, unknown>,
+  opts?: { persistStyle?: "session" | "uuid"; generationStartedAt?: number },
+): Promise<GeneratedExamBundle> {
+  const started = opts?.generationStartedAt ?? Date.now();
   const examId =
     opts?.persistStyle === "uuid"
       ? crypto.randomUUID()
@@ -2294,10 +2593,10 @@ export async function buildSessionExamBundle(
   const rawQs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
   if (rawQs.length === 0) {
     throw new Error(
-      `AI 返回的试卷中未能解析出题目列表（须为非空 questions[]，部分模型误用 problems 等字段已做兼容）。${describeParsedPayloadKeys(parsed)}${describeQuestionsExtractionFailure(parsed)}请确认模型按 submit_exam 提交；本地模型请在「设置」运行「测试 submit_exam」。`,
+      `AI 返回的试卷中未能解析出题目列表（须为非空 questions[]，部分模型误用 problems 等字段已做兼容）。${describeParsedPayloadKeys(parsed)}${describeQuestionsExtractionFailure(parsed)}请确认模型按 submit_exam 提交；本地模型请换用支持 function calling 的型号，或到「设置」检查默认模型配置。`,
     );
   }
-  assertParsedQuestionsComplete(rawQs);
+  assertParsedQuestionsComplete(rawQs, semanticValidationContextFromConfig(config));
 
   await refreshExamMathRepairMergedRules();
   await scanBuiltinFixedFragmentsAndLearnRulesAsync(collectSemiBuiltinsOnlyFromRawQuestions(rawQs));
@@ -2316,8 +2615,10 @@ export async function buildSessionExamBundle(
         order_index: i,
         type: normalizeQuestionType(q.type),
         subject: String(q.subject ?? "数学").slice(0, 200),
-        content: fixed.content,
-        options: Array.isArray(fixed.options) ? fixed.options.map((o) => String(o)) : null,
+        content: stripExamPaperUiMetaInstructions(fixed.content),
+        options: Array.isArray(fixed.options)
+          ? fixed.options.map((o) => stripExamPaperUiMetaInstructions(String(o)))
+          : null,
         answer: fixed.answer,
         solution_steps: (Array.isArray(fixed.solution_steps)
           ? fixed.solution_steps
@@ -2330,7 +2631,6 @@ export async function buildSessionExamBundle(
     config.composition,
   );
 
-  /** 模型未带 diagram_schema 时，按题干补推断矢量几何图（与导入页「推断示意图」同引擎） */
   questions = await fillGeometryDiagramsForQuestionList(questions, config.ai);
 
   const examples: Example[] = [];
@@ -2350,9 +2650,234 @@ export async function buildSessionExamBundle(
     is_featured: false,
     created_at: finishedAt,
     generation_duration_sec: generationDurationSec,
+    ...generationPassQualityFields(finishedAt),
   };
 
   return { examId, exam, questions, examples };
+}
+
+/** 未配置 Supabase 时：生成完整快照供前端 sessionStorage + localStorage 或本地文件 */
+export async function buildSessionExamBundle(
+  config: GenerationConfig,
+  opts?: { persistStyle?: "session" | "uuid" },
+): Promise<GeneratedExamBundle> {
+  const generationStartedAt = Date.now();
+  const parsed = await runExamAiGenerationWithValidationRetry(config);
+  return buildExamBundleFromParsedPayload(config, parsed, {
+    ...opts,
+    generationStartedAt,
+  });
+}
+
+/**
+ * 草稿恢复共用修复闭环（命题恢复与导入恢复走同一条路，禁止各自硬编码）：
+ * - 不调用整卷模型；先执行现有确定性 heal/validate；
+ * - 若剩余问题全部是 figure_scene，仅逐题调用题图 scene 模型并再次验证；
+ * - 非题图错误不猜测修补，直接返回明确错误；
+ * - 每次恢复失败写回草稿并记入审计学习（累积证据，达阈值后可批准为提示策略）；
+ * - 题图修复成功同样记入审计学习（outcome=repaired），供后续命题/导入复盘。
+ */
+async function repairStoredDraftParsedForRecovery(input: {
+  draft: StoredGenerationDraft;
+  ai?: AiRuntimePayload;
+  subject?: string;
+  /** 恢复过程中写回草稿的安全 config（不得含 ai/API Key） */
+  safeConfig: Record<string, unknown>;
+  /** heal 后追加的非题图校验问题（如命题侧题数与题型组成核对） */
+  collectExtraIssues?: (questions: ParsedAiQuestion[]) => string[];
+}): Promise<Record<string, unknown>> {
+  const { draft, ai, subject, safeConfig } = input;
+  const parsed = structuredClone(draft.parsed);
+  let rawQs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
+  if (rawQs.length === 0) {
+    throw new Error("已返回草稿中没有可解析的 questions，无法无猜测恢复");
+  }
+
+  const semCtx: ExamSemanticValidationContext | undefined = (() => {
+    const grade = typeof safeConfig.grade === "string" ? safeConfig.grade : undefined;
+    const subj =
+      typeof safeConfig.subject === "string"
+        ? safeConfig.subject
+        : typeof subject === "string"
+          ? subject
+          : undefined;
+    if (!grade && !subj) return undefined;
+    return {
+      title: typeof safeConfig.title === "string" ? safeConfig.title : undefined,
+      gradeId: grade,
+      gradeLabel: grade ? gradeLevelLabel(grade) : undefined,
+      subjectId: subj,
+      subjectLabel: subj ? curriculumSubjectLabel(subj) : undefined,
+      difficulty: typeof safeConfig.difficulty === "string" ? safeConfig.difficulty : undefined,
+      paperKindId:
+        typeof safeConfig.paper_kind === "string" ? safeConfig.paper_kind : undefined,
+      paperKindLabel:
+        typeof safeConfig.paper_kind === "string"
+          ? paperKindLabel(safeConfig.paper_kind)
+          : undefined,
+      competitionFocusLabels: Array.isArray(safeConfig.competition_focus)
+        ? (safeConfig.competition_focus as string[]).map((id) =>
+            competitionFocusLabelById(subj ?? "math", id),
+          )
+        : undefined,
+    };
+  })();
+
+  let healed = healAndCollectParsedIssues(rawQs, semCtx);
+  rawQs = healed.questions;
+  replaceQuestionsInParsedPayload(parsed, rawQs);
+  const extraIssues = input.collectExtraIssues?.(rawQs) ?? [];
+  if (extraIssues.length > 0) {
+    healed = { questions: rawQs, issues: [...healed.issues, ...extraIssues] };
+  }
+
+  if (healed.issues.length > 0) {
+    const initialIssues = [...healed.issues];
+    const nonFigure = healed.issues.filter(
+      (issue) => categorizeValidationIssue(issue) !== "figure_scene",
+    );
+    if (nonFigure.length > 0) {
+      throw new Error(
+        `已返回试卷仍有非题图错误，不能自动猜测修补：${nonFigure.slice(0, 6).join("；")}`,
+      );
+    }
+
+    const indexes = new Set(
+      healed.issues
+        .map((issue) => /^第\s*(\d+)\s*题/.exec(issue)?.[1])
+        .filter((value): value is string => Boolean(value))
+        .map((value) => Number(value) - 1)
+        .filter((value) => Number.isInteger(value) && value >= 0 && value < rawQs.length),
+    );
+    const { generateFigureSceneFromQuestionText } = await import("@/lib/figureSvgAi.server");
+    const learningHints = buildActiveGenerationLearningHintsSync({
+      stage: "figure",
+      subject,
+    });
+
+    for (const index of indexes) {
+      const question = rawQs[index]!;
+      const questionRecord = question as unknown as Record<string, unknown>;
+      const attachments = Array.isArray(questionRecord.attachments)
+        ? (questionRecord.attachments as Array<Record<string, unknown>>)
+        : [];
+      const existing = attachments.find(
+        (attachment) => attachment.kind === "figure" || attachment.kind === "image",
+      );
+      const scene = await generateFigureSceneFromQuestionText({
+        content: String(question.content ?? ""),
+        alt: typeof existing?.alt === "string" ? existing.alt : undefined,
+        ai,
+        subject: typeof question.subject === "string" ? question.subject : subject,
+        learningHints,
+      });
+      const nextFigure = {
+        ...(existing ?? {}),
+        kind: "figure",
+        uri: "pending://figure",
+        alt:
+          typeof existing?.alt === "string" && existing.alt.trim()
+            ? existing.alt
+            : "按题干结构生成的题图",
+        figure_scene: scene,
+      };
+      questionRecord.attachments = [
+        ...attachments.filter(
+          (attachment) => attachment.kind !== "figure" && attachment.kind !== "image",
+        ),
+        nextFigure,
+      ];
+    }
+
+    healed = healAndCollectParsedIssues(rawQs, semCtx);
+    rawQs = healed.questions;
+    replaceQuestionsInParsedPayload(parsed, rawQs);
+    if (healed.issues.length > 0) {
+      await saveGenerationDraft({
+        id: draft.id,
+        phase: "validation_failed",
+        config: safeConfig,
+        parsed,
+        issues: healed.issues,
+      });
+      recordGenerationLearningIssuesSync({
+        runId: `${draft.id}:recover:${Date.now()}`,
+        scope: { stage: "figure", subject },
+        issues: healed.issues,
+        outcome: "observed",
+      });
+      throw new Error(
+        `已返回试卷完成题图专项修复后仍未通过校验：${healed.issues.slice(0, 8).join("；")}`,
+      );
+    }
+
+    recordGenerationLearningIssuesSync({
+      runId: `${draft.id}:recover:${Date.now()}`,
+      scope: { stage: "figure", subject },
+      issues: initialIssues,
+      outcome: "repaired",
+    });
+  }
+
+  await saveGenerationDraft({
+    id: draft.id,
+    phase: "validated",
+    config: safeConfig,
+    parsed,
+    issues: [],
+  });
+  return parsed;
+}
+
+/**
+ * 从已保存的模型返回草稿恢复试卷（命题侧）。
+ * 复用 repairStoredDraftParsedForRecovery 的共用修复闭环，另加题数与题型组成核对。
+ */
+export async function recoverExamBundleFromStoredDraft(
+  draft: StoredGenerationDraft,
+  ai?: AiRuntimePayload,
+): Promise<GeneratedExamBundle> {
+  const config = {
+    ...(draft.config as unknown as GenerationConfig),
+    ai,
+    generation_request_id: draft.id,
+  };
+  const parsed = await repairStoredDraftParsedForRecovery({
+    draft,
+    ai,
+    subject: config.subject,
+    safeConfig: generationDraftSafeConfig(config),
+    collectExtraIssues: (questions) => {
+      const expected = expectedQuestionCountFromComposition(config.composition);
+      return questions.length === expected
+        ? []
+        : [
+            `题目数量须为 ${expected} 道（与「题型组成」合计完全一致），当前为 ${questions.length} 道。`,
+          ];
+    },
+  });
+  return buildExamBundleFromParsedPayload(config, parsed, { persistStyle: "uuid" });
+}
+
+/**
+ * 从已保存的导入草稿恢复 submit_exam 结构（导入侧「处理已返回结果」）。
+ * 与命题恢复共用同一修复闭环：确定性 heal → 题图专项 AI 修复 → 审计学习，
+ * 修复通过后由调用方走 buildImportedExamSnapshotFromAiParsed 入库。
+ */
+export async function recoverImportedParsedFromStoredDraft(
+  draft: StoredGenerationDraft,
+  ai?: AiRuntimePayload,
+): Promise<Record<string, unknown>> {
+  const subject =
+    typeof draft.config.subject === "string" && draft.config.subject.trim()
+      ? draft.config.subject
+      : IMPORT_DEFAULTS.subject;
+  return repairStoredDraftParsedForRecovery({
+    draft,
+    ai,
+    subject,
+    safeConfig: { ...draft.config, kind: "offline_import", subject },
+  });
 }
 
 /** Postgrest / Postgres 错误结构化展示 */
@@ -2562,7 +3087,8 @@ const SYSTEM_PROMPT = `你是一位资深的国际竞赛命题专家，长期参
 9. 卷面附图：content 支持 Markdown；可用 ![](URL) 嵌入插图（须为可访问 URL；线下导入常见本站 \`/import-figures/…\` 或云端完整 URL 中含 \`/offline-import/…\`）。若用户导入的正文含此类图片行，必须写入对应题目的 content 并**保留 URL**，勿改成无链接的「如图所示」。**禁止编造**不存在的本地路径（如 \`/import-figures/3.png\` 而无对应上传）；命题页未附图的 generated 卷应以文字与 LaTeX 描述几何关系，勿杜撰插图链接。
 10. **插图与公式分界**：\`![](URL)\` **禁止**写在 \`$...$\` 或 \`$$...$$\` 数学公式内，须单独成行放在题干段落中；三角形记号须写 \`$\\\\triangle ABC$\`（JSON 字符串内双反斜杠），禁止裸写 \`\\triangle\`（易被解析成 Tab 导致卷面出现「riangle」乱码）。
 11. **题型组成一致**：用户在命题表单「题型组成」中为某行指定的内置题型，必须与返回的 \`questions[].type\` **按顺序严格对应**——该行选择「选择题（多选）」时 type **必须**为 \`multiple_choice_multi\`，「单选」则为 \`multiple_choice\`；多选题 \`answer\` 须列出全部正确项（如 \`A、C\`）。
-12. **平面几何矢量示意图（结构化题库）**：凡题干涉及三角形、圆、垂直、角平分线、辅助线等**尺规平面示意**、且语义上不依赖「原卷扫描图」时，可在 \`diagram_schema\` 给出 **v1** JSON（version \`"1"\`，\`points\` \\{ id, x, y \\} 坐标 **0～100**，\`segments\` \\[\\["A","B"\\],…\\]，可选 \`circles\`）。纯代数 / 科学记数法 / 函数数值 / 概率等**省略** \`diagram_schema\`。**禁止**在题干出现「右图、下图、如图所示、三视图、主视图、立体图、选项配图、统计图、函数图像、坐标系读图」等**依赖原图或位图**的表述时，仍用 \`diagram_schema\`「猜画」顶替——此类题须仅用文字/LaTeX 叙述，并在有真实插图时把 \`![](URL)\` 写入 content；无原图时不得输出矢量 JSON 冒充卷面图。`;
+12. **平面几何矢量示意图（结构化题库）**：凡题干涉及三角形、圆、垂直、角平分线、辅助线等**尺规平面示意**、且语义上不依赖「原卷扫描图」时，可在 \`diagram_schema\` 给出 **v1** JSON（version \`"1"\`，\`points\` \\{ id, x, y \\} 坐标 **0～100**，\`segments\` \\[\\["A","B"\\],…\\]，可选 \`circles\`）。纯代数 / 科学记数法 / 函数数值 / 概率等**省略** \`diagram_schema\`。**禁止**在题干出现「右图、下图、如图所示、三视图、主视图、立体图、选项配图、统计图、函数图像、坐标系读图」等**依赖原图或位图**的表述时，仍用 \`diagram_schema\`「猜画」顶替——此类题须仅用文字/LaTeX 叙述，并在有真实插图时把 \`![](URL)\` 写入 content；无原图时不得输出矢量 JSON 冒充卷面图。
+13. ${EXAM_PAPER_NO_UI_META_PROMPT_RULE}`;
 
 const examTool = {
   type: "function",
@@ -2575,7 +3101,11 @@ const examTool = {
       properties: {
         title: { type: "string" },
         subtitle: { type: "string" },
-        description: { type: "string", description: "200字以内的试卷概述与命题思路" },
+        description: {
+          type: "string",
+          description:
+            "可选：题库检索用一句话定位（≤40字）。勿写长篇命题思路/考察目标说明（不上卷面）",
+        },
         questions: {
           type: "array",
           minItems: 1,
@@ -2662,7 +3192,7 @@ const examTool = {
           },
         },
       },
-      required: ["title", "subtitle", "description", "questions"],
+      required: ["title", "subtitle", "questions"],
       additionalProperties: false,
     },
   },
@@ -2752,7 +3282,7 @@ function buildMissingToolCallDetail(data: Record<string, unknown>): string {
   }
 
   const hint =
-    "若正文看似已是 submit_exam 的 JSON（含 ``` 围栏、name/arguments 或 parameters 字段），本项目会尽量从 content 自动解析。导入失败时还会再试一次「仅输出整卷 JSON、不走工具」的回退。若仍失败：请升级 Ollama / 换用支持 function calling 的模型、在设置中运行「测试 submit_exam」、或略缩短单次导入正文以免输出被截断。";
+    "若正文看似已是 submit_exam 的 JSON（含 ``` 围栏、name/arguments 或 parameters 字段），本项目会尽量从 content 自动解析。导入失败时还会再试一次「仅输出整卷 JSON、不走工具」的回退。若仍失败：请升级 Ollama / 换用支持 function calling 的模型，或略缩短单次导入正文以免输出被截断。";
   return parts.length ? ` ${parts.join("；")}。${hint}` : ` ${hint}`;
 }
 
@@ -2998,31 +3528,37 @@ function formatLocalInferenceError(
   return `本地模型请求失败 ${status}: ${responseText.slice(0, 280)}`;
 }
 
-/** 命题 / OCR 语义修复等共用：OpenAI 兼容 Chat Completions（云端 Lovable 网关或本地 Ollama/LM Studio）。 */
+/** 命题 / OCR 语义修复等共用：OpenAI 兼容 Chat Completions（自定义云 / 本机 / Lovable 网关）。 */
 export async function callChatCompletions(
   body: Record<string, unknown>,
   ai?: AiRuntimePayload,
   resolve?: LocalModelResolveOptions,
 ) {
-  const mode = ai?.mode ?? "cloud";
+  const effective = resolveEffectiveAiRuntime(ai, resolve ?? { purpose: "exam" });
+  const mode = effective.mode ?? "cloud";
 
-  if (mode === "local") {
-    const baseUrl = ai?.localBaseUrl?.trim();
-    const model = resolveLocalInferenceModel(ai, resolve ?? { purpose: "exam" });
+  // 本机 Ollama/LM Studio，或设置页「自定义 OpenAI 兼容云」（Gemini/DeepSeek 等）
+  if (usesOpenAiCompatEndpoint(effective)) {
+    const baseUrl = effective.localBaseUrl?.trim();
+    const model =
+      mode === "local"
+        ? resolveLocalInferenceModel(effective, resolve ?? { purpose: "exam" })
+        : effective.cloudModel?.trim() || effective.localModel?.trim();
     if (!baseUrl) throw new Error("本地模式需要填写接口地址");
-    if (!model) throw new Error("本地模式需要填写模型名称");
+    if (!model) {
+      throw new Error(mode === "local" ? "本地模式需要填写模型名称" : "云端模型需要填写模型名称");
+    }
     assertHttpUrl(baseUrl);
 
-    const base = baseUrl.replace(/\/$/, "");
-    const url = `${base}/v1/chat/completions`;
+    const url = openAiCompatChatCompletionsUrl(baseUrl);
     const payload = stripUnsupportedForLocal({
       ...body,
       model,
     });
 
     const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (ai?.localApiKey?.trim()) {
-      headers.Authorization = `Bearer ${ai.localApiKey.trim()}`;
+    if (effective.localApiKey?.trim()) {
+      headers.Authorization = `Bearer ${effective.localApiKey.trim()}`;
     }
 
     const res = await fetch(url, {
@@ -3041,7 +3577,7 @@ export async function callChatCompletions(
   const apiKey = process.env.LOVABLE_API_KEY;
   if (!apiKey) throw new Error("云端模式需要服务端配置 LOVABLE_API_KEY，或使用本地模型");
 
-  const modelId = ai?.cloudModel?.trim() || DEFAULT_CLOUD_MODEL;
+  const modelId = effective.cloudModel?.trim() || DEFAULT_CLOUD_MODEL;
   const payload = { ...body, model: modelId };
 
   const res = await fetch(GATEWAY_URL, {
@@ -3066,94 +3602,217 @@ export async function callChatCompletions(
   return res.json() as Promise<Record<string, unknown>>;
 }
 
-const PROBE_TOOL_SYSTEM = `你是自动化连通性测试助手。你必须仅通过提供的 submit_exam 工具提交试卷 JSON，不要输出用于闲聊的自然语言段落。`;
-
 /**
- * 发送与真实命题相同的 tools + tool_choice，验证本地/云端能否返回 submit_exam。
- * 设置页「测试 submit_exam」使用；比单纯 ping 更能发现「模型不支持 tool_calls」问题。
+ * 库内质量修复：按校验问题单题重写（表驱动提示；过闸才由调用方写回）。
  */
-export async function probeSubmitExamToolCall(
-  ai?: AiRuntimePayload,
-): Promise<{ ok: boolean; message: string }> {
-  const mode = ai?.mode ?? "cloud";
+export async function rewriteQuestionForQualityGate(input: {
+  examTitle: string;
+  examTags: string[];
+  question: Question;
+  issueMessages: string[];
+  ai?: AiRuntimePayload;
+  /** true：忽略学科模型映射，用默认命题模型（学科绑定的 Interactions 专用模型时回退） */
+  useDefaultModel?: boolean;
+}): Promise<Question> {
+  const { EXAM_QUALITY_REMEDIATION } = await import("@/config/examDomain");
+  const { normalizeSubjectIdForModelMap } = await import("@/lib/aiRuntime.shared");
+  const regen = EXAM_QUALITY_REMEDIATION.regenerate;
+  const issueBullets = input.issueMessages.map((m) => `• ${m}`).join("\n");
+  const questionJson = JSON.stringify(
+    {
+      type: input.question.type,
+      subject: input.question.subject,
+      points: input.question.points,
+      content: input.question.content,
+      options: input.question.options,
+      answer: input.question.answer,
+      solution_steps: input.question.solution_steps,
+      knowledge_tags: input.question.knowledge_tags,
+    },
+    null,
+    2,
+  ).slice(0, 12_000);
 
-  if (mode === "local") {
-    const baseUrl = ai?.localBaseUrl?.trim();
-    const model = resolveLocalInferenceModel(ai, { purpose: "exam" });
-    if (!baseUrl) return { ok: false, message: "请先填写本地接口根 URL。" };
-    if (!model) return { ok: false, message: "请先填写本地模型名称。" };
-  } else if (!process.env.LOVABLE_API_KEY) {
-    return { ok: false, message: "云端探测需要服务端已配置 LOVABLE_API_KEY。" };
+  const subjectRaw = String(input.question.subject ?? "").trim();
+  const subjectId = input.useDefaultModel
+    ? undefined
+    : normalizeSubjectIdForModelMap(subjectRaw) ?? (subjectRaw || undefined);
+
+  const injectHints =
+    EXAM_QUALITY_REMEDIATION.learningFromValidate?.enabled !== false &&
+    EXAM_QUALITY_REMEDIATION.learningFromValidate?.injectHintsOnRegenerate !== false;
+  const learningHints = injectHints
+    ? buildActiveGenerationLearningHintsSync({
+        stage: "exam",
+        subject: subjectRaw || undefined,
+      }).trim()
+    : "";
+
+  let userPrompt = regen.userTemplate
+    .replaceAll("{{examTitle}}", input.examTitle.slice(0, 200))
+    .replaceAll("{{examTags}}", input.examTags.join("、").slice(0, 500))
+    .replaceAll("{{issueBullets}}", issueBullets.slice(0, 4000))
+    .replaceAll("{{questionJson}}", questionJson);
+  if (learningHints) {
+    userPrompt = userPrompt.replaceAll("{{learningHints}}", learningHints.slice(0, 3000));
+  } else {
+    userPrompt = userPrompt
+      .replace(/\n*【已批准改进策略（须遵守）】\n\{\{learningHints\}\}/g, "")
+      .replaceAll("{{learningHints}}", "");
   }
 
-  const userPrompt = `连通性测试：仅允许通过 submit_exam 提交。请提交一份最小合法试卷：
-title="连通性测试"，subtitle="测"，description="接口探测"。
-questions 仅 1 道：type=fill_blank，subject="数学"，points=10，content 为一句简短填空题；
-answer 简短；solution_steps 至少 2 步（每步含 step、description、reasoning）；knowledge_tags 至少 1 个标签。
-不要复述指令，只调用工具。`;
-
-  try {
-    const baseBody: Record<string, unknown> = {
+  const data = await callChatCompletions(
+    {
       messages: [
-        { role: "system", content: PROBE_TOOL_SYSTEM },
+        { role: "system", content: `${SYSTEM_PROMPT}\n\n${regen.systemExtra}` },
         { role: "user", content: userPrompt },
       ],
       tools: [examTool],
       tool_choice: { type: "function", function: { name: "submit_exam" } },
-    };
+      reasoning: { effort: "medium" },
+      max_tokens: resolveExamAiMaxOutputTokens(1),
+    },
+    input.ai,
+    {
+      purpose: "exam",
+      subjectId,
+    },
+  );
 
-    const body =
-      mode === "local"
-        ? stripUnsupportedForLocal(baseBody)
-        : { ...baseBody, reasoning: { effort: "low" as const } };
-
-    const data = await callChatCompletions(body, ai, { purpose: "exam" });
-
-    const rawArgs = resolveSubmitExamPayloadString(data);
-    if (!rawArgs) {
-      return {
-        ok: false,
-        message: `无法得到 submit_exam 载荷（无有效 tool_calls，且正文无法解析）。${buildMissingToolCallDetail(data).trim()}`,
-      };
-    }
-
-    let parsed: Record<string, unknown>;
-    try {
-      parsed = parseSubmitExamArgumentsJson(rawArgs);
-    } catch (e) {
-      return {
-        ok: false,
-        message: e instanceof Error ? e.message : "载荷不是合法 JSON（submit_exam arguments）。",
-      };
-    }
-    const qs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
-    if (qs.length < 1) {
-      return {
-        ok: false,
-        message: `已解析出 JSON，但未得到有效题目列表。${describeParsedPayloadKeys(parsed)}`,
-      };
-    }
-
-    const fromToolsPayload = getFirstToolCallArgumentsString(data, "submit_exam");
-    const viaContent = Boolean(rawArgs && !fromToolsPayload);
-
-    return {
-      ok: true,
-      message:
-        mode === "local"
-          ? viaContent
-            ? "submit_exam 解析成功：模型把工具输出写在正文中（未填 tool_calls），本项目已兼容；可正常命题。"
-            : "submit_exam 工具调用成功：当前本地接口返回标准 tool_calls，可正常命题。"
-          : viaContent
-            ? "submit_exam 解析成功：载荷来自正文 JSON（非标准 tool_calls 字段），可正常命题。"
-            : "submit_exam 工具调用成功：云端返回标准 tool_calls，可正常命题。",
-    };
-  } catch (e) {
-    return {
-      ok: false,
-      message: e instanceof Error ? e.message : "探测失败",
-    };
+  const argsStr = resolveSubmitExamPayloadString(data);
+  if (!argsStr) {
+    throw new Error(`修复题未返回 submit_exam。${buildMissingToolCallDetail(data)}`);
   }
+  const parsed = parseSubmitExamArgumentsJson(argsStr);
+  let qs = normalizeParsedQuestionsMcq(extractQuestionsFromSubmitExamPayload(parsed));
+  if (qs.length === 0) throw new Error("修复题解析结果为空");
+  const raw = qs[0]!;
+  const fixed = repairExamQuestionPayloadStringsWithLearningSync(raw);
+  return {
+    ...input.question,
+    type: normalizeQuestionType(raw.type),
+    subject: String(raw.subject ?? input.question.subject).slice(0, 200),
+    content: stripExamPaperUiMetaInstructions(fixed.content),
+    options: Array.isArray(fixed.options)
+      ? fixed.options.map((o) => stripExamPaperUiMetaInstructions(String(o)))
+      : null,
+    answer: fixed.answer,
+    solution_steps: (Array.isArray(fixed.solution_steps)
+      ? fixed.solution_steps
+      : input.question.solution_steps) as SolutionStep[],
+    knowledge_tags: normalizeKnowledgeTags(raw.knowledge_tags),
+    points: Number.isFinite(Number(raw.points))
+      ? Math.min(1000, Math.max(1, Math.round(Number(raw.points))))
+      : input.question.points,
+  };
+}
+
+/** 将已经生成并通过校验的 bundle 写入 Supabase；不调用整卷模型。 */
+export async function persistGeneratedExamBundleToSupabase(
+  config: GenerationConfig,
+  bundle: GeneratedExamBundle,
+): Promise<string> {
+  const supabaseAdmin = getSupabaseAdmin();
+  if (!supabaseAdmin) throw new Error("服务端未配置 Supabase");
+
+  const { exam, questions } = bundle;
+  const { data: examRow, error: examErr } = await supabaseAdmin
+    .from("exams")
+    .insert({
+      id: exam.id,
+      title: exam.title.slice(0, 500),
+      subtitle: exam.subtitle?.slice(0, 500) ?? null,
+      description: exam.description?.slice(0, 2000) ?? null,
+      subjects: exam.subjects,
+      difficulty: exam.difficulty,
+      duration_min: exam.duration_min,
+      total_score: exam.total_score,
+      source: "generated",
+      is_featured: false,
+      created_at: exam.created_at,
+      generation_duration_sec: exam.generation_duration_sec,
+      quality_status: exam.quality_status ?? "pass",
+      quality_report: exam.quality_report ?? null,
+      quality_checked_at: exam.quality_checked_at ?? exam.created_at,
+      quality_exclude_assign: exam.quality_exclude_assign ?? false,
+    } as never)
+    .select()
+    .single();
+  if (examErr || !examRow) {
+    throw new Error(
+      describeSupabaseError("保存试卷失败", examErr ?? { message: "数据库未返回试卷 id" }),
+    );
+  }
+
+  const displayLabels = expandCompositionDisplayLabels(config.composition);
+  const rasterReadyQuestions = questions.map(materializeQuestionRasterFigures);
+
+  const questionRows = rasterReadyQuestions.map((q, i) => {
+    const diagram_schema: Json | null =
+      q.diagram_schema != null ? (JSON.parse(JSON.stringify(q.diagram_schema)) as Json) : null;
+    const raster_figures: Json | null =
+      q.raster_figures != null ? (JSON.parse(JSON.stringify(q.raster_figures)) as Json) : null;
+    const figure_dependency = JSON.parse(
+      JSON.stringify(q.figure_dependency ?? computeQuestionFigureDependencyV1(q)),
+    ) as Json;
+    const visual_geometry_evidence: Json | null =
+      q.visual_geometry_evidence != null
+        ? (JSON.parse(JSON.stringify(q.visual_geometry_evidence)) as Json)
+        : null;
+    return {
+      id: q.id,
+      exam_id: examRow.id,
+      order_index: i,
+      type: q.type,
+      type_label: displayLabels[i]?.slice(0, 200) ?? null,
+      subject: q.subject,
+      content: q.content,
+      options: q.options,
+      answer: q.answer,
+      solution_steps: unknownToJson(q.solution_steps),
+      knowledge_tags: normalizeKnowledgeTags(q.knowledge_tags),
+      points: q.points,
+      diagram_schema,
+      raster_figures,
+      figure_dependency,
+      visual_geometry_evidence,
+    };
+  });
+
+  const { error: questionError } = await supabaseAdmin.from("questions").insert(questionRows);
+  if (questionError) {
+    const { error: rollbackError } = await supabaseAdmin
+      .from("exams")
+      .delete()
+      .eq("id", examRow.id);
+    if (rollbackError) {
+      console.error("[persist recovered exam] rollback failed:", rollbackError.message);
+    }
+    throw new Error(describeSupabaseError("保存题目失败", questionError));
+  }
+
+  const examIdStr = examRow.id as string;
+  try {
+    const { data: persistedQs } = await supabaseAdmin
+      .from("questions")
+      .select("*")
+      .eq("exam_id", examIdStr)
+      .order("order_index");
+    if (persistedQs?.length) {
+      await writeListeningScriptMarkdownForEnglishListeningExam(
+        examIdStr,
+        exam,
+        persistedQs as unknown as Question[],
+      );
+    }
+  } catch (error) {
+    console.warn(
+      "[listening-script] 恢复试卷写听力稿失败（试卷已保存）:",
+      error instanceof Error ? error.message : error,
+    );
+  }
+
+  return examIdStr;
 }
 
 export async function generateAndPersistExam(config: GenerationConfig) {
@@ -3170,7 +3829,7 @@ export async function generateAndPersistExam(config: GenerationConfig) {
       `AI 返回的试卷中没有题目，无法入库（须能解析出非空题目列表）。${describeParsedPayloadKeys(parsed)}`,
     );
   }
-  assertParsedQuestionsComplete(rawQuestions);
+  assertParsedQuestionsComplete(rawQuestions, semanticValidationContextFromConfig(config));
 
   await refreshExamMathRepairMergedRules();
   await scanBuiltinFixedFragmentsAndLearnRulesAsync(
@@ -3190,7 +3849,8 @@ export async function generateAndPersistExam(config: GenerationConfig) {
       total_score: config.total_score,
       source: "generated",
       is_featured: false,
-    })
+      ...generationPassQualityFields(),
+    } as never)
     .select()
     .single();
 
@@ -3218,8 +3878,10 @@ export async function generateAndPersistExam(config: GenerationConfig) {
       order_index: i,
       type: normalizeQuestionType(q.type),
       subject: String(q.subject ?? "数学").slice(0, 200),
-      content: fixed.content,
-      options: Array.isArray(fixed.options) ? fixed.options.map((o) => String(o)) : null,
+      content: stripExamPaperUiMetaInstructions(fixed.content),
+      options: Array.isArray(fixed.options)
+        ? fixed.options.map((o) => stripExamPaperUiMetaInstructions(String(o)))
+        : null,
       answer: fixed.answer,
       solution_steps: (Array.isArray(fixed.solution_steps)
         ? fixed.solution_steps
@@ -3413,38 +4075,41 @@ export async function listLocalInferenceModels(
   return { source: "openai", models: uniq };
 }
 
-/** 设置页「测试连接」：云端仅检查环境变量；本地发送极简 completion */
+/** 设置页 / 命题页连通探测：按当前有效运行时（目录模型优先），文案来自 exam-domain.json */
 export async function probeAiRuntime(
   ai?: AiRuntimePayload,
 ): Promise<{ ok: boolean; message: string }> {
-  const mode = ai?.mode ?? "cloud";
-  if (mode === "cloud") {
+  const effective = resolveEffectiveAiRuntime(ai, { purpose: "chat" });
+  const mode = effective.mode ?? "cloud";
+
+  // Lovable 默认云网关：仅检查服务端密钥；自定义云端点 / 本机走 ping
+  if (mode === "cloud" && !usesOpenAiCompatEndpoint(effective)) {
     const ok = !!process.env.LOVABLE_API_KEY;
     return {
       ok,
       message: ok
-        ? "服务端已配置 LOVABLE_API_KEY，可使用 Lovable 云端网关。"
-        : "服务端未检测到 LOVABLE_API_KEY。请在部署环境或项目根目录 `.env` / `.dev.vars` 中配置，或改用本地模型。",
+        ? AI_RUNTIME_PROBE.lovableGatewayReady
+        : AI_RUNTIME_PROBE.lovableGatewayMissing,
     };
   }
+
   try {
     await callChatCompletions(
       {
         messages: [{ role: "user", content: "ping" }],
         max_tokens: 8,
       },
-      ai,
+      effective,
       { purpose: "chat" },
     );
     return {
       ok: true,
-      message:
-        "本地接口连通（轻量 ping）。正式命题需要 tool_calls；请点击「测试 submit_exam」验证模型是否支持函数调用。",
+      message: AI_RUNTIME_PROBE.localPingOk,
     };
   } catch (e) {
     return {
       ok: false,
-      message: e instanceof Error ? e.message : "探测失败",
+      message: e instanceof Error ? e.message : AI_RUNTIME_PROBE.probeFailedFallback,
     };
   }
 }

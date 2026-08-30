@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="12 52 200 104" width="200" height="104">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="12" y="52" width="200" height="104" fill="#fff"/>
+  <line x1="40" y1="80" x2="40" y2="128" stroke="#0f172a" stroke-width="2"/>
+  <line x1="88" y1="80" x2="88" y2="128" stroke="#0f172a" stroke-width="2"/>
+  <line x1="136" y1="80" x2="136" y2="128" stroke="#0f172a" stroke-width="2"/>
+  <line x1="184" y1="80" x2="184" y2="128" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="80" x2="88" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <line x1="40" y1="128" x2="88" y2="128" stroke="#0f172a" stroke-width="2"/>
+  <line x1="88" y1="80" x2="136" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <line x1="88" y1="128" x2="136" y2="128" stroke="#0f172a" stroke-width="2"/>
+  <line x1="136" y1="80" x2="184" y2="80" stroke="#0f172a" stroke-width="2"/>
+  <line x1="136" y1="128" x2="184" y2="128" stroke="#0f172a" stroke-width="2"/>
+</svg>

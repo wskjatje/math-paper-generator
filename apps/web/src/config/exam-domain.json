@@ -1,0 +1,820 @@
+{
+  "version": 1,
+  "paperKinds": [
+    { "id": "regular_daily", "label": "日常考试 / 随堂测", "group": "regular" },
+    { "id": "regular_unit", "label": "单元测试", "group": "regular" },
+    { "id": "regular_final", "label": "期中 / 期末", "group": "regular" },
+    { "id": "entrance_primary_junior", "label": "小升初", "group": "entrance" },
+    { "id": "entrance_junior_senior", "label": "初升高", "group": "entrance" },
+    { "id": "entrance_senior_college", "label": "高升大", "group": "entrance" },
+    { "id": "contest_school", "label": "校内学科竞赛", "group": "contest" },
+    { "id": "contest_city", "label": "市级学科竞赛", "group": "contest" },
+    { "id": "contest_provincial", "label": "省级学科竞赛", "group": "contest" },
+    { "id": "olympiad", "label": "奥林匹克竞赛（奥数 / 理科学科奥赛等综合）", "group": "contest" }
+  ],
+  "difficulties": [
+    { "id": "beginner", "label": "入门" },
+    { "id": "intermediate", "label": "进阶" },
+    { "id": "competition", "label": "竞赛" },
+    { "id": "advanced", "label": "高阶竞赛" }
+  ],
+  "importDefaults": {
+    "duration_min": 100,
+    "total_score": 120,
+    "difficulty": "intermediate",
+    "grade": "jhs_g3_s2",
+    "subject": "math"
+  },
+  "generateDefaults": {
+    "duration_min": 60,
+    "total_score": 100,
+    "difficulty": "intermediate"
+  },
+  "validation": {
+    "duration_min": { "min": 30, "max": 360 },
+    "total_score": { "min": 50, "max": 300 },
+    "mcq": {
+      "rejectDuplicateOptions": true,
+      "dedupeOnPersist": true,
+      "dedupeOnNormalize": false,
+      "dedupeOnDisplay": true
+    },
+    "semanticGates": {
+      "enabled": true,
+      "alignment": {
+        "enabled": true,
+        "rules": [
+          {
+            "id": "primary_forbid_national_camp",
+            "whenGradeBands": ["primary"],
+            "forbidCorpusPatterns": [
+              "国家集训队",
+              "CMO",
+              "IMO",
+              "联赛二试",
+              "联赛一试"
+            ],
+            "message": "年级学段与竞赛定位冲突：小学不宜绑定国家集训队/联赛一试二试/CMO·IMO 等标签"
+          },
+          {
+            "id": "junior_forbid_imo_national",
+            "whenGradeBands": ["junior"],
+            "forbidCorpusPatterns": ["国家集训队", "IMO金牌", "IMO 金牌"],
+            "message": "年级学段与竞赛定位冲突：初中不宜绑定国家集训队/IMO 金牌等标签"
+          }
+        ]
+      },
+      "solutionAnswerConflict": {
+        "enabled": true,
+        "rules": [
+          {
+            "id": "zero_methods_vs_positive",
+            "solutionPatterns": [
+              "没有放置方法",
+              "无法放置",
+              "0\\s*种",
+              "零种",
+              "无解",
+              "没有满足",
+              "无法满足"
+            ],
+            "answerConflictPatterns": [
+              "^\\s*[1-9]",
+              "^\\s*\\$\\s*[1-9]",
+              "^\\s*[A-Da-d]\\s*$"
+            ],
+            "message": "解析断言无解/0 种，但答案为非零或选项字母"
+          }
+        ]
+      },
+      "countMcqSuspiciousOptions": {
+        "enabled": true,
+        "stemPatterns": [
+          "有多少个",
+          "有多少种",
+          "共有多少",
+          "一共有多少",
+          "可能有多少",
+          "共几种",
+          "有几种",
+          "共多少个",
+          "共多少种"
+        ],
+        "optionTypes": ["multiple_choice", "multiple_choice_multi"],
+        "requireAllOptionsNumeric": true,
+        "maxOptionAbsValue": 9,
+        "minOptionCount": 2,
+        "message": "计数类选择题选项为过小整数序列，疑似未覆盖真实计数范围；请扩大选项区间或改为填空/解答"
+      },
+      "multiSelectAnswerLetters": {
+        "enabled": true,
+        "types": ["multiple_choice_multi"],
+        "pluralStemPatterns": ["哪些", "下列正确", "正确的有", "所有正确", "全部正确"],
+        "requireMultipleLettersWhenPluralStem": true,
+        "messageInvalid": "多选题答案字母须对应已有选项",
+        "messagePluralIncomplete": "题干要求选出多项时，答案须含至少两个正确选项字母"
+      },
+      "domainPlugins": {
+        "enabled": true,
+        "physicsWeightAsMassTrap": {
+          "enabled": true,
+          "stemPatterns": ["重力", "摩擦力", "加速度", "水平推力", "水平桌面"],
+          "weightNewtonPattern": "(?:重力|重)\\s*(?:为|是)?\\s*\\$?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?N",
+          "frictionNewtonPattern": "摩擦(?:力)?\\s*(?:为|是)?\\s*\\$?\\s*(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?N",
+          "accelPattern": "(?:加速度\\s*(?:为|是)?\\s*\\$?\\s*|以\\s*\\$?\\s*)(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?(?:m\\s*/\\s*s|米)",
+          "gApprox": 10,
+          "answerNewtonPattern": "(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?(?:N|牛)?",
+          "toleranceAbs": 0.25,
+          "message": "物理受力题答案疑似把重力数值当作质量使用（量纲错误）"
+        },
+        "solutionMassFraction": {
+          "enabled": true,
+          "stemPatterns": ["质量分数", "溶质"],
+          "initialMassPercentPattern": "(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?(?:g|克)[^。；;]{0,80}?(?:质量分数|含有|含)[^0-9%]{0,24}(\\d+(?:\\.\\d+)?)\\s*\\\\?%",
+          "addMassPattern": "(?:加入|加水|再加入|又加入)[^0-9]{0,16}(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?(?:g|克)",
+          "evaporatePattern": "(?:蒸发|蒸去|蒸发掉)[^0-9]{0,16}(\\d+(?:\\.\\d+)?)\\s*(?:\\\\text\\{\\s*)?(?:g|克)",
+          "answerPercentPattern": "(\\d+(?:\\.\\d+)?)\\s*\\\\?%",
+          "toleranceAbs": 0.2,
+          "message": "溶液质量分数与题干可推算值不一致"
+        }
+      }
+    }
+  },
+  "qualityRemediation": {
+    "actionIds": [
+      "flag_needs_review",
+      "exclude_from_assign",
+      "clear_exclude_assign",
+      "demote_mcq_to_fill",
+      "strip_conflicting_track_tags",
+      "regenerate_failing_questions"
+    ],
+    "actionLabels": {
+      "flag_needs_review": "标为待修",
+      "exclude_from_assign": "禁止布置",
+      "clear_exclude_assign": "恢复可布置",
+      "demote_mcq_to_fill": "计数选择题改填空",
+      "strip_conflicting_track_tags": "去掉越阶竞赛标签",
+      "regenerate_failing_questions": "修复问题题"
+    },
+    "issueActionHints": [
+      {
+        "issueCodePattern": "^alignment\\.",
+        "suggestedActions": ["strip_conflicting_track_tags", "flag_needs_review"]
+      },
+      {
+        "issueCodePattern": "count_option|mcq\\.count",
+        "suggestedActions": ["demote_mcq_to_fill", "regenerate_failing_questions"]
+      },
+      {
+        "issueCodePattern": "solution\\.answer|domain\\.|mcq\\.multi",
+        "suggestedActions": ["regenerate_failing_questions"]
+      },
+      {
+        "issueCodePattern": "^figure\\.|require_valid_figure|require_pure_json_figure",
+        "suggestedActions": ["regenerate_failing_questions", "flag_needs_review"]
+      }
+    ],
+    "stripTrackTagPatterns": [
+      "国家集训队",
+      "CMO",
+      "IMO",
+      "联赛一试",
+      "联赛二试"
+    ],
+    "assignGate": {
+      "requireStatuses": ["pass"],
+      "blockWhenExcludeAssign": true,
+      "passOverridesExcludeAssign": true,
+      "clearExcludeAssignOnPass": true,
+      "rejectMessage": "仅可布置已通过验证的试卷"
+    },
+    "validateLock": {
+      "lockedStatuses": ["pass"],
+      "rejectMessage": "已通过验证，不可再次验证"
+    },
+    "regenerate": {
+      "maxQuestionsPerRun": 8,
+      "systemExtra": "你正在修复已入库试卷中未通过语义校验的题目。必须保持题型与考查点，修正答案、解析与选项，使结论自洽且可通过数值/量纲验算。禁止猜测几何图；无法配图则不要依赖「如图」。",
+      "userTemplate": "【试卷上下文】\n标题：{{examTitle}}\n标签：{{examTags}}\n\n【校验失败（必须全部消除）】\n{{issueBullets}}\n\n【已批准改进策略（须遵守）】\n{{learningHints}}\n\n【待修复原题 JSON】\n{{questionJson}}\n\n【强制】调用 submit_exam，questions 长度恰好为 1；保留合理题干事实，修正 answer / solution_steps / options；多选写全正确项；解析结论须与 answer 一致。",
+      "recordedToLearningSuffix": "已记入设置 → 改进建议",
+      "retryWithDefaultModelOnPatterns": [
+        "Interactions API|与接口不兼容|only supports Interactions"
+      ],
+      "retryWithDefaultModelNote": "学科模型不兼容，已改用默认命题模型重试"
+    },
+    "learningFromValidate": {
+      "enabled": true,
+      "recordFailIssues": true,
+      "injectHintsOnRegenerate": true
+    },
+    "displayHygieneOnValidate": {
+      "enabled": true,
+      "persistRepairs": true,
+      "failOnUnhealed": false
+    }
+  },
+  "generationLearning": {
+    "autoAgree": {
+      "enabled": true,
+      "minEvidence": 3,
+      "kinds": ["prompt_policy", "ops_advisory"],
+      "actor": "auto-agree",
+      "reevaluateOnRecord": true,
+      "reevaluateOnRead": true
+    },
+    "runtimeIssueRules": [
+      {
+        "match": "Interactions API|与接口不兼容|only supports Interactions",
+        "issueCode": "runtime.api_incompatible",
+        "strategyId": "prefer_openai_compat_model",
+        "kind": "ops_advisory",
+        "summary": "模型接口与当前修题/命题调用不兼容"
+      },
+      {
+        "match": "fetch failed|ECONNREFUSED|ENOTFOUND|无法连接|UND_ERR_CONNECT|ETIMEDOUT|socket hang up",
+        "issueCode": "runtime.fetch_failed",
+        "strategyId": "check_ai_endpoint_connectivity",
+        "kind": "ops_advisory",
+        "summary": "无法连接 AI 服务"
+      }
+    ]
+  },
+  "textNormalization": {
+    "stripZeroWidth": true,
+    "normalizeUnicodeSpaces": true,
+    "fullwidthPunctToHalfwidthForCompare": true,
+    "fullwidthPunctMap": {
+      "，": ",",
+      "。": ".",
+      "：": ":",
+      "；": ";",
+      "！": "!",
+      "？": "?",
+      "（": "(",
+      "）": ")",
+      "【": "[",
+      "】": "]",
+      "＂": "\"",
+      "＇": "'",
+      "－": "-",
+      "／": "/",
+      "＝": "="
+    },
+    "applyUnicodeNoiseOnPersist": true,
+    "applyUnicodeNoiseOnDisplay": true,
+    "applyOnOptionDedupKey": true,
+    "trimSpacedInlineMathDelimiters": true,
+    "repairMalformedMhchemCe": true,
+    "expandMhchemCeToPlainKatex": true,
+    "unwrapFormulaLikeTextCommands": true,
+    "wrapBareSubscriptAllowLeadingDigits": true,
+    "mergeLetterParenInlineMath": true,
+    "unwrapOverEscapedMarkdown": true,
+    "normalizeEmptyMarkdownFences": true,
+    "demoteEmbeddedDisplayMath": true,
+    "demoteEmbeddedDisplayMathMaxInnerLength": 160,
+    "collapseStemExtraBlankLines": true,
+    "joinOrphanMathLines": true,
+    "tightenStemBlankLines": true,
+    "explicitMultiplyDisplay": "times",
+    "latexTabEatenCommandRepairs": [
+      { "eatenTail": "imes", "command": "times" },
+      { "eatenTail": "ext", "command": "text", "requireOpenBrace": true },
+      { "eatenTail": "extbf", "command": "textbf", "requireOpenBrace": true },
+      { "eatenTail": "riangle", "command": "triangle" },
+      { "eatenTail": "heta", "command": "theta" },
+      { "eatenTail": "ightarrow", "command": "rightarrow" },
+      { "eatenTail": "Rightarrow", "command": "Rightarrow" },
+      { "eatenTail": "dots", "command": "ldots" }
+    ],
+    "bareLatexCommandRepairs": [
+      { "bare": "leqslant", "command": "leqslant" },
+      { "bare": "geqslant", "command": "geqslant" },
+      { "bare": "cdots", "command": "cdots" },
+      { "bare": "ldots", "command": "ldots" },
+      { "bare": "approx", "command": "approx" },
+      { "bare": "infty", "command": "infty" },
+      { "bare": "triangle", "command": "triangle" },
+      { "bare": "angle", "command": "angle" },
+      { "bare": "cdot", "command": "cdot" },
+      { "bare": "times", "command": "times" },
+      { "bare": "leq", "command": "leq" },
+      { "bare": "geq", "command": "geq" },
+      { "bare": "neq", "command": "neq" },
+      { "bare": "pm", "command": "pm" },
+      { "bare": "mp", "command": "mp" },
+      { "bare": "div", "command": "div" },
+      { "bare": "sin", "command": "sin" },
+      { "bare": "cos", "command": "cos" },
+      { "bare": "tan", "command": "tan" },
+      { "bare": "log", "command": "log" },
+      { "bare": "ln", "command": "ln" },
+      { "bare": "sqrt", "command": "sqrt", "requireOpenBrace": true },
+      { "bare": "frac", "command": "frac", "requireOpenBrace": true },
+      { "bare": "text", "command": "text", "requireOpenBrace": true }
+    ],
+    "numberedPlainEquationListToCases": {
+      "enabled": true,
+      "minEquations": 2,
+      "maxEquations": 12,
+      "triggerPatterns": [
+        "解方程组",
+        "解下列方程组",
+        "下列方程组",
+        "方程组\\s*[：:]",
+        "solve\\s+the\\s+system",
+        "system\\s+of\\s+equations"
+      ],
+      "equationLinePattern": "^\\s*(\\d+)\\s*[.、．)\\]］]\\s*(.+?=\\s*.+)$"
+    },
+    "promptLeakageStripPatterns": [
+      "\\*\\*\\(\\s*e\\.g\\.[^)]*\\)\\*\\*",
+      "\\(\\s*e\\.g\\.\\s*如图\\s*\\)",
+      "\\(\\s*e\\.g\\.\\s*as\\s+shown[^)]*\\)"
+    ],
+    "normalizeLatexDelimitersToDollar": true,
+    "normalizeMalformedMarkdownImages": true,
+    "collapseNewlinesInsideMathDelimiters": true,
+    "suppressNonTriangleDiagramWhenStemMentionsTriangle": true,
+    "mcqAnswerBlankParenSpacing": {
+      "enabled": true,
+      "blankPatterns": ["（\\s*）", "\\(\\s*\\)"],
+      "spaceBefore": " ",
+      "innerFill": "　"
+    }
+  },
+  "site": {
+    "ogImageUrl": "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/lovable-uploads/lovable.app-1777594590148.png"
+  },
+  "ai": {
+    "gatewayUrl": "https://ai.gateway.lovable.dev/v1/chat/completions"
+  },
+  "choiceOptionsLayout": {
+    "inlineMaxWeightPerOption": 12,
+    "inlineMaxTotalWeight": 40,
+    "columnsMaxWeightPerOption": 22,
+    "columnsMaxTotalWeight": 80,
+    "noBesideInlineMaxWeightPerOption": 14,
+    "noBesideInlineMaxTotalWeight": 56,
+    "noBesideColumnsMaxWeightPerOption": 28,
+    "noBesideColumnsMaxTotalWeight": 100,
+    "noBesideInlineDistribute": true,
+    "noBesideInlineGapRem": 1.5,
+    "noBesideInlineItemMinWidthRem": 0,
+    "besideFigureMaxWeightPerOption": 24,
+    "besideFigureMaxTotalWeight": 90,
+    "besideFigureMinOptionCount": 2,
+    "besideGapRem": 0.75,
+    "stackedGapRem": 0.5,
+    "inlineMathWeight": 6,
+    "displayMathWeight": 12,
+    "latinCharWeight": 0.55,
+    "forceStackedIfDisplayMath": true,
+    "forceStackedIfNewline": true
+  },
+  "examPaperSections": {
+    "groupByConsecutiveType": true,
+    "mergeAdjacentSameTypeSections": true,
+    "chineseOrdinals": [
+      "一", "二", "三", "四", "五", "六", "七", "八", "九", "十",
+      "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"
+    ],
+    "sectionTitleTemplate": "{{ordinal}}、{{typeLabel}}",
+    "sectionMetaTemplate": "（共 {{count}} 小题，共 {{points}} 分）",
+    "questionIndexTemplate": "{{n}}.",
+    "questionPointsTemplate": "（{{points}}分）",
+    "sectionHeaderShowBottomBorder": false,
+    "stemPointsPlacement": {
+      "withoutSubquestions": "inline_end",
+      "withSubquestionsNoOwnPoints": "inline_end",
+      "withSubquestionsOwnPoints": "omit"
+    },
+    "subquestionOwnPointsPatterns": [
+      "[（(]\\s*\\d+\\s*分\\s*[）)]",
+      "[（(]\\s*本小[题问]\\s*(?:满分)?\\s*\\d+\\s*分\\s*[）)]"
+    ],
+    "stripRedundantStemIndexPatterns": [
+      "^\\s*(?:\\*\\*)?\\s*{{n}}\\s*[.．、]\\s*(?:\\*\\*)?",
+      "^\\s*(?:\\*\\*)?\\s*第\\s*{{n}}\\s*题\\s*[.．、:：]?\\s*(?:\\*\\*)?"
+    ]
+  },
+  "paperSurfaceLayout": {
+    "subquestionLabelStyle": "fullwidth_paren",
+    "subquestionLabelTemplate": "（{n}）",
+    "stemToFigureGapRem": 0.5,
+    "stemToSubquestionGapRem": 0.35,
+    "stemShowBottomBorder": false,
+    "stemMarkdownParagraphMarginRem": 0.3,
+    "stemDisplayMathMarginRem": 0.2,
+    "stemCodeBlockMarginRem": 0.15,
+    "stemInlineCodeAppearance": "plain_mono",
+    "stemLabeledSectionsEnabled": true,
+    "stemLabeledSectionIndentRem": 1.5,
+    "stemLabeledSectionLabelGapRem": 0.05,
+    "stemLabeledSectionBlockGapRem": 0.25,
+    "stemLabeledSectionLabelLinePattern": "^\\*\\*[^*\\n]+\\*\\*\\s*[:：]?\\s*$",
+    "stemLabeledSectionPlainLabelLinePattern": "^[^\\n$*`]{1,24}[:：]\\s*$",
+    "stemLabeledSectionBodyPaddingYRem": 0,
+    "stemLabeledSectionBodyPaddingXRem": 0,
+    "stemLabeledSectionBodySurface": false,
+    "figureBlockCompactMarginRem": 0.35,
+    "figureBlockMarginRem": 0.5,
+    "eplBlockStackGapRem": 0.5,
+    "subquestionClusterMarginRem": 0.35,
+    "questionClusterMarginRem": 0.5,
+    "attachmentStackGapRem": 0.5,
+    "attachmentStackMarginRem": 0.5,
+    "subquestionFigureBesideMaxWeightPerItem": 48,
+    "subquestionFigureBesideMaxTotalWeight": 120,
+    "subquestionFigureBesideMinCount": 1,
+    "subquestionFigureBesideMaxCount": 6,
+    "subquestionFigureBesideGapRem": 0.75,
+    "subquestionFigureBesideFigureMaxWidthRem": 20,
+    "subquestionFigureForceStackedIfDisplayMath": true,
+    "subquestionFigureForceStackedIfMultiline": true,
+    "subquestionIndentRem": 0,
+    "numericParenElevateToSectionBodyPrefixes": ["将", "平移", "重叠"],
+    "subquestionNoFigureLayout": "auto",
+    "subquestionNoFigureInlineMaxWeightPerItem": 22,
+    "subquestionNoFigureInlineMaxTotalWeight": 56,
+    "subquestionNoFigureColumnsMaxWeightPerItem": 48,
+    "subquestionNoFigureColumnsMaxTotalWeight": 120,
+    "subquestionNoFigureForceStackedIfDisplayMath": true,
+    "subquestionNoFigureForceStackedIfMultiline": true,
+    "subquestionNoFigureStackIfWeightSpreadRatio": 1.35,
+    "subquestionNoFigureMinCount": 2,
+    "subquestionNoFigureMaxCount": 8,
+    "listeningOmittedStemShowAuthoringPolicyBanner": false,
+    "listeningOmittedStemShowAuthoringStemReveal": false,
+    "listeningOmittedStemShowExamCue": false,
+    "answerWritingSpace": {
+      "enabled": true,
+      "skipWhenHasChoiceOptions": true,
+      "showBottomBorder": false,
+      "excludeTypeIdPatterns": [
+        "^multiple_choice",
+        "^fill_blank$"
+      ],
+      "excludeTypeLabelPatterns": [
+        "选择题",
+        "^填空"
+      ],
+      "defaultMinHeightRem": 7,
+      "rules": [
+        {
+          "typeIdPatterns": ["^proof$", "^essay$"],
+          "typeLabelPatterns": ["证明", "作文", "写作", "论述", "申论"],
+          "minHeightRem": 10
+        },
+        {
+          "typeIdPatterns": ["^short_answer$", "^calculation$", "^cross_"],
+          "typeLabelPatterns": ["解答", "计算", "简答", "应用题", "分析", "实验", "探究", "综合"],
+          "minHeightRem": 8
+        },
+        {
+          "typeIdPatterns": ["^programming$"],
+          "typeLabelPatterns": ["编程", "程序设计", "代码"],
+          "minHeightRem": 8
+        }
+      ]
+    }
+  },
+  "listeningGeneration": {
+    "questionDetectPatterns": [
+      "听力",
+      "听录音",
+      "listening",
+      "\\baudio\\b"
+    ]
+  },
+  "figureGeneration": {
+    "tryOptionalDiagramOnForce": true,
+    "requireDiagramStemPatterns": [
+      "如图|见图|见下图|如下图|按下图|下图所示|右图|左图|示意[图]?如下",
+      "\\[图\\]|（图）|\\(图\\)"
+    ],
+    "optionalDiagramStemPatterns": [
+      "\\\\triangle|△|三角形",
+      "\\\\angle|∠",
+      "直角三角形|Rt\\\\s*\\\\triangle",
+      "圆|⊙|圆心|切线",
+      "平行四边形|梯形|矩形|长方形|正方形",
+      "坐标|数轴|函数图|图象|图像",
+      "阴影|涂色|重叠部分",
+      "网格|方格网|方格",
+      "随机游走|random\\s*walk"
+    ],
+    "gridDimensionAliases": {
+      "rowsKeys": ["rows", "row", "m", "nRows", "height"],
+      "colsKeys": ["cols", "col", "columns", "n", "nCols", "width"],
+      "pairKeys": ["size", "dims", "dimensions", "shape", "grid"],
+      "pairPattern": "^(\\d+)\\s*(?:[x×X]|\\\\times)\\s*(\\d+)$",
+      "stemSizePattern": "(\\d+)\\s*(?:\\\\times|×|x|X)\\s*(\\d+)",
+      "stemGridMentionPattern": "方格|网格|方格网"
+    },
+    "sampleGridFigure": {
+      "requirePatterns": ["网格|方格|方格网"],
+      "sampleLeadPatterns": ["样例输入\\s*[:：]?", "Sample\\s*Input\\s*[:：]?"],
+      "sampleEndPatterns": ["样例输出", "Sample\\s*Output", "输出格式"],
+      "fenceCapturePatterns": ["```(?:[\\w+-]*)?\\r?\\n([\\s\\S]*?)```"],
+      "headerLinePattern": "^\\s*(\\d+)\\s+(\\d+)\\s+(\\d+)\\s*$",
+      "pointLinePattern": "^\\s*(\\d+)\\s+(\\d+)\\s*$",
+      "maxRows": 40,
+      "maxCols": 40,
+      "maxObstacles": 80,
+      "startLabel": "起",
+      "endLabel": "终",
+      "cell": 28,
+      "originX": 40,
+      "originY": 40
+    },
+    "randomWalkLatticeFigure": {
+      "triggerPatterns": ["随机游走|random\\s*walk"],
+      "requirePatterns": ["网格|格点|二维"],
+      "originPatterns": ["原点\\s*\\$?\\(\\s*0\\s*,\\s*0\\s*\\)\\$?", "\\(\\s*0\\s*,\\s*0\\s*\\)"],
+      "stepCountPatterns": [
+        "N\\s*=\\s*\\$?(\\d+)\\$?",
+        "\\$N\\s*=\\s*(\\d+)\\$",
+        "进行\\s*\\$?N\\s*=\\s*(\\d+)\\$?\\s*步",
+        "(\\d+)\\s*步之后",
+        "N\\s*=\\s*(\\d+)\\s*步"
+      ],
+      "maxN": 12,
+      "originLabel": "O",
+      "drawAxes": true,
+      "drawBoundBox": false,
+      "drawLatticePoints": true,
+      "drawManhattanBound": true,
+      "yUp": true,
+      "cell": 28
+    },
+    "stemPathGridFigure": {
+      "requirePatterns": ["网格|方格|方格网"],
+      "startPatterns": [
+        "左下角\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?",
+        "起点\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?",
+        "从\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?"
+      ],
+      "endPatterns": [
+        "右上角\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?",
+        "终点\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?",
+        "到(?:达)?\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?"
+      ],
+      "obstaclePatterns": [
+        "点\\s*\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?\\s*是一个?障碍",
+        "障碍物[^。；\\n]{0,24}\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?",
+        "不能经过[^。；\\n]{0,24}\\$?\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)\\$?"
+      ],
+      "latticeCornerPatterns": ["左下角", "右上角", "左上角", "右下角"],
+      "yUpWhenBottomLeftStart": true,
+      "startLabel": "起",
+      "endLabel": "终",
+      "obstacleLabel": "障",
+      "maxSize": 40,
+      "cell": 28,
+      "originX": 40,
+      "originY": 40
+    },
+    "optionalDiagramKnowledgeTagPatterns": [
+      "图形与几何",
+      "平面几何",
+      "立体几何",
+      "geometry"
+    ],
+    "requireDiagramWhenKnowledgeTagMatches": false,
+    "allowMediumConfidenceTemplateFallback": false,
+    "preferHighConfidenceTemplateBeforeAi": true,
+    "elementTypeHeal": {
+      "typeFieldAliases": ["type", "kind", "element_type", "elementType", "elem_type", "shape"],
+      "typeNameAliases": {
+        "pt": "point",
+        "dot": "point",
+        "vertex": "point",
+        "node": "point",
+        "line": "segment",
+        "seg": "segment",
+        "edge": "segment",
+        "side": "segment",
+        "poly": "polygon",
+        "polyline": "polygon",
+        "circ": "circle",
+        "txt": "label",
+        "text": "label",
+        "annotation": "label",
+        "curve": "sampled_curve",
+        "sampledcurve": "sampled_curve",
+        "integral": "integral_region",
+        "region": "integral_region",
+        "box": "rect",
+        "rectangle": "rect",
+        "vector": "force"
+      },
+      "structuralInfer": [
+        {
+          "packs": ["math.function"],
+          "type": "sampled_curve",
+          "allKeys": ["expr"],
+          "anyKeyGroups": [["axes"], ["domain"]]
+        },
+        {
+          "packs": ["math.function"],
+          "type": "axes",
+          "anyKeyGroups": [["x", "y"]]
+        },
+        {
+          "packs": ["math.function"],
+          "type": "tangent",
+          "anyKeys": ["at_x", "slope"]
+        },
+        {
+          "packs": ["math.function"],
+          "type": "integral_region",
+          "anyKeys": ["area"]
+        },
+        {
+          "packs": ["physics.mechanics"],
+          "type": "force",
+          "allKeys": ["label"],
+          "anyKeyGroups": [["from", "to"]]
+        },
+        {
+          "packs": ["physics.mechanics"],
+          "type": "rect",
+          "anyKeyGroups": [["width", "height"], ["w", "h"]]
+        },
+        {
+          "packs": ["physics.mechanics"],
+          "type": "liquid",
+          "anyKeys": ["points"]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics", "math.function", "*"],
+          "type": "label",
+          "allKeys": ["text"],
+          "anyKeys": ["at", "anchor"]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics"],
+          "type": "circle",
+          "anyKeys": ["center", "r", "radius"]
+        },
+        {
+          "packs": ["math.geometry"],
+          "type": "grid",
+          "anyKeyGroups": [["rows", "cols"], ["m", "n"]]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics"],
+          "type": "polygon",
+          "anyKeys": ["points", "vertices"]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics"],
+          "type": "arrow",
+          "requireTypeNameHintPattern": "arrow|矢量|箭头",
+          "anyKeyGroups": [["from", "to"], ["start", "end"]]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics"],
+          "type": "segment",
+          "anyKeyGroups": [["from", "to"], ["start", "end"], ["a", "b"]]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics", "math.function", "*"],
+          "type": "point",
+          "allKeys": ["id"],
+          "anyKeyGroups": [["x", "y"], ["coordinates"], ["coords"], ["xy"], ["pos"]]
+        },
+        {
+          "packs": ["math.geometry", "physics.mechanics", "math.function", "*"],
+          "type": "point",
+          "anyKeyGroups": [["x", "y"], ["coordinates"], ["coords"], ["xy"]]
+        }
+      ]
+    },
+    "aiScenePromptExtras": [
+      "elements 数组每一项必须是对象，且必须含 type 字段（同义字段 kind / element_type 也可）；取值须为该 pack 允许类型（如 point/segment/polygon/circle/grid/label/arrow）。",
+      "正确：{\"type\":\"point\",\"id\":\"A\",\"x\":0,\"y\":0}；错误：{\"id\":\"A\",\"x\":0,\"y\":0}（缺少 type）。禁止用「元素形态暗示」省略 type。"
+    ],
+    "triangleTemplate": {
+      "mentionPatterns": ["\\\\triangle|△|三角形"],
+      "parallelMentionPatterns": ["平行|∥|parallel"],
+      "vertexLabelPatterns": [
+        "\\\\triangle\\s*([A-Za-z])([A-Za-z])([A-Za-z])",
+        "△\\s*([A-Za-z])([A-Za-z])([A-Za-z])",
+        "三角形\\s*([A-Za-z])([A-Za-z])([A-Za-z])"
+      ],
+      "defaultVertexLabels": ["A", "B", "C"],
+      "rightAngleVertexPatterns": [
+        "\\\\angle\\s*([A-Za-z])\\s*=\\s*90",
+        "∠\\s*([A-Za-z])\\s*=\\s*90",
+        "角\\s*([A-Za-z])\\s*=\\s*90\\s*°",
+        "直角\\s*(?:于|在)?\\s*([A-Za-z])\\b"
+      ],
+      "sideLengthPatterns": [
+        "\\b([A-Za-z]{2})\\s*=\\s*(\\d+(?:\\.\\d+)?)",
+        "\\b([A-Za-z]{2})\\s*:\\s*(\\d+(?:\\.\\d+)?)"
+      ],
+      "sideLengthStemNormalize": {
+        "stripLatexCommandPattern": "\\\\[a-zA-Z]+\\*?",
+        "stripDollar": true,
+        "equalsNormalizeFrom": ["＝"],
+        "colonNormalizeFrom": ["∶", "："]
+      },
+      "ariaLabelRight": "right-triangle",
+      "ariaLabelPlain": "triangle",
+      "markTrigReferencedAngles": true,
+      "trigAngleVertexPatterns": [
+        "\\\\sin\\s*\\(?\\s*([A-Za-z])",
+        "\\\\cos\\s*\\(?\\s*([A-Za-z])",
+        "\\\\tan\\s*\\(?\\s*([A-Za-z])",
+        "\\bsin\\s*\\(\\s*([A-Za-z])",
+        "\\bcos\\s*\\(\\s*([A-Za-z])",
+        "\\btan\\s*\\(\\s*([A-Za-z])"
+      ],
+      "acuteAngleMarkRadius": 22,
+      "angleMarkLabelPrefix": "∠",
+      "markTrigSideRoles": true,
+      "trigSideRoleLabels": {
+        "opposite": "对边",
+        "adjacent": "邻边",
+        "hypotenuse": "斜边"
+      },
+      "trigSideRoleWithLengthFormat": "{length}（{role}）",
+      "trigSideRoleOnlyFormat": "{role}"
+    }
+  },
+  "userFacingErrors": {
+    "fallback": "操作失败，请稍后重试",
+    "devTraceFallback": "操作未完成，请按提示调整后重试。",
+    "maxRawLength": 180,
+    "devTracePattern": "figure\\.|pack|JSON\\.parse|SUPABASE_|LOVABLE_|MPG_|DATABASE_URL|ALLOW_UI_|GOT-?OCR|pending:\\/\\/|data\\/[a-z]|stack|at\\s+\\S+\\.(ts|js|tsx)|\\.env|\\.dev\\.vars|attachments|schema_version|ffmpeg|Tesseract|OpenAI Speech",
+    "rules": [
+      { "match": "学科与.*不一致|学科与 pack|图类不匹配|无法启用：学科", "message": "该建议的学科与示意图类型不一致，请拒绝后重新等待正确汇总" },
+      { "match": "证据不足|至少需要.*不同失败证据", "message": "同类失败次数还不够，可稍后再启用，或确认后提前启用" },
+      { "match": "figure_scene|配图未通过|缺少可校验|pending:\\/\\/figure|attachments", "message": "题目配图未完成或不完整，请重新生成题图或调整题干后重试" },
+      { "match": "LOVABLE_API_KEY|云端模式需要服务端配置|未检测到\\s*LOVABLE|\\.env\\b|\\.dev\\.vars", "message": "云端 AI 尚未配置，请到设置改用本机 AI，或请管理员配置云端服务" },
+      { "match": "本地模式需要填写|本地接口地址|仅允许 http", "message": "本机 AI 地址无效，请到设置检查本地接口配置" },
+      { "match": "Interactions API|与接口不兼容|only supports Interactions|Chat Completions", "message": "当前模型与本系统接口不兼容，请到设置改用支持标准对话补全的模型后再试" },
+      { "match": "HTTP\\s*401|unauthorized|invalid\\s*api\\s*key", "message": "AI 登录校验失败，请到设置检查密钥" },
+      { "match": "HTTP\\s*402|余额不足|Insufficient Balance", "message": "AI 额度不足，请充值后再试" },
+      { "match": "HTTP\\s*429|rate\\s*limited|过于频繁", "message": "AI 请求过于频繁，请稍后再试" },
+      { "match": "HTTP\\s*4\\d\\d|INVALID_ARGUMENT", "message": "当前模型或接口参数不被接受，请在设置中检查该学科的模型与地址" },
+      { "match": "fetch failed|ECONNREFUSED|ENOTFOUND|无法连接", "message": "无法连接 AI 服务，请检查网络或本机服务是否已启动" },
+      { "match": "submit_exam|tool_choice|未能.*结构化试卷", "message": "模型未按规范返回试卷，请更换模型或稍后重试" },
+      { "match": "题目数量须为|questions", "message": "题目数量与设置不符，请调整题型组成后重新生成" },
+      { "match": "已提交过|不能重复提交|请勿重复提交", "message": "你已提交过该作业，不能重复提交" },
+      { "match": "需要教师权限|只能查看自己发布|已关闭教师建号|Forbidden|configure MPG_ADMIN", "message": "没有权限执行此操作" },
+      { "match": "作业不存在|试卷不可用|EXAM_NOT_FOUND|未找到试卷|找不到", "message": "找不到对应的作业或试卷" },
+      { "match": "JSON 解析失败|快照格式无效", "message": "备份文件格式无效，请确认导入的是本系统导出的备份" },
+      { "match": "正文过短", "message": "文档正文过短，无法识别为试卷，请换一份更清晰的文件" },
+      { "match": "导入须指定学科|禁止省略后静默", "message": "请先选择学科再导入" },
+      { "match": "未在目录中找到该条目|remote-paper-catalog|REMOTE_IMPORT_CATALOG", "message": "未在网上导入目录中找到该条目，请检查目录配置或稍后重试同步" },
+      { "match": "Tavily|Brave|WEB_SEARCH|外网检索", "message": "未配置外网检索，请到「设置 → 模型与接口」填写检索服务密钥" },
+      { "match": "ALLOW_UI_DB_MIGRATIONS|DATABASE_URL|Connection string|页面执行迁移", "message": "未允许从页面执行迁移，请在配库「高级」中开启并配置云端数据库直连" },
+      { "match": "尚未保存 MySQL 连接|尚未保存本机 MySQL|请先填写并保存", "message": "请先填写并保存本机数据库连接" },
+      { "match": "请先执行本机 MySQL 建表|建表脚本", "message": "请先完成本机数据库建表，再到配库执行" },
+      { "match": "MySQL|Supabase|data\\/local-exams|不可写|无法持久化|无法保存|未配置.*连接|本机密钥文件", "message": "试卷保存位置不可用，请到设置检查本地或云端存储" },
+      { "match": "\\bOCR\\b|GOT-?OCR|未配置 MPG_GATEWAY|gateway OCR", "message": "识图服务未就绪或识别失败，请确认服务已启动后重试" },
+      { "match": "听力.*TTS|LISTENING_TTS|listening-tts|Piper|ffmpeg", "message": "听力语音生成未配置或失败，请到设置检查语音服务后重试" },
+      { "match": "PLAINTEXT_EXTRACT|OPEN_NOTEBOOK", "message": "外部正文增强服务未配置" },
+      { "match": "标准 UUID|试卷 UUID|试卷 id", "message": "试卷编号无效，请从试卷库重新打开" },
+      { "match": "generation-scratch|无盘只读|未收到试卷内容快照", "message": "未能保存试卷快照，请检查存储配置后重试" }
+    ]
+  },
+  "generatePageUi": {
+    "aiUnavailableTitle": "请先为学科配置模型",
+    "aiUnavailableFallback": "当前学科尚无可用模型",
+    "subjectModelEmptyCatalog": "尚未配置任何模型，请到设置添加后再命题",
+    "subjectModelUnmapped": "当前学科尚未指定模型，请到设置绑定默认或该学科模型",
+    "subjectModelIncomplete": "当前学科对应的模型配置不完整，请到设置补全",
+    "settingsLinkLabel": "去设置",
+    "persistenceWarningTitle": "试卷可能无法长期保存",
+    "persistenceWarningBeforeLink": "请到",
+    "persistenceWarningAfterLink": "检查保存位置。"
+  },
+  "examDetailUi": {
+    "forensicsAndFigureOwnership": {
+      "requireImported": true,
+      "requireSearchFlag": "figures_debug",
+      "enableInDevWithoutFlag": false
+    },
+    "showOfflineImportFigureCrops": false,
+    "missingFigureHints": {
+      "showQuestionCallout": false,
+      "showPerOptionMissing": false,
+      "showPerOptionMissingWhenQuestionCallout": false,
+      "appendixLoadErrorLabel": "（附图无法加载）"
+    },
+    "importParseBanner": {
+      "enabled": false
+    }
+  },
+  "aiRuntimeProbe": {
+    "lovableGatewayReady": "云端网关可用",
+    "lovableGatewayMissing": "云端 AI 尚未配置，请到设置改用本机 AI，或请管理员配置云端服务",
+    "localPingOk": "本机接口连通。正式命题请在设置中验证模型是否可用。",
+    "probeFailedFallback": "探测失败"
+  }
+}

@@ -1,10 +1,26 @@
 import type { Example, Question } from "@/lib/types";
+import { LISTENING_GENERATION } from "@/config/examDomain";
 
 function ensureText(v: unknown): string {
   return typeof v === "string" ? v : "";
 }
 
-/** 与 `listeningAudio.server` 一致：用于判断是否为听力类题目（卷面关键词） */
+function matchesListeningDetectPattern(blob: string): boolean {
+  const t = String(blob ?? "");
+  if (!t.trim()) return false;
+  for (const raw of LISTENING_GENERATION.questionDetectPatterns ?? []) {
+    const src = String(raw ?? "").trim();
+    if (!src) continue;
+    try {
+      if (new RegExp(src, "i").test(t)) return true;
+    } catch {
+      /* 跳过非法正则 */
+    }
+  }
+  return false;
+}
+
+/** 与 `listeningAudio.server` 一致：听力类题目判定（表驱动，跨学科） */
 export function questionLooksLikeListening(
   q: Pick<Question, "subject" | "type_label" | "content" | "knowledge_tags">,
 ): boolean {
@@ -12,13 +28,8 @@ export function questionLooksLikeListening(
   const typeLabel = ensureText(q.type_label);
   const content = ensureText(q.content);
   const tags = Array.isArray(q.knowledge_tags) ? q.knowledge_tags.map(ensureText).join(" ") : "";
-  const blob = `${subject} ${typeLabel} ${content} ${tags}`.toLowerCase();
-  return (
-    blob.includes("听力") ||
-    blob.includes("听录音") ||
-    blob.includes("listening") ||
-    blob.includes("audio")
-  );
+  const blob = `${subject} ${typeLabel} ${content} ${tags}`;
+  return matchesListeningDetectPattern(blob);
 }
 
 export function examHasListeningStyleQuestions(

@@ -1,0 +1,447 @@
+{
+  "version": 1,
+  "id": "d022ad53-501f-400f-bf6a-e85b3c4c85ef",
+  "createdAt": "2026-08-06T00:18:30.709Z",
+  "updatedAt": "2026-08-06T00:18:30.713Z",
+  "expiresAt": "2026-08-07T00:18:30.713Z",
+  "phase": "validated",
+  "config": {
+    "title": "数学竞赛",
+    "grade": "gen_unbound",
+    "subject": "math",
+    "scopes": [],
+    "difficulty": "advanced",
+    "exam_track": "contest_track",
+    "target_track_id": "ct_math_league",
+    "paper_kind": "olympiad",
+    "duration_min": 60,
+    "total_score": 100,
+    "composition": [
+      {
+        "type": "multiple_choice",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "multiple_choice_multi",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "fill_blank",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "calculation",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "short_answer",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "proof",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "programming",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "cross_math_physics",
+        "count": 1,
+        "type_label": null
+      },
+      {
+        "type": "cross_math_chemistry",
+        "count": 1,
+        "type_label": null
+      }
+    ],
+    "quality_hints": "【习惯统计】根据您近期命题记录，请重点避免下列问题（不必复述统计数字）：\n- 如图 figure_scene：曾反复出现（约 7 次相关），本次务必自检。\n- 选择题 options：曾反复出现（约 3 次相关），本次务必自检。\n- 多问 answer 编号：曾反复出现（约 3 次相关），本次务必自检。\n- 方程数值/代入验算：曾反复出现（约 2 次相关），本次务必自检。\n选择题：options 必须为至少 4 个独立字符串；可把选项写在题干末尾每行 A. B. C. D.。\n多问：题干有（1）（2）时 answer 须写齐编号。\n计算题：结论须与方程自洽。\n\n【自主学习·强化】近期命题未通过校验的比例偏高：在调用 submit_exam 前请逐项自检：选择题 options 至少 4 条、多问 answer 与题干编号一致、方程类须在解析中体现代入验算。\n【自主学习·聚焦】统计上「如图 figure_scene」仍较易出现，本题对该类题型请加倍核对。\n【最近一次失败摘要】AI 命题在「工具调用 ×2 + JSON 回退」后仍无法得到非空题目列表。\n\n【已审批学习策略】以下策略来自可审计失败证据并已由管理员批准；仅作为生成约束，不得覆盖题干事实：\n- 依赖配图的题必须提供当前学科已启用 Diagram Pack 的结构化 scene；提交前检查引用、坐标、表达式和题干事实一致性。无法构造可信 scene 时应改为不依赖配图的题，禁止猜图。",
+    "competition_focus": [
+      "math_try2_combo"
+    ],
+    "generation_request_id": "d022ad53-501f-400f-bf6a-e85b3c4c85ef"
+  },
+  "parsed": {
+    "questions": [
+      {
+        "knowledge_tags": [
+          "组合计数",
+          "网格路径",
+          "容斥原理"
+        ],
+        "solution_steps": [
+          {
+            "description": "计算从 $(0,0)$ 到 $(4,4)$ 的总路径数。",
+            "formula": "$$ \\binom{(4-0)+(4-0)}{4-0} = \\binom{8}{4} = \\frac{8 \\times 7 \\times 6 \\times 5}{4 \\times 3 \\times 2 \\times 1} = 70 $$",
+            "step": 1,
+            "reasoning": "从 $(r_1, c_1)$ 到 $(r_2, c_2)$ 只向上或向右移动的路径数是 $\\binom{(r_2-r_1) + (c_2-c_1)}{r_2-r_1}$。"
+          },
+          {
+            "reasoning": "这可以通过计算从 $(0,0)$ 到 $(2,2)$ 的路径数乘以从 $(2,2)$ 到 $(4,4)$ 的路径数得到。",
+            "description": "计算从 $(0,0)$ 经过障碍物 $(2,2)$ 到 $(4,4)$ 的路径数。",
+            "step": 2,
+            "formula": "从 $(0,0)$ 到 $(2,2)$ 的路径数：$\\binom{(2-0)+(2-0)}{2-0} = \\binom{4}{2} = 6$\n从 $(2,2)$ 到 $(4,4)$ 的路径数：$\\binom{(4-2)+(4-2)}{4-2} = \\binom{4}{2} = 6$\n经过 $(2,2)$ 的路径总数：$6 \\times 6 = 36$"
+          },
+          {
+            "step": 3,
+            "formula": "$$ 70 - 36 = 34 $$",
+            "reasoning": "避开障碍物的路径数等于总路径数减去经过障碍物的路径数。",
+            "description": "计算避开障碍物的路径数。"
+          }
+        ],
+        "type": "multiple_choice",
+        "subject": "数学",
+        "answer": "A",
+        "points": 10,
+        "content": "在一个 $5 \\times 5$ 的网格中，从左下角 $(0,0)$ 移动到右上角 $(4,4)$。每次只能向上或向右移动一格。如果网格中点 $(2,2)$ 是一个障碍物，不能经过，请问有多少条不同的路径？",
+        "options": [
+          "A. 34",
+          "B. 70",
+          "C. 36",
+          "D. 30"
+        ]
+      },
+      {
+        "points": 12,
+        "type": "multiple_choice_multi",
+        "answer": "A, B, C",
+        "content": "考虑集合 $S = \\{1, 2, \\dots, 10\\}$。从 $S$ 中选择一个 $k$ 元素的子集 $A$，使得 $A$ 中不包含任何连续的整数。例如，如果 $k=3$，子集 $\\{1,3,5\\}$ 是允许的，但 $\\{1,2,5\\}$ 是不允许的。以下关于此类子集数量的说法中，哪些是正确的？",
+        "knowledge_tags": [
+          "组合计数",
+          "不连续选择",
+          "组合恒等式"
+        ],
+        "solution_steps": [
+          {
+            "step": 1,
+            "formula": "数量为 $C(n-k+1, k) = \\binom{n-k+1}{k}$。",
+            "reasoning": "若从集合 $\\{1, 2, \\dots, n\\}$ 中选择 $k$ 个数 $x_1 < x_2 < \\dots < x_k$，使得它们不连续，则 $x_{i+1} - x_i \\ge 2$。令 $y_1 = x_1$, $y_2 = x_2 - 1$, ..., $y_k = x_k - (k-1)$。则 $1 \\le y_1 < y_2 < \\dots < y_k \\le n - (k-1)$。因此，问题转化为从集合 $\\{1, 2, \\dots, n-k+1\\}$ 中选择 $k$ 个数的组合。",
+            "description": "建立无连续整数子集数量的通用公式。"
+          },
+          {
+            "reasoning": "将 $n=10$ 代入公式 $C(10-k+1, k)$ 并计算。",
+            "formula": "A. $k=0: \\binom{10-0+1}{0} = \\binom{11}{0} = 1$ (正确)\nB. $k=1: \\binom{10-1+1}{1} = \\binom{10}{1} = 10$ (正确)\nC. $k=2: \\binom{10-2+1}{2} = \\binom{9}{2} = \\frac{9 \\times 8}{2} = 36$ (正确)\nD. $k=3: \\binom{10-3+1}{3} = \\binom{8}{3} = \\frac{8 \\times 7 \\times 6}{3 \\times 2 \\times 1} = 56$ (错误，选项为 60)\nE. $k=4: \\binom{10-4+1}{4} = \\binom{7}{4} = \\frac{7 \\times 6 \\times 5}{3 \\times 2 \\times 1} = 35$ (错误，选项为 20)",
+            "step": 2,
+            "description": "根据公式计算不同 $k$ 值对应的子集数量。"
+          }
+        ],
+        "subject": "数学",
+        "options": [
+          "A. 当 $k=0$ 时，只有一个这样的子集。",
+          "B. 当 $k=1$ 时，有 10 个这样的子集。",
+          "C. 当 $k=2$ 时，有 36 个这样的子集。",
+          "D. 当 $k=3$ 时，有 60 个这样的子集。",
+          "E. 当 $k=4$ 时，有 20 个这样的子集。"
+        ]
+      },
+      {
+        "answer": "34",
+        "type": "fill_blank",
+        "points": 10,
+        "subject": "数学",
+        "content": "考虑一个长度为 $n$ 的二进制字符串，其中不允许出现连续的两个 '1'。设 $a_n$ 表示这样的字符串的数量。例如，$a_1 = 2$ (0, 1)，$a_2 = 3$ (00, 01, 10)。请计算 $a_7$ 的值。",
+        "solution_steps": [
+          {
+            "description": "建立递推关系。",
+            "reasoning": "对于一个长度为 $n$ 的无连续 '1' 的二进制字符串：\n1. 如果它以 '0' 结尾，则前 $n-1$ 位可以是任何有效的无连续 '1' 字符串，有 $a_{n-1}$ 种情况。\n2. 如果它以 '1' 结尾，则倒数第二位必须是 '0'，否则会出现连续 '1'。所以前 $n-2$ 位可以是任何有效的无连续 '1' 字符串，有 $a_{n-2}$ 种情况。",
+            "formula": "$$ a_n = a_{n-1} + a_{n-2} $$",
+            "step": 1
+          },
+          {
+            "reasoning": "根据题意和对递推关系的理解。",
+            "description": "确定初始值。",
+            "formula": "$a_0 = 1$ (空字符串)\n$a_1 = 2$ (0, 1)\n$a_2 = 3$ (00, 01, 10)",
+            "step": 2
+          },
+          {
+            "reasoning": "利用递推关系逐步计算。",
+            "description": "计算 $a_7$。",
+            "formula": "$a_3 = a_2 + a_1 = 3 + 2 = 5$\n$a_4 = a_3 + a_2 = 5 + 3 = 8$\n$a_5 = a_4 + a_3 = 8 + 5 = 13$\n$a_6 = a_5 + a_4 = 13 + 8 = 21$\n$a_7 = a_6 + a_5 = 21 + 13 = 34$",
+            "step": 3
+          }
+        ],
+        "knowledge_tags": [
+          "递推关系",
+          "斐波那契数列",
+          "组合计数"
+        ]
+      },
+      {
+        "type": "calculation",
+        "points": 15,
+        "knowledge_tags": [
+          "概率",
+          "组合",
+          "不放回抽样"
+        ],
+        "answer": "(1) $\\frac{5}{12}$ ; (2) $\\frac{11}{12}$",
+        "subject": "数学",
+        "solution_steps": [
+          {
+            "reasoning": "总共有 $5+5=10$ 个球，从中不放回地抽取 3 个球的组合数。",
+            "formula": "$$ \\binom{10}{3} = \\frac{10 \\times 9 \\times 8}{3 \\times 2 \\times 1} = 120 $$",
+            "step": 1,
+            "description": "计算抽取 3 个球的总方式数。"
+          },
+          {
+            "description": "计算恰好有 2 个红球的方式数。",
+            "formula": "选择红球的方式数：$\\binom{5}{2} = \\frac{5 \\times 4}{2} = 10$\n选择蓝球的方式数：$\\binom{5}{1} = 5$\n恰好 2 红 1 蓝的方式数：$10 \\times 5 = 50$",
+            "step": 2.1,
+            "reasoning": "需要从 5 个红球中选择 2 个，同时从 5 个蓝球中选择 1 个。"
+          },
+          {
+            "description": "计算恰好有 2 个红球的概率。",
+            "step": 2.2,
+            "reasoning": "概率等于符合条件的方式数除以总方式数。",
+            "formula": "$$ P(\\text{恰好 2 红}) = \\frac{50}{120} = \\frac{5}{12} $$"
+          },
+          {
+            "formula": "$$ \\binom{5}{3} = \\frac{5 \\times 4}{2} = 10 $$",
+            "step": 3.1,
+            "description": "计算没有蓝球（即全部是红球）的方式数。",
+            "reasoning": "需要从 5 个红球中选择 3 个。"
+          },
+          {
+            "formula": "$$ P(\\text{没有蓝球}) = \\frac{10}{120} = \\frac{1}{12} $$",
+            "step": 3.2,
+            "reasoning": "概率等于符合条件的方式数除以总方式数。",
+            "description": "计算没有蓝球的概率。"
+          },
+          {
+            "step": 3.3,
+            "formula": "$$ P(\\text{至少 1 蓝}) = 1 - P(\\text{没有蓝球}) = 1 - \\frac{1}{12} = \\frac{11}{12} $$",
+            "description": "计算至少有 1 个蓝球的概率。",
+            "reasoning": "至少有 1 个蓝球的事件是 '没有蓝球' 事件的对立事件，所以其概率等于 1 减去没有蓝球的概率。"
+          }
+        ],
+        "content": "在一个盒子里有 5 个红球和 5 个蓝球。我们随机抽取 3 个球。假设每次抽取的球不放回。\n(1) 抽取的 3 个球中恰好有 2 个红球的概率是多少？\n(2) 抽取的 3 个球中至少有 1 个蓝球的概率是多少？"
+      },
+      {
+        "knowledge_tags": [
+          "图论",
+          "完全图",
+          "组合计数",
+          "同余"
+        ],
+        "answer": "(1) 证明见解析。\n(2) 方案：$K_4$ 的六条边中，3 条染红色，3 条染蓝色。例如，设顶点为 A, B, C, D。红边为 AB, BC, CD；蓝边为 AC, AD, BD。",
+        "solution_steps": [
+          {
+            "description": "证明 (1) - 分析总边数。",
+            "formula": "$$ \\binom{n}{2} = \\frac{n(n-1)}{2} $$",
+            "step": 1.1,
+            "reasoning": "完全图 $K_n$ 的总边数为 $\\binom{n}{2}$。如果 $K_n$ 是平衡的，则红边数等于蓝边数，这意味着总边数必须是偶数。"
+          },
+          {
+            "description": "证明 (1) - 分析 $n(n-1)/2$ 为偶数的条件。",
+            "formula": "$n(n-1) \\equiv 0 \\pmod{4}$",
+            "step": 1.2,
+            "reasoning": "为了使 $\\frac{n(n-1)}{2}$ 是偶数，分子 $n(n-1)$ 必须是 4 的倍数。"
+          },
+          {
+            "description": "证明 (1) - 考虑 $n$ 的奇偶性。",
+            "reasoning": "分两种情况讨论 $n$ 的奇偶性。",
+            "step": 1.3,
+            "formula": "Case 1: $n$ 为偶数。设 $n = 2k$。则 $2k(2k-1)$ 必须被 4 整除，即 $k(2k-1)$ 必须被 2 整除。由于 $2k-1$ 是奇数，所以 $k$ 必须是偶数。设 $k=2m$，则 $n = 2(2m) = 4m$，所以 $n \\equiv 0 \\pmod{4}$。\nCase 2: $n$ 为奇数。设 $n = 2k+1$。则 $(2k+1)(2k)$ 必须被 4 整除，即 $(2k+1)k$ 必须被 2 整除。由于 $2k+1$ 是奇数，所以 $k$ 必须是偶数。设 $k=2m$，则 $n = 2(2m)+1 = 4m+1$，所以 $n \\equiv 1 \\pmod{4}$。"
+          },
+          {
+            "step": 1.4,
+            "description": "证明 (1) - 总结结论。",
+            "reasoning": "综合两种情况，如果 $K_n$ 是平衡的，则 $n$ 必须满足 $n \\equiv 0 \\pmod{4}$ 或 $n \\equiv 1 \\pmod{4}$。"
+          },
+          {
+            "description": "证明 (2) - 对于 $n=4$ 的分析。",
+            "step": 2.1,
+            "formula": "总边数 = 6；红边数 = 3；蓝边数 = 3",
+            "reasoning": "对于 $K_4$，总边数为 $\\binom{4}{2} = 6$。要使其平衡，需要 3 条红边和 3 条蓝边。"
+          },
+          {
+            "step": 2.2,
+            "reasoning": "选择任意三条边染红色，其余三条染蓝色即可。",
+            "description": "证明 (2) - 给出着色方案。",
+            "formula": "设 $K_4$ 的顶点为 A, B, C, D。我们可以将边 AB, BC, CD 染成红色。剩余的边 AC, AD, BD 染成蓝色。此时红边数为 3，蓝边数为 3，满足平衡条件。"
+          }
+        ],
+        "content": "一个完全图 $K_n$ 的边可以被染成红色或蓝色。我们称一个 $K_n$ 是 \"平衡\" 的，如果红色边的数量等于蓝色边的数量。\n(1) 证明：如果 $K_n$ 是平衡的，则 $n \\equiv 0 \\pmod{4}$ 或 $n \\equiv 1 \\pmod{4}$。\n(2) 对于 $n=4$，给出一个平衡的 $K_4$ 的边着色方案，并说明理由。",
+        "points": 15,
+        "type": "short_answer",
+        "subject": "数学"
+      },
+      {
+        "content": "证明以下组合恒等式：\n$$ \\sum_{k=0}^{n} \\binom{n}{k}^2 = \\binom{2n}{n} $$",
+        "solution_steps": [
+          {
+            "formula": "设我们有一个由 $n$ 名男性和 $n$ 名女性组成的共 $2n$ 人的团队。",
+            "description": "问题转化：组合论证法。",
+            "reasoning": "我们可以通过考虑一个包含 $2n$ 个元素的集合中选择 $n$ 个元素的两种不同方式来证明这个恒等式。",
+            "step": 1
+          },
+          {
+            "description": "计算 LHS (左侧) 的含义。",
+            "step": 2,
+            "formula": "由于 $\\binom{n}{n-k} = \\binom{n}{k}$，所以选择 $k$ 名男性和 $n-k$ 名女性的方式有 $\\binom{n}{k} \\binom{n}{k} = \\binom{n}{k}^2$ 种。将所有可能的 $k$ 值相加，得到总的委员会选择方式为 $\\sum_{k=0}^{n} \\binom{n}{k}^2$。",
+            "reasoning": "考虑从这 $2n$ 个人中选择一个 $n$ 人委员会的方式。委员会可以包含 $k$ 名男性和 $n-k$ 名女性，其中 $k$ 可以从 $0$ 取到 $n$。选择 $k$ 名男性的方式有 $\\binom{n}{k}$ 种，选择 $n-k$ 名女性的方式有 $\\binom{n}{n-k}$ 种。"
+          },
+          {
+            "formula": "$$ \\binom{2n}{n} $$",
+            "step": 3,
+            "reasoning": "直接从 $2n$ 个人中选择 $n$ 人的委员会，而不区分性别，总共有 $\\binom{2n}{n}$ 种方式。",
+            "description": "计算 RHS (右侧) 的含义。"
+          },
+          {
+            "description": "得出结论。",
+            "step": 4,
+            "reasoning": "由于左侧和右侧都表示从 $2n$ 个人中选择 $n$ 人委员会的总方式数，因此它们必须相等。",
+            "formula": "$$ \\sum_{k=0}^{n} \\binom{n}{k}^2 = \\binom{2n}{n} $$"
+          }
+        ],
+        "knowledge_tags": [
+          "组合恒等式",
+          "范德蒙德恒等式",
+          "组合论证法"
+        ],
+        "subject": "数学",
+        "points": 15,
+        "type": "proof",
+        "answer": "证明见解析。"
+      },
+      {
+        "knowledge_tags": [
+          "动态规划",
+          "组合计数",
+          "路径问题",
+          "容斥原理",
+          "图论",
+          "算法设计"
+        ],
+        "solution_steps": [
+          {
+            "reasoning": "这是一个经典的网格路径计数问题，存在障碍物时无法直接使用组合数公式。考虑到网格大小 $m,n$ 可能较大但障碍物数量 $K$ 较小，适合采用基于容斥原理的动态规划方法，或者更精确地说，是路径计数与障碍物的结合，通过排序处理特殊点。",
+            "description": "问题分析与算法选择。",
+            "formula": "算法复杂度：$O(K^2 \\cdot (m+n))$ 或 $O(K^2 \\cdot \\max(m,n))$。",
+            "step": 1
+          },
+          {
+            "reasoning": "将起点、终点和所有障碍物视为“特殊点”。首先，对这些特殊点进行排序（通常按行优先，行相同则按列优先）。定义 $dp[i]$ 为从起点到第 $i$ 个特殊点 $P_i$ 的路径数，这些路径不经过任何排在 $P_i$ 之前的其他障碍物。计算 $dp[i]$ 时，首先计算从起点到 $P_i$ 的总路径数，然后减去所有经过排在 $P_i$ 之前的特殊点 $P_j$ 到 $P_i$ 的路径数乘以 $dp[j]$。",
+            "formula": "$paths(P_a, P_b) = \\binom{(r_b-r_a) + (c_b-c_a)}{r_b-r_a}$\n$dp[i] = paths(start, P_i) - \\sum_{j<i, P_j \\text{是障碍物且可达P_i}} dp[j] \\times paths(P_j, P_i)$",
+            "step": 2,
+            "description": "定义状态与转移。"
+          },
+          {
+            "reasoning": "由于路径可能较长，组合数 $\\binom{N}{K}$ 可能很大。Python 自带大整数支持，无需额外处理模运算。但为了避免重复计算，对组合数进行记忆化处理 (memoization) 可以提高效率。对于 $K_{val} > N/2$ 的情况，利用 $\\binom{N}{K_{val}} = \\binom{N}{N-K_{val}}$ 简化计算。",
+            "description": "组合数计算优化。",
+            "step": 3,
+            "formula": "```python\ndef combinations(N, K_val):\n    if K_val < 0 or K_val > N: return 0\n    if K_val == 0 or K_val == N: return 1\n    if K_val > N // 2: K_val = N - K_val\n    # 使用字典进行缓存 memo_combinations\n    # ... (省略具体计算循环)\n    return res\n```"
+          },
+          {
+            "formula": "见代码中的 `solve()` 函数实现。",
+            "step": 4,
+            "description": "具体实现步骤。",
+            "reasoning": "1. 将起点、终点和所有在起点-终点矩形区域内的障碍物收集起来。\n2. 对这些点按行、列进行排序。\n3. 初始化 DP 数组。\n4. 遍历排序后的特殊点，根据上述状态转移方程计算 $dp$ 值。\n5. 最终结果为终点对应的 $dp$ 值。"
+          },
+          {
+            "formula": "无",
+            "description": "样例验证。",
+            "step": 5,
+            "reasoning": "对于样例输入：从 (0,0) 到 (2,2)，障碍物 (1,1)。\n总路径 $\\binom{4}{2} = 6$。\n经过 (1,1) 的路径：从 (0,0) 到 (1,1) 有 $\\binom{2}{1}=2$ 条，从 (1,1) 到 (2,2) 有 $\\binom{2}{1}=2$ 条。共 $2 \\times 2 = 4$ 条。\n不经过障碍物的路径：$6 - 4 = 2$ 条。与样例输出一致。"
+          }
+        ],
+        "answer": "```python\nimport math\n\ndef solve():\n    m, n, K = map(int, input().split())\n    xs, ys = map(int, input().split())\n    xe, ye = map(int, input().split())\n    obstacles = []\n    for _ in range(K):\n        r, c = map(int, input().split())\n        obstacles.append((r, c))\n\n    # 收集所有相关点：起点、有效障碍物、终点\n    special_points_set = set()\n    special_points_set.add((xs, ys))\n    for r, c in obstacles:\n        # 只考虑在起点到终点矩形区域内的障碍物\n        if xs <= r <= xe and ys <= c <= ye:\n            special_points_set.add((r, c))\n    special_points_set.add((xe, ye))\n\n    # 按行、列对特殊点进行排序，确保处理顺序\n    special_points = sorted(list(special_points_set))\n    \n    # 查找起点和终点在排序列表中的索引\n    start_idx = special_points.index((xs, ys))\n    end_idx = special_points.index((xe, ye))\n\n    # 组合数计算的备忘录\n    memo_combinations = {}\n    def combinations(N, K_val):\n        if K_val < 0 or K_val > N:\n            return 0\n        if K_val == 0 or K_val == N:\n            return 1\n        if K_val > N // 2:\n            K_val = N - K_val\n        if (N, K_val) in memo_combinations:\n            return memo_combinations[(N, K_val)]\n        \n        res = 1\n        for i in range(K_val):\n            res = res * (N - i) // (i + 1)\n        memo_combinations[(N, K_val)] = res\n        return res\n\n    # 计算两点间的路径数\n    def paths_between(r1, c1, r2, c2):\n        if r2 < r1 or c2 < c1:\n            return 0  # 无法从 (r1,c1) 到 (r2,c2) 只通过右移和下移\n        dr = r2 - r1\n        dc = c2 - c1\n        return combinations(dr + dc, dr)\n\n    # dp[i] 存储从起点 (xs, ys) 到 special_points[i] 的路径数，且不经过任何在 special_points[0...i-1] 中的障碍物\n    dp = [0] * len(special_points)\n\n    for i in range(len(special_points)): # 遍历所有特殊点\n        curr_r, curr_c = special_points[i]\n\n        # 如果当前点在起点之前，则无法到达 (对于我们的排序方式，这通常不会发生，除非起点不是第一个点)\n        if curr_r < xs or curr_c < ys:\n            continue\n        \n        # 计算从起点到当前点的总路径数\n        num_paths = paths_between(xs, ys, curr_r, curr_c)\n\n        # 减去经过之前障碍物的路径数\n        for j in range(i): # 遍历所有排在当前点之前的特殊点\n            prev_r, prev_c = special_points[j]\n\n            # 如果 prev_point 可从起点到达，且 curr_point 可从 prev_point 到达\n            if xs <= prev_r <= curr_r and ys <= prev_c <= curr_c:\n                # dp[j] 已经是到 prev_point 的“有效”路径数（不经过更早障碍物）\n                # 现在我们需要减去这些路径再乘以从 prev_point 到 curr_point 的路径数\n                num_paths -= dp[j] * paths_between(prev_r, prev_c, curr_r, curr_c)\n                \n        dp[i] = num_paths\n\n    # 最终结果是终点对应的 dp 值\n    return dp[end_idx]\n\n# 对于在线判题系统，通常需要将上述代码放在一个函数中，并由系统调用。此处直接写出。\n# 如果是本地测试，可以通过模拟输入来运行：\n# import sys\n# from io import StringIO\n# test_input =",
+        "subject": "数学",
+        "points": 10,
+        "type": "programming",
+        "content": "给定一个 $m \\times n$ 的网格，以及一个起始点 $(x_s, y_s)$ 和一个终止点 $(x_e, y_e)$。机器人从起始点出发，每次只能向右或向下移动一格。机器人不能经过网格中的 $K$ 个障碍物。请计算从起始点到终止点的不同路径数量。\n输入格式：\n第一行包含四个整数 $m, n, K$ (网格的行数和列数，障碍物数量)。\n第二行包含两个整数 $x_s, y_s$ (起始点的坐标)。\n第三行包含两个整数 $x_e, y_e$ (终止点的坐标)。\n接下来的 $K$ 行，每行包含两个整数 $r_i, c_i$ (第 $i$ 个障碍物的坐标)。\n输出格式：\n一个整数，表示不同路径的数量。\n样例输入：\n```\n3 3 1\n0 0\n2 2\n1 1\n```\n样例输出：\n```\n2\n```"
+      },
+      {
+        "knowledge_tags": [
+          "随机游走",
+          "组合计数",
+          "物理模型",
+          "概率统计"
+        ],
+        "solution_steps": [
+          {
+            "step": 1.1,
+            "reasoning": "设粒子向右 (R)、左 (L)、上 (U)、下 (D) 移动的步数分别为 $n_R, n_L, n_U, n_D$。总步数为 $N = n_R+n_L+n_U+n_D = 4$。回到原点意味着水平位移和垂直位移都为零。",
+            "description": "分析 (1) 粒子回到原点 $(0,0)$ 的条件。",
+            "formula": "$n_R = n_L$ 且 $n_U = n_D$"
+          },
+          {
+            "formula": "1. $(n_R, n_L, n_U, n_D) = (0,0,2,2)$：$N_1 = \\frac{4!}{0!0!2!2!} = \\frac{24}{4} = 6$\n2. $(n_R, n_L, n_U, n_D) = (1,1,1,1)$：$N_2 = \\frac{4!}{1!1!1!1!} = 24$\n3. $(n_R, n_L, n_U, n_D) = (2,2,0,0)$：$N_3 = \\frac{4!}{2!2!0!0!} = \\frac{24}{4} = 6$\n总路径数：$N_1 + N_2 + N_3 = 6 + 24 + 6 = 36$",
+            "description": "列出 (1) 所有满足条件的步数组合并计算路径数。",
+            "reasoning": "根据 $n_R+n_L+n_U+n_D=4$ 且 $n_R=n_L, n_U=n_D$ 的条件，列出 $(n_R, n_L, n_U, n_D)$ 的所有可能组合，并使用多项式系数公式 $\\frac{N!}{n_R!n_L!n_U!n_D!}$ 计算路径数。",
+            "step": 1.2
+          },
+          {
+            "reasoning": "停留在 $x$ 轴上意味着最终 $y$ 坐标为 $0$。总步数为 $N = n_R+n_L+n_U+n_D = 4$。",
+            "formula": "$n_U = n_D$",
+            "step": 2.1,
+            "description": "分析 (2) 粒子停留在 $x$ 轴上的条件。"
+          },
+          {
+            "step": 2.2,
+            "description": "列出 (2) 所有满足条件的步数组合并计算路径数。",
+            "reasoning": "根据 $n_U=n_D$ 的条件，分情况讨论 $n_U$ (和 $n_D$) 的可能值，然后计算对应的 $n_R, n_L$ 组合及路径数。",
+            "formula": "1. $n_U=n_D=0$: 则 $n_R+n_L=4$\n   - $(4,0,0,0)$: $\\frac{4!}{4!} = 1$\n   - $(3,1,0,0)$: $\\frac{4!}{3!1!} = 4$\n   - $(2,2,0,0)$: $\\frac{4!}{2!2!} = 6$\n   - $(1,3,0,0)$: $\\frac{4!}{1!3!} = 4$\n   - $(0,4,0,0)$: $\\frac{4!}{4!} = 1$\n   小计：$1+4+6+4+1 = 16$\n2. $n_U=n_D=1$: 则 $n_R+n_L=2$\n   - $(2,0,1,1)$: $\\frac{4!}{2!1!1!} = 12$\n   - $(1,1,1,1)$: $\\frac{4!}{1!1!1!1!} = 24$\n   - $(0,2,1,1)$: $\\frac{4!}{2!1!1!} = 12$\n   小计：$12+24+12 = 48$\n3. $n_U=n_D=2$: 则 $n_R+n_L=0$\n   - $(0,0,2,2)$: $\\frac{4!}{2!2!} = 6$\n   小计：$6$\n总路径数：$16 + 48 + 6 = 70$"
+          }
+        ],
+        "subject": "数学",
+        "type": "cross_math_physics",
+        "answer": "(1) 36 ; (2) 70",
+        "content": "一个粒子在二维网格上从原点 $(0,0)$ 出发，进行 $N$ 步随机游走。每一步粒子以等概率向右、左、上、下四个方向中的一个移动一格。\n(1) 如果粒子在 $N=4$ 步之后回到了原点 $(0,0)$，请问有多少条不同的路径？\n(2) 如果粒子在 $N=4$ 步之后停留在 $x$ 轴上（即 $y$ 坐标为 $0$），请问有多少条不同的路径？",
+        "points": 8
+      },
+      {
+        "answer": "(1) 2种：丁烷、异丁烷。\n(2) 4种：1-氯丁烷、2-氯丁烷、1-氯-2-甲基丙烷、2-氯-2-甲基丙烷。",
+        "type": "cross_math_chemistry",
+        "subject": "数学",
+        "points": 5,
+        "knowledge_tags": [
+          "有机化学",
+          "结构异构",
+          "烷烃",
+          "卤代烷",
+          "化学计数"
+        ],
+        "solution_steps": [
+          {
+            "description": "分析 (1) $\\ce{C4H10}$ 的结构异构体。",
+            "formula": "1. 直链：丁烷 (n-butane)，化学式为 $\\ce{CH3-CH2-CH2-CH3}$。\n2. 支链：异丁烷 (isobutane 或 2-甲基丙烷)，化学式为 $\\ce{CH3-CH(CH3)-CH3}$。\n数量：2种。",
+            "reasoning": "对于烷烃，需要找到所有可能的碳链骨架。$\\ce{C4}$ 烷烃有两种基本骨架：直链和带一个甲基支链的结构。",
+            "step": 1.1
+          },
+          {
+            "formula": "1. 替换 C1 或 C4 上的 H：得到 1-氯丁烷 (1-chlorobutane)，$\\ce{CH2Cl-CH2-CH2-CH3}$。\n2. 替换 C2 或 C3 上的 H：得到 2-氯丁烷 (2-chlorobutane)，$\\ce{CH3-CHCl-CH2-CH3}$。\n从丁烷可得到 2 种氯代烷异构体。",
+            "reasoning": "将丁烷上的不同类型的氢原子替换为氯原子。丁烷有两类不等价的氢原子位置：末端甲基上的氢 (C1, C4) 和中间亚甲基上的氢 (C2, C3)。",
+            "description": "分析 (2) $\\ce{C4H9Cl}$ 的结构异构体：从丁烷衍生。",
+            "step": 2.1
+          },
+          {
+            "formula": "1. 替换三个等价甲基上的 H：得到 1-氯-2-甲基丙烷 (1-chloro-2-methylpropane 或 isobutyl chloride)，$\\ce{CH2Cl-CH(CH3)-CH3}$。\n2. 替换中心 CH 上的 H：得到 2-氯-2-甲基丙烷 (2-chloro-2-methylpropane 或 tert-butyl chloride)，$\\ce{CH3-CCl(CH3)-CH3}$。\n从异丁烷可得到 2 种氯代烷异构体。",
+            "description": "分析 (2) $\\ce{C4H9Cl}$ 的结构异构体：从异丁烷衍生。",
+            "step": 2.2,
+            "reasoning": "将异丁烷上的不同类型的氢原子替换为氯原子。异丁烷也有两类不等价的氢原子位置：三个等价的甲基上的氢，以及中心亚甲基上的氢。"
+          },
+          {
+            "description": "总结 (2) $\\ce{C4H9Cl}$ 的总结构异构体数量。",
+            "step": 2.3,
+            "formula": "总计 4 种结构异构体：\n1. 1-氯丁烷\n2. 2-氯丁烷\n3. 1-氯-2-甲基丙烷\n4. 2-氯-2-甲基丙烷",
+            "reasoning": "合并所有独一无二的氯代烷异构体。"
+          }
+        ],
+        "content": "考虑一个有机分子的结构异构体计数问题。假设有一个具有分子式 $\\ce{C4H10}$ 的烷烃。\n(1) 请列出所有可能的链式异构体（不考虑立体异构体），并计算其数量。\n(2) 如果我们将其中一个氢原子替换为氯原子，得到分子式为 $\\ce{C4H9Cl}$ 的氯代烷。请列出所有可能的氯代烷结构异构体（不考虑立体异构体），并计算其数量。"
+      }
+    ],
+    "title": "数学竞赛",
+    "description": "本试卷旨在考察学生在组合数学方面的高阶思维能力和问题解决技巧，题目涵盖了多种组合计数方法、图论、概率、动态规划以及与物理、化学交叉的组合问题。试卷难度对齐全国决赛/国家集训队选拔级，强调严谨推导与思维拐点。",
+    "subtitle": "联赛二试 · 组合"
+  },
+  "issues": []
+}

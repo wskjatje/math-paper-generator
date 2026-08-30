@@ -93,7 +93,7 @@ export function ensureGatewayOcrWarmup(
     if (!reachable) {
       const next: GatewayOcrWarmupSnapshot = {
         state: "unavailable",
-        message: "网关未就绪（请确认 npm run dev:host:mps 或 docker:api:mps）",
+        message: "识图服务未就绪",
       };
       setSnapshot(next);
       return next;

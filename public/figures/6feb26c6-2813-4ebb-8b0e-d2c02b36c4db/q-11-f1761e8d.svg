@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="28 6 308 270" width="308" height="270">
+  <defs>
+    <marker id="mg-arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#0f172a"/>
+    </marker>
+  </defs>
+  <rect x="28" y="6" width="308" height="270" fill="#fff"/>
+  <line x1="64" y1="240" x2="64" y2="235" stroke="#0f172a" stroke-width="2"/>
+  <line x1="164" y1="240" x2="164" y2="235" stroke="#0f172a" stroke-width="2"/>
+  <line x1="264" y1="240" x2="264" y2="235" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="183.33333333333334" x2="69" y2="183.33333333333334" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="155" x2="69" y2="155" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="126.66666666666667" x2="69" y2="126.66666666666667" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="112.5" x2="69" y2="112.5" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="70" x2="69" y2="70" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="70" x2="164" y2="112.5" stroke="#0f172a" stroke-width="2"/>
+  <line x1="164" y1="112.5" x2="264" y2="155" stroke="#0f172a" stroke-width="2"/>
+  <line x1="64" y1="240" x2="164" y2="183.33333333333334" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="164" y1="183.33333333333334" x2="264" y2="126.66666666666667" stroke="#0f172a" stroke-width="2" stroke-dasharray="6 4"/>
+  <line x1="64" y1="240" x2="300" y2="240" stroke="#0f172a" stroke-width="2" marker-end="url(#mg-arrow)"/>
+  <line x1="64" y1="240" x2="64" y2="42" stroke="#0f172a" stroke-width="2" marker-end="url(#mg-arrow)"/>
+  <circle cx="64" cy="70" r="3.2" fill="#0f172a"/>
+  <circle cx="164" cy="112.5" r="3.2" fill="#0f172a"/>
+  <circle cx="264" cy="155" r="3.2" fill="#0f172a"/>
+  <circle cx="64" cy="240" r="3.2" fill="#0f172a"/>
+  <circle cx="164" cy="183.33333333333334" r="3.2" fill="#0f172a"/>
+  <circle cx="264" cy="126.66666666666667" r="3.2" fill="#0f172a"/>
+  <text x="304" y="256" font-size="13" font-family="serif" fill="#0f172a">t/min</text>
+  <text x="36" y="46" font-size="13" font-family="serif" fill="#0f172a">V/L</text>
+  <text x="61" y="256" font-size="13" font-family="serif" fill="#0f172a">0</text>
+  <text x="161" y="256" font-size="13" font-family="serif" fill="#0f172a">1</text>
+  <text x="261" y="256" font-size="13" font-family="serif" fill="#0f172a">2</text>
+  <text x="42" y="187.33333333333334" font-size="13" font-family="serif" fill="#0f172a">4</text>
+  <text x="42" y="159" font-size="13" font-family="serif" fill="#0f172a">6</text>
+  <text x="42" y="130.66666666666669" font-size="13" font-family="serif" fill="#0f172a">8</text>
+  <text x="42" y="116.5" font-size="13" font-family="serif" fill="#0f172a">9</text>
+  <text x="42" y="74" font-size="13" font-family="serif" fill="#0f172a">12</text>
+  <text x="72" y="64" font-size="13" font-family="serif" fill="#0f172a">V<tspan baseline-shift="sub" font-size="0.72em">A</tspan></text>
+  <text x="272" y="120.66666666666667" font-size="13" font-family="serif" fill="#0f172a">V<tspan baseline-shift="sub" font-size="0.72em">C</tspan></text>
+</svg>

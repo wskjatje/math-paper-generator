@@ -29,7 +29,7 @@ export function PageShell({
     <div
       className={cn(
         "mx-auto w-full px-4 sm:px-6 lg:px-8",
-        !noVerticalPadding && "py-10 md:py-12 lg:py-14",
+        !noVerticalPadding && "py-5 md:py-6",
         SIZE_CLASS[size],
         className,
       )}

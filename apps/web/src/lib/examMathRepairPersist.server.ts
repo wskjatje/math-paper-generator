@@ -7,6 +7,7 @@ import path from "node:path";
 
 import type { Json } from "@/integrations/supabase/types";
 import { stripLeadingChoiceMarker } from "@/lib/examChoiceOptions.shared";
+import { dedupeMcqOptionsKeepFirst } from "@/lib/examMcqOptions.shared";
 import type { PersistedExamMathRepairRule } from "@/lib/examMathRepairLexicon.shared";
 export type { PersistedExamMathRepairRule } from "@/lib/examMathRepairLexicon.shared";
 import type { SessionExamSnapshot } from "@/lib/examSession";
@@ -15,15 +16,20 @@ import {
   sanitizeImportedMcqOptionTails,
   sanitizeImportedStemStructuralPollution,
 } from "@/lib/questionImportSanitize.shared";
+import { stripExamPaperUiMetaInstructions } from "@/lib/examPaperSurfaceText.shared";
 import { computeQuestionFigureDependencyV1 } from "@/lib/questionFigureDependency.shared";
 import { cleanMcqStemInlineOptionResidue } from "@/lib/mcqStemInlineCleaner.shared";
-import { shouldSuppressVectorDiagramSchemaForQuestion } from "@/lib/examRasterFigureHints.shared";
+import { shouldSuppressVectorDiagramSchemaForQuestion, diagramSchemaConflictsWithTriangleStem } from "@/lib/examRasterFigureHints.shared";
 import type { Example, Question, QuestionType } from "@/lib/types";
 import { getMysqlPool } from "@/lib/examStorage/mysqlExamStore.server";
 import {
   loadMergedExamMathRepairRules,
   upsertExamMathRepairRulesToStores,
 } from "@/lib/examMathRepairLexiconStore.server";
+import {
+  healDisplayHygieneQuestion,
+  looksLikeSourceCode,
+} from "@/lib/examDisplayHygiene.shared";
 import {
   repairExamMathCanonicalSync,
   repairSolutionStepsFromJsonCorruption,
@@ -57,28 +63,6 @@ export const EXAM_MATH_LEARNING_TEMPLATES: Array<{
 let rulesCache: PersistedExamMathRepairRule[] | null = null;
 /** 最近一次从 DB + 本地合并的快照；未调用 {@link refreshExamMathRepairMergedRules} 前为 null，读盘兜底 */
 let mergedRulesSnapshot: PersistedExamMathRepairRule[] | null = null;
-
-/** 选项去重键：忽略选项字母前缀、大小写与多余空白（保留首次出现的原文） */
-function optionDedupKey(raw: string): string {
-  return stripLeadingChoiceMarker(String(raw ?? ""))
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function dedupeOptionsKeepFirst(options: unknown): unknown {
-  if (!Array.isArray(options)) return options;
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const item of options) {
-    const text = String(item ?? "");
-    const key = optionDedupKey(text);
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    out.push(text);
-  }
-  return out;
-}
 
 function ensureDataDir(): void {
   const dir = path.dirname(overridesPath());
@@ -146,20 +130,38 @@ function finalizeImportedStyleMath(s: string): string {
 }
 
 export function repairExamQuestionPayloadStringsWithLearningSync(payload: {
+  type?: unknown;
   content?: unknown;
   answer?: unknown;
   options?: unknown;
   solution_steps?: unknown;
 }) {
+  const type = payload.type != null ? String(payload.type) : undefined;
   const content = finalizeImportedStyleMath(String(payload.content ?? ""));
-  const answer = finalizeImportedStyleMath(String(payload.answer ?? ""));
-  const options = dedupeOptionsKeepFirst(
+  const rawAnswer = String(payload.answer ?? "");
+  // programming / 源码答案：跳过数学链，只做围栏（避免 is_prime→下标、def 被撕碎）
+  const answerIsCode = type === "programming" || looksLikeSourceCode(rawAnswer);
+  const answer = answerIsCode ? rawAnswer : finalizeImportedStyleMath(rawAnswer);
+  const options = dedupeMcqOptionsKeepFirst(
     Array.isArray(payload.options)
       ? payload.options.map((o) => finalizeImportedStyleMath(String(o)))
       : payload.options,
   );
   const solution_steps = repairSolutionStepsWithLearningSync(payload.solution_steps);
-  return { content, answer, options, solution_steps };
+  // 题型感知展示卫生（programming 围栏等）；与验证/生成入库共用
+  const healed = healDisplayHygieneQuestion({
+    type,
+    content,
+    answer,
+    options,
+    solution_steps,
+  });
+  return {
+    content: healed.content,
+    answer: healed.answer,
+    options: healed.options,
+    solution_steps: healed.solution_steps,
+  };
 }
 
 function repairSolutionStepsWithLearningSync(steps: unknown): unknown {
@@ -170,7 +172,8 @@ function repairSolutionStepsWithLearningSync(steps: unknown): unknown {
     const next = { ...o };
     for (const k of ["description", "reasoning", "formula"] as const) {
       if (typeof o[k] === "string") {
-        next[k] = finalizeImportedStyleMath(o[k] as string);
+        const raw = o[k] as string;
+        next[k] = looksLikeSourceCode(raw) ? raw : finalizeImportedStyleMath(raw);
       }
     }
     return next;
@@ -272,7 +275,7 @@ export type ExampleDisplayRepairInput = Omit<Example, "solution_steps"> & {
 export function deepRepairQuestionForDisplay(q: QuestionDisplayRepairInput): Question {
   const fix = finalizeImportedStyleMath;
   const rawOpts = Array.isArray(q.options) ? q.options.map((o) => fix(String(o))) : q.options;
-  const deduped = dedupeOptionsKeepFirst(rawOpts) as Question["options"];
+  const deduped = dedupeMcqOptionsKeepFirst(rawOpts) as Question["options"];
   const optsStrippedLead = Array.isArray(deduped)
     ? deduped.map((o) => stripLeadingChoiceMarker(String(o)))
     : null;
@@ -281,7 +284,9 @@ export function deepRepairQuestionForDisplay(q: QuestionDisplayRepairInput): Que
     (qt === "multiple_choice" || qt === "multiple_choice_multi") &&
     Array.isArray(optsStrippedLead) &&
     optsStrippedLead.filter((o) => String(o ?? "").trim()).length >= 4;
-  let contentStem = sanitizeImportedStemStructuralPollution(fix(String(q.content ?? "")));
+  let contentStem = stripExamPaperUiMetaInstructions(
+    sanitizeImportedStemStructuralPollution(fix(String(q.content ?? ""))),
+  );
   if (mcqFourPlus) {
     contentStem = cleanMcqStemInlineOptionResidue(contentStem);
   }
@@ -290,7 +295,11 @@ export function deepRepairQuestionForDisplay(q: QuestionDisplayRepairInput): Que
     type: q.type as QuestionType,
     content: contentStem,
     answer: fix(String(q.answer ?? "")),
-    options: sanitizeImportedMcqOptionTails(optsStrippedLead) as Question["options"],
+    options: sanitizeImportedMcqOptionTails(
+      Array.isArray(optsStrippedLead)
+        ? optsStrippedLead.map((o) => stripExamPaperUiMetaInstructions(String(o)))
+        : optsStrippedLead,
+    ) as Question["options"],
     solution_steps: (repairSolutionStepsWithLearningSync(q.solution_steps) ??
       q.solution_steps) as Question["solution_steps"],
   };
@@ -298,10 +307,16 @@ export function deepRepairQuestionForDisplay(q: QuestionDisplayRepairInput): Que
   /**
    * 缺卷面位图且题干用语依赖示意图时，禁止再用 diagram_schema 做「结构化重绘」——避免无原图时的随机线段幻觉。
    * 有 Markdown / raster_figures 附图则不剥。
+   * 另：题干写三角形但 schema 点集 >3（误推四边形）时亦剥，避免读卷展示错误矢量。
    */
   const fd = computeQuestionFigureDependencyV1(withRaster);
+  const schemaObj =
+    withRaster.diagram_schema != null && typeof withRaster.diagram_schema === "object"
+      ? (withRaster.diagram_schema as { points?: unknown[] })
+      : null;
   if (
-    shouldSuppressVectorDiagramSchemaForQuestion(withRaster) &&
+    (shouldSuppressVectorDiagramSchemaForQuestion(withRaster) ||
+      diagramSchemaConflictsWithTriangleStem(String(withRaster.content ?? ""), schemaObj)) &&
     withRaster.diagram_schema != null &&
     typeof withRaster.diagram_schema === "object"
   ) {

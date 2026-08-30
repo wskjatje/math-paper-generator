@@ -29,7 +29,7 @@ function safeParseLocalLegacy(raw: string | null): RemoteImportJob[] {
     if (!Array.isArray(o)) return [];
     return (o as RemoteImportJob[]).map((j) => ({
       ...j,
-      importSource: j.importSource ?? "catalog",
+      importSource: j.importSource ?? "upload",
     }));
   } catch {
     return [];
@@ -102,6 +102,17 @@ export async function clearCompletedRemoteImportJobs(): Promise<void> {
   const next = mirrorJobs.filter((j) => j.status === "running" || j.status === "queued");
   await replaceRemoteImportJobsDb({ data: { jobs: next } });
   await syncRemoteImportJobsFromServer();
+}
+
+/** 仅清除失败记录，保留成功、已取消及进行中的任务。 */
+export async function clearFailedRemoteImportJobs(): Promise<number> {
+  const before = mirrorJobs.length;
+  const next = mirrorJobs.filter((j) => j.status !== "failed");
+  const removed = before - next.length;
+  if (removed === 0) return 0;
+  await replaceRemoteImportJobsDb({ data: { jobs: next } });
+  await syncRemoteImportJobsFromServer();
+  return removed;
 }
 
 export async function releaseStaleRunningRemoteImportJobs(nowMs?: number): Promise<number> {

@@ -108,9 +108,8 @@ export function buildCognitivePackingRuntime(
 
       if (group.role === "subquestion_cluster") {
         const transforms: PackingTransformAppliedV1[] = ["adjacency_tightening"];
-        const classes = afterQwf
-          ? ["my-0.5", "mt-0.5", "pl-3", "sm:pl-4"]
-          : ["my-1", "pl-3", "sm:pl-4"];
+        // 不在此加 pl-*：小问左缘由 paperSurfaceLayout.subquestionIndentRem 统一控制
+        const classes = afterQwf ? ["my-0.5", "mt-0.5"] : ["my-1"];
         groupHints.push({ groupId: group.id, classNames: joinClasses(classes), transforms });
       }
 

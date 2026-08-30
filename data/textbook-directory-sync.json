@@ -1,0 +1,7 @@
+{
+  "autoSync": true,
+  "catalogUrl": "data/textbook-directory.authoritative.json",
+  "intervalMinutes": 60,
+  "lastSyncAt": "2026-08-27T00:52:20.217Z",
+  "lastSyncSummary": "已同步「小学一年级（上）」16 册"
+}

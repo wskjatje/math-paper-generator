@@ -4,7 +4,8 @@ import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
 
 import {
-  importRemoteCatalogEntryAsStaging,
+  hasRecoverableGenerationDraft,
+  importOfflineExamFromDocument,
   importWebUrlAsStaging,
 } from "@/lib/exam.functions.server";
 import type { PaperKindId } from "@/lib/generateCatalog";
@@ -19,12 +20,14 @@ import {
   registerRemoteImportQueueHandler,
   requestRemoteImportQueueDrain,
 } from "@/lib/remoteImportQueueDrain";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 
-/** 无 UI：根组件挂载，按 FIFO 执行「网上导入」队列（任务持久化在数据库） */
+/** 无 UI：根组件挂载，按 FIFO 执行导入队列（DB 同步 + 上传/网址；目录清单已移除） */
 export function RemoteImportJobQueueRunner() {
   const router = useRouter();
-  const importCatalogFn = useServerFn(importRemoteCatalogEntryAsStaging);
   const importWebFn = useServerFn(importWebUrlAsStaging);
+  const importUploadFn = useServerFn(importOfflineExamFromDocument);
+  const hasDraftFn = useServerFn(hasRecoverableGenerationDraft);
 
   const execute = useCallback(
     async (jobId: string) => {
@@ -38,26 +41,49 @@ export function RemoteImportJobQueueRunner() {
       }
 
       try {
+        if (job.importSource === "upload" && !job.documentText) {
+          throw new Error("该文件导入任务的抽取正文已过期，请重新选择文件");
+        }
+        if (
+          job.importSource === "catalog" ||
+          (job.importSource !== "upload" && job.importSource !== "web")
+        ) {
+          throw new Error("网上试卷目录导入已移除，请改用「导入线下卷」上传文件");
+        }
         const ai = toAiRuntimePayload(loadAiSettings());
         const res =
-          job.importSource === "web" && job.webFetchUrl
-            ? await importWebFn({
+          job.importSource === "upload" && job.documentText
+            ? await importUploadFn({
                 data: {
-                  url: job.webFetchUrl,
-                  gradeId: job.gradeId,
-                  subjectId: job.subjectId,
-                  ...(job.paperKindId?.trim()
-                    ? { paper_kind: job.paperKindId.trim() as PaperKindId }
-                    : {}),
+                  text: job.documentText,
+                  sourceDocumentId: job.sourceDocumentId,
+                  grade: job.gradeId,
+                  subject: job.subjectId,
+                  difficulty: job.difficulty,
+                  duration_min: job.durationMin,
+                  jobId,
                   ai,
                 },
               })
-            : await importCatalogFn({
-                data: {
-                  catalogEntryId: job.catalogEntryId,
-                  ai,
-                },
-              });
+            : job.importSource === "web" && job.webFetchUrl
+              ? await importWebFn({
+                  data: {
+                    url: job.webFetchUrl,
+                    gradeId: job.gradeId,
+                    subjectId: job.subjectId,
+                    jobId,
+                    ...(job.paperKindId?.trim()
+                      ? { paper_kind: job.paperKindId.trim() as PaperKindId }
+                      : {}),
+                    ...(job.durationMin != null ? { duration_min: job.durationMin } : {}),
+                    ...(job.totalScore != null ? { total_score: job.totalScore } : {}),
+                    ...(job.difficulty ? { difficulty: job.difficulty } : {}),
+                    ai,
+                  },
+                })
+              : (() => {
+                  throw new Error("无法识别的导入任务，请重新上传文件");
+                })();
 
         const after = loadRemoteImportJob(jobId);
         const userCancelled = after?.status === "cancelled" || after?.cancelRequested;
@@ -67,25 +93,37 @@ export function RemoteImportJobQueueRunner() {
           status: "success",
           examId: res.examId,
           cancelRequested: false,
+          documentText: undefined,
+          recoveryDraftId: undefined,
+          effectiveSubjectId:
+            "effectiveSubjectId" in res && typeof res.effectiveSubjectId === "string"
+              ? res.effectiveSubjectId
+              : job.subjectId,
+          subjectFallbackApplied:
+            "subjectFallbackApplied" in res && res.subjectFallbackApplied === true,
         });
         void router.invalidate();
-        toast.message("网上导入已完成", {
-          description: "已写入「待确认」临时库，可在导入线下卷页面核对后确认入库。",
-          duration: 7000,
-        });
+        toast.message(job.importSource === "upload" ? "文件导入已完成" : "导入已完成");
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "导入失败";
         const after = loadRemoteImportJob(jobId);
-        if (after?.status !== "cancelled" && !after?.cancelRequested) {
-          await patchRemoteImportJob(jobId, { status: "failed", errorMessage: msg });
+        let recoveryDraftId: string | undefined;
+        try {
+          const draft = await hasDraftFn({ data: { draftId: jobId } });
+          if (draft.available) recoveryDraftId = jobId;
+        } catch {
+          // 草稿探测失败不覆盖原始错误
         }
-        toast.error(msg, {
-          description: "详情见「网上导入队列」。",
-          duration: 8000,
-        });
+        if (after?.status !== "cancelled" && !after?.cancelRequested) {
+          await patchRemoteImportJob(jobId, {
+            status: "failed",
+            errorMessage: e instanceof Error ? e.message : "导入失败",
+            recoveryDraftId,
+          });
+        }
+        toast.error(toUserFacingErrorMessage(e, "导入失败"));
       }
     },
-    [importCatalogFn, importWebFn, router],
+    [hasDraftFn, importUploadFn, importWebFn, router],
   );
 
   useEffect(() => {

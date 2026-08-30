@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { loadAiSettings, toAiRuntimePayload } from "@/lib/aiSettingsStorage";
+import { toUserFacingErrorMessage } from "@/lib/userFacingError.shared";
 import {
   deleteExamRemediationRuleEntry,
   draftExamRemediationRuleWithAi,
@@ -69,7 +70,7 @@ function RemediationRulesPage() {
       const res = await listRules();
       if (res.ok) setRules((res.rules as RuleRow[]) ?? []);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setLoadingList(false);
     }
@@ -112,7 +113,7 @@ function RemediationRulesPage() {
       toast.success("已保存规则");
       await refreshList();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -127,7 +128,7 @@ function RemediationRulesPage() {
       else toast.message("未删除（可能不存在）");
       await refreshList();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setDeletingId(null);
     }
@@ -136,7 +137,7 @@ function RemediationRulesPage() {
   async function handleReapply() {
     const id = reapplyExamId.trim();
     if (!id) {
-      toast.error("请输入试卷 UUID");
+      toast.error("请输入试卷编号");
       return;
     }
     setReapplyBusy(true);
@@ -145,7 +146,7 @@ function RemediationRulesPage() {
       const res = await reapplyPipeline({ examId: id, ai });
       toast.success(`完成：存储 ${res.backend}，变更题目示意图 ${res.changedQuestionCount} 道`);
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setReapplyBusy(false);
     }
@@ -175,7 +176,7 @@ function RemediationRulesPage() {
       setFormActionJson(JSON.stringify(draft.action_json, null, 2));
       toast.success("已填入表单，请核对后再保存");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      toast.error(toUserFacingErrorMessage(e));
     } finally {
       setDraftBusy(false);
     }
@@ -194,11 +195,7 @@ function RemediationRulesPage() {
 
   return (
     <PageShell size="narrow">
-      <PageHeader
-        eyebrow="运维"
-        title="试卷修复管线（方案 C）"
-        description="规则存 MySQL，多套卷共用；导入后会自动执行。此处可管理规则、对已有试卷重跑管线，或用模型起草规则草案。"
-      />
+      <PageHeader eyebrow="运维" title="试卷修复管线" />
 
       <div className="mb-6 flex flex-wrap gap-3 text-sm">
         <Link to="/settings" className="text-primary underline-offset-4 hover:underline">
@@ -208,13 +205,10 @@ function RemediationRulesPage() {
 
       <section className="paper-card mb-8 space-y-4 p-6">
         <h2 className="text-display text-lg font-semibold">Agent 起草规则（可选）</h2>
-        <p className="text-sm text-muted-foreground">
-          用自然语言描述适用场景与期望动作，模型生成 JSON 填入下方表单；请务必人工核对后再保存。
-        </p>
         <Textarea
           value={draftDesc}
           onChange={(e) => setDraftDesc(e.target.value)}
-          placeholder="例如：对所有导入卷里题干包含「旋转」「绕点 B」且还没有几何示意图的题目，用 rule_only 做一次示意图推断"
+          placeholder="描述适用场景与期望动作，生成后请核对再保存"
           rows={4}
           className="font-mono text-sm"
         />
@@ -301,11 +295,6 @@ function RemediationRulesPage() {
 
       <section className="paper-card mb-8 space-y-4 p-6">
         <h2 className="text-display text-lg font-semibold">对已入库试卷重跑管线</h2>
-        <p className="text-sm text-muted-foreground">
-          按当前数据库中的启用规则，重新计算并写回各题的
-          diagram_schema（与导入后自动执行同一套逻辑）。需配置本地 MySQL 中的规则表；存储为云端 /
-          MySQL / 本地 JSON 时均可尝试解析。
-        </p>
         <div className="flex flex-wrap items-end gap-3">
           <div className="min-w-[240px] flex-1 space-y-2">
             <Label htmlFor="reapply-id">试卷 exam id（UUID）</Label>

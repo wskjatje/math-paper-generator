@@ -50,6 +50,18 @@ export const getMysqlSettingsUiState = createServerFn({ method: "GET" }).handler
   getMysqlUiState(),
 );
 
+/** 用已保存连接探测（配库页「测试已保存连接」） */
+export const testMysqlSavedConnection = createServerFn({ method: "POST" }).handler(async () => {
+  const conn = await loadMysqlConnection();
+  if (!conn) throw new Error("尚未保存本机数据库连接，请先填写并保存。");
+  try {
+    await testMysqlWithDatabase(conn);
+    return { ok: true as const, host: conn.host, database: conn.database };
+  } catch (e: unknown) {
+    throw new Error(formatMysqlTestFailure(e, conn.database, { host: conn.host, port: conn.port }));
+  }
+});
+
 /** 保存连接信息到服务端 data/mysql-connection.json（勿提交到 Git）。密码留空则沿用上次保存的密码。 */
 export const saveMysqlConnectionSettings = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => MysqlConnSchema.parse(data))
@@ -151,7 +163,13 @@ export const applyMysqlZhixueSchema = createServerFn({ method: "POST" })
     }
     try {
       await applyZhixueMysqlSchema(conn);
-      return { ok: true as const };
+      const { ensureDefaultLocalAdminSeed } = await import("@/lib/mysqlDefaultAdminSeed.server");
+      const seeded = await ensureDefaultLocalAdminSeed();
+      return {
+        ok: true as const,
+        seededAdmin: seeded.seeded,
+        seedLogin: seeded.login,
+      };
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       throw new Error(`执行建表脚本失败：${msg}`);

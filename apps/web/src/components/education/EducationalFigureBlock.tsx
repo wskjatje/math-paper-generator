@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import { ExamFigureImage } from "@/components/ExamFigureImage";
+import { PAPER_SURFACE_LAYOUT } from "@/config/examDomain";
 import type { FigureLayoutKindV1 } from "@/lib/educationalAst.shared";
 import type { FigurePackingSpatialHintV1 } from "@/lib/cognitivePackingRuntime.shared";
 import {
@@ -77,17 +79,25 @@ export function EducationalFigureBlock({
     packingHint?.maxHeightClass ??
     mod?.maxHeightClass ??
     (compact ? "max-h-[min(36vh,240px)]" : "max-h-[min(50vh,420px)]");
+  const myRem = compact
+    ? PAPER_SURFACE_LAYOUT.figureBlockCompactMarginRem
+    : PAPER_SURFACE_LAYOUT.figureBlockMarginRem;
+  const figureStyle = {
+    marginTop: `${myRem}rem`,
+    marginBottom: `${myRem}rem`,
+  } satisfies CSSProperties;
   return (
     <figure
       className={cn(
         compact
-          ? "my-2 rounded-md border border-border/70 bg-muted/15 px-2 py-2"
-          : "my-3 rounded-lg border border-border/80 bg-muted/20 px-3 py-3",
+          ? "rounded-md border border-border/70 bg-muted/15 px-2 py-2"
+          : "rounded-lg border border-border/80 bg-muted/20 px-3 py-3",
         mod?.captionEmphasis === "muted" && "opacity-95",
         packingHint?.classNames,
         showPackingDebug && packingDebugMarkerClass(transforms, cognitiveRole),
         className,
       )}
+      style={figureStyle}
       data-figure-cognitive-role={cognitiveRole}
       data-figure-salience-weight={mod?.salienceWeight}
       {...debugAttrs}

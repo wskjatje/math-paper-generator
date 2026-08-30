@@ -1,0 +1,409 @@
+{
+  "schemaVersion": 1,
+  "candidates": [
+    {
+      "id": "3a393b9726634ba5162b6920",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.missing",
+      "scope": {
+        "stage": "exam",
+        "subject": "math"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "approved",
+      "evidenceCount": 8,
+      "firstSeenAt": "2026-07-18T06:14:38.922Z",
+      "lastSeenAt": "2026-07-20T00:28:33.911Z",
+      "evidenceHashes": [
+        "d3a08f034b0913f94230a652e379850f2c7babd14bf3389c78c75c18a16d13e2",
+        "cb6c2fbb0cb15b4268f53d7aa16ad0868b0e94d0a03c193c5b77631ddf72b9df",
+        "558838cbb5be08e6adca23eaa7d59862600a4380a379045ae8ab55bc1d8b4598",
+        "6083efa32700b234d068f82a4d23a1bc756ece83e5ecc6c87cafe79f9e6374e7",
+        "f5c1cd04ccb77bc2b6cda01244edef783122d530553e9aa784d7272e1655658e",
+        "6d94d70ae27bd99d0d86a4b634881fd9daf7496b51e73c0f60ce573ae67e0a03",
+        "4b025b2968dba5f9558d036e004084b0b6b70e71bee2402b7a40afdd57e2b7e7",
+        "d123a6ffa3d30af5d9e46c514bc885bb0e1cb1bb40e21457d732aa68be04469d"
+      ],
+      "summaries": [
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry 或 math.function），且无有效图 URI（figure_scene 未通过校验：题干出现点 S，scene 中缺失）。见 docs/prd-math-function-m2.md",
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry 或 math.function），且无有效图 URI（figure_scene 未通过校验：题干出现点 G，scene 中缺失；题干出现点 D，scene 中缺失；题干出现点 F，scene 中缺失）。见 docs/prd-math-function-m2.md",
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry 或 math.function），且无有效图 URI（figure_scene 未通过校验：题干出现点 G，scene 中缺失；math.geometry 解析失败：元素#11(point) 缺少数值坐标 x/y（或 coordinates:[x,y]））。见 docs/prd-math-function-m2.md"
+      ],
+      "approvedAt": "2026-07-18T06:19:47.626Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "233e060dff9bae7646644017",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.missing",
+      "scope": {
+        "stage": "figure",
+        "subject": "math"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "approved",
+      "evidenceCount": 7,
+      "firstSeenAt": "2026-07-19T03:16:10.890Z",
+      "lastSeenAt": "2026-08-03T05:29:05.039Z",
+      "evidenceHashes": [
+        "9aad9471bf9b09b9abc9f7d754f91907d8bd2fec1e5454aa6a4690b3eedf34d3",
+        "dc95a2584715c526e97d1a11f4b926d62668deed04f3d6fd7ce1137443f432d0",
+        "595aa1b18b45e5865bbbb10eb1ba1bcabc7d4af4e406f3be2e375cd6daadda1e",
+        "7bed90c5fad1516c73296ec64bd1b558af7817e84ccca43d658b924cbbee5c1a",
+        "09198abb9c2f548f20544df2cbb2d8912626f4705af9d8620db99d3246eccaba",
+        "f82e13beeba7d5c09923f66a6e2015c68bff3688bf584f4a1a90fe9c2de98de9",
+        "ab67d51a3ef5a41f2fb718d787db7f0477ea7c05dced15ec14f4f7d2ab50b78f"
+      ],
+      "summaries": [
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry 或 math.function），且无有效图 URI（figure_scene 未通过校验：math.geometry 解析失败：元素#7(arrow) 缺少端点 from/to（点 id 字符串）；math.geometry 解析失败：元素#8(arrow) 缺少端点 from/to（点 id 字符串）；math.geometry 解析失败：元素#9(label) 须有 at（锚点 id）与 text）。见 docs/prd-math-function-m2.md",
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry / math.function / physics.mechanics），且无有效图 URI（figure_scene 未通过校验：题干出现点 S，scene 中缺失）。见 docs/diagram-system.md"
+      ],
+      "approvedAt": "2026-07-22T05:13:49.693Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "f6859aa0e505f8e94270096a",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.invalid",
+      "scope": {
+        "stage": "figure",
+        "subject": "物理",
+        "pack": "math.geometry"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "disabled",
+      "evidenceCount": 11,
+      "firstSeenAt": "2026-07-22T05:11:35.418Z",
+      "lastSeenAt": "2026-07-22T05:16:33.262Z",
+      "evidenceHashes": [
+        "70ae19deebdd8cec82753dab615d1afad9557e1eef640023a49c9a89d10ea49d",
+        "3d26cfc37d239aebf3815a80a11f96fde5c1a4ff3b5e0a0a944aff592418106e",
+        "7ec5d229ccd48f8900cf86c8c01c537b71df5785a3179031183c2a316abcb0cf",
+        "4dbe900db577a241a9e1e05007a4b910b71ffeedbe82af1a26d70a5665fb65d4",
+        "da9fcb0c45fe34c847114dca1d182ae1f11af23e8a56891cfe091ba3536e8a49",
+        "39437516f487f13a03a64901217acfed5ac1f9104fb3fe96f109ccdae40ecf7c",
+        "67d5660b878604e56e0064d64b74a8da3aea73a8c968c711898c530bad6bb1ba",
+        "8fe49f041a3ecd7c2144852dff265c93af404af3be028445525d4f7602a84cb7",
+        "06710ef3994f6966b188e0c2bcb65bb6de18ea0a2736dc601cb91cb328c55164",
+        "e6ae279f547364dd9d2acabf84b1641df159ab91e672f0f5eb701a6de1a17486",
+        "9184a1b1cac2c48612b0a7df76442aca12d1f904d786a8808d1197c59d7f857b"
+      ],
+      "summaries": [
+        "依赖配图的题未能生成可校验 figure_scene",
+        "math.geometry 解析失败：元素#1 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#2 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#3 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#4 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#5 "
+      ],
+      "approvedAt": "2026-07-22T05:13:48.590Z",
+      "approvedBy": "settings-admin",
+      "disabledAt": "2026-07-22T12:17:15.121Z",
+      "disabledBy": "scope-consistency-migration"
+    },
+    {
+      "id": "92682b6d25d5f0074f47746f",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.invalid",
+      "scope": {
+        "stage": "figure",
+        "subject": "物理",
+        "pack": "math.function"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "disabled",
+      "evidenceCount": 3,
+      "firstSeenAt": "2026-07-22T05:11:35.423Z",
+      "lastSeenAt": "2026-07-22T05:13:55.438Z",
+      "evidenceHashes": [
+        "ac926a7c90cb711fabfcd47c9000c6378db0d472cb0d8328af78ec8d51794e11",
+        "8ec3415cf06e33aaac8c6083d4738027001860963f5464768b181e605e6f0835",
+        "25c6039108930debc45c0cce3ee884f9d70b317ea6ffc5eca7d4dcdf051fa2b9"
+      ],
+      "summaries": [
+        "依赖配图的题未能生成可校验 figure_scene",
+        "math.function 解析失败：元素#1 未知 type「」（可用 axes/sampled_curve/point/tangent/integral_region/label）；math.function 解析失败：元素#2 未知 type「」（可用 axes/sampled_curve/point/tangent/integral_region/label）；math.function 解析失败：元素#3 未知 type「」（可用 axes/sampled_curve/point/tangent/integral_region/label）；math.function 解析失败：元素#4 未知 type「」（可用 axes/sampled_curve/point/tangent/integral_re"
+      ],
+      "approvedAt": "2026-07-22T05:13:46.041Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true,
+      "disabledAt": "2026-07-22T12:17:15.122Z",
+      "disabledBy": "scope-consistency-migration"
+    },
+    {
+      "id": "cec0e267162da72d247ceebb",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.parse_failed",
+      "scope": {
+        "stage": "figure",
+        "subject": "物理",
+        "pack": "math.geometry"
+      },
+      "strategyId": "require_pure_json_figure_scene",
+      "kind": "prompt_policy",
+      "status": "disabled",
+      "evidenceCount": 14,
+      "firstSeenAt": "2026-07-22T05:11:53.417Z",
+      "lastSeenAt": "2026-07-22T05:16:49.536Z",
+      "evidenceHashes": [
+        "cba48279afeb44347d9515d49ca1066dc849bbfd3a060259505fd973e24642d2",
+        "e5e417e8ee5347907b6fee07431aac0930366c5f809f43620c4fd58ebafe86ce",
+        "d6e014c36874142bfca4b24814379c67b8393aab13617d72055aad4ab3cab7b7",
+        "c5b88c56c931875e048efbc27346a454347c0a740b8a544166680d798c4841cf",
+        "5b8338731369754994525236e1f857f9605a637439a7669cd839d65b26772fe4",
+        "da12dba5c5417735d943d0cc4845c8b540d4034ebc6e9931a8e6800d56be5ec6",
+        "fa18181871db296c9b411fa50793ff5dd237acd33a07545a892dd2f9dc56b2a2",
+        "f095685f21ea5307a2b8a14b3df89213c6c28b4c4401a55b469fa8c24dfdf091",
+        "ff60c3356df3434ac090a2f01048fe93e4b926a71d20659d0b3faf1b09402c2b",
+        "1454bdab2d110e2082d7c78342bd85ff00cb3644e4d97825656b265a7cb22d9e",
+        "1e16d12b2620279379d50d4c8ec358bd5927b6c0fc8d3db93cb93af2eaa9f376",
+        "bcbcc196feb853ca82fbe7fdb78e2ef4bb30616cdcf47991d4e924cde58d00db",
+        "f6203acbcd667a7a4b1af04cd94b74d88fabc439b8847cb1bdaafaddf076ec9c",
+        "5edb7b457533619d35dbbb0ca1cca4db0fd81c13dc8908854f57f81cf40f09ae"
+      ],
+      "summaries": [
+        "figure_scene JSON 解析失败"
+      ],
+      "approvedAt": "2026-07-22T05:13:44.846Z",
+      "approvedBy": "settings-admin",
+      "disabledAt": "2026-07-22T12:17:15.122Z",
+      "disabledBy": "scope-consistency-migration"
+    },
+    {
+      "id": "fc97f65409a3187753eb3212",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.invalid",
+      "scope": {
+        "stage": "figure",
+        "subject": "数学",
+        "pack": "math.geometry"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "approved",
+      "evidenceCount": 2,
+      "firstSeenAt": "2026-07-22T06:13:03.233Z",
+      "lastSeenAt": "2026-07-22T06:13:03.276Z",
+      "evidenceHashes": [
+        "7c74244636877cabfa0445916b041bb93a184e297530a9975fc6505fd7b8700d",
+        "c770c77d4c3bc69a2a796c2a79c7d3e6ae9f738e55374e03cf4f12c218d0f4e9"
+      ],
+      "summaries": [
+        "配图需要服务端 LOVABLE_API_KEY，或在设置中配置自定义 API 端点与 Key"
+      ],
+      "approvedAt": "2026-07-22T11:58:13.488Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "82843ab78316cb6ab0926a2a",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.invalid",
+      "scope": {
+        "stage": "figure",
+        "subject": "英语",
+        "pack": "math.geometry"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "disabled",
+      "evidenceCount": 1,
+      "firstSeenAt": "2026-07-22T06:13:03.239Z",
+      "lastSeenAt": "2026-07-22T06:13:03.239Z",
+      "evidenceHashes": [
+        "0bbc0acd2c799b27e2826377ee4a56cf7fa3a96e66e373fd95d3c420a39a2827"
+      ],
+      "summaries": [
+        "配图需要服务端 LOVABLE_API_KEY，或在设置中配置自定义 API 端点与 Key；配图需要服务端 LOVABLE_API_KEY，或在设置中配置自定义 API 端点与 Key"
+      ],
+      "approvedAt": "2026-07-22T11:58:15.242Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true,
+      "disabledAt": "2026-07-22T12:17:15.122Z",
+      "disabledBy": "scope-consistency-migration"
+    },
+    {
+      "id": "a15f31ddb31691e05f1a08ec",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.invalid",
+      "scope": {
+        "stage": "figure",
+        "subject": "数学"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "approved",
+      "evidenceCount": 20,
+      "firstSeenAt": "2026-08-05T04:37:26.005Z",
+      "lastSeenAt": "2026-08-06T09:01:08.923Z",
+      "evidenceHashes": [
+        "de01594ab7e89edd36648e914b64eb6421cc676a2b235f3fc2540487ba47ef0c",
+        "44efba4aa4bd7917440c0923b572500ae1e75f725b3776cc1d6185f5298a7421",
+        "83740308da0ccf5efcb30192b89e9d0a9609645f5fe338756a8e4025cc0320e1",
+        "578420bbdce7bbe88b432d8f9623b808fcf68ad0b4706d33b8f1ac1231f7b4e0",
+        "46540a16164a1b5e2edf274548f5cd2f3c78dd7b390b7ef0617cd1529bd6b691",
+        "b45dc02f400cd7f42d86741640ce21dd17a413695c31bed08d913aae0b7d0836",
+        "99f031ec1aef124198d2c6b980403fc101c4c921145a01b7e9ee8783a841baca",
+        "db52607b2511e2fdeba931244775826f4b47f27c4d4139f3885868f63ca4340c",
+        "d0c802ddd68afe1a343fe5ed0ab52656867634d41c2b39f46a7bcb50af811855",
+        "8e3e3d28ca793373b4f091e3f2570e7b02b57d42290367e6f8790401bcb7fe3f",
+        "63971fd8be93494b17b51899a85768c24bdc0db37574b12f0f8f79d5fa06e6a3",
+        "3a99e83742867695f3d02117ba642b26db9907fda67b8ddd0fa558490bab2161",
+        "2b22af1e7d58649fbf39fb7490bd55a982f4bae2c731661a6af03515226770d2",
+        "427bf9857b2f36fcf9fdc63126115152dba9bf2f6e876ce2f3b58df5a6b96e47",
+        "479a97ea75bb5b4c2c7ca08995bb9b15e3e726d2a4fa7e5abd29dea601c5acc4",
+        "37240822ff178a0b14211313f134aebd0673cc72981affa8cb8dab9fcdb483b3",
+        "943d5cd0d6054178461492867ae4dd54e2e40859ea089b964bfac418addb77fa",
+        "8007bc90f4c02ebf4cea7009272a8e9f7a0b42ec1137a996978d416db98736cd",
+        "b30c17ff065d023b66493b9441af1e66d38b57293caecdedb2f7c2d7ff8216e1",
+        "a48a69673db247431a7a1d51c5ca1016c4f6c8d55855871e5d256066cd760056"
+      ],
+      "summaries": [
+        "math.geometry 解析失败：元素#1(grid) rows/cols 须为 1~40 的数；模型未返回可消毒的 SVG（请检查模型是否支持按指令只输出 SVG）",
+        "math.geometry 解析失败：元素#1 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#2 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#3 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#4 未知 type「」（可用 point/segment/polygon/circle/grid/label/arrow）；math.geometry 解析失败：元素#5 ",
+        "配图模型调用失败 HTTP 503: [{ \"error\": { \"code\": 503, \"message\": \"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\", \"status\": \"UNAVAILABLE\" } } ]"
+      ],
+      "approvedAt": "2026-08-06T05:54:50.889Z",
+      "approvedBy": "settings-admin"
+    },
+    {
+      "id": "23a3e4680ddae339d91594f8",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.parse_failed",
+      "scope": {
+        "stage": "figure",
+        "subject": "数学"
+      },
+      "strategyId": "require_pure_json_figure_scene",
+      "kind": "prompt_policy",
+      "status": "approved",
+      "evidenceCount": 1,
+      "firstSeenAt": "2026-08-06T00:19:33.408Z",
+      "lastSeenAt": "2026-08-06T00:19:33.408Z",
+      "evidenceHashes": [
+        "1e9d878584781718ca5d36118ee636201a8e515dec013530b336e154c7335ef5"
+      ],
+      "summaries": [
+        "figure_scene JSON 解析失败；模型未返回可消毒的 SVG（请检查模型是否支持按指令只输出 SVG）"
+      ],
+      "approvedAt": "2026-08-06T05:55:00.689Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "42ba01ac0fcc5ccef9b613cf",
+      "schemaVersion": 1,
+      "issueCode": "runtime.fetch_failed",
+      "scope": {
+        "stage": "exam",
+        "subject": "数学"
+      },
+      "strategyId": "check_ai_endpoint_connectivity",
+      "kind": "ops_advisory",
+      "status": "approved",
+      "evidenceCount": 4,
+      "firstSeenAt": "2026-08-06T07:56:19.546Z",
+      "lastSeenAt": "2026-08-10T03:20:42.252Z",
+      "evidenceHashes": [
+        "e81704f6732243c09bf2ade9e67f774db786ad46823041e04ad58bbb9ffac0ec",
+        "8da1e40702943b75588b50f847a0ea0dbf32d6d2be20c5823e57b6090e3d2b54",
+        "a867a8a387acc6a489bf759fe577730ae16007fb30a794b878434635bbb86054",
+        "4783e304cc6c50709a431400094ceb9c846b95f45c3e6ef51fb66a886a663461"
+      ],
+      "summaries": [
+        "第 7 题：无法连接 AI 服务 — fetch failed",
+        "第 1 题：无法连接 AI 服务 — fetch failed"
+      ],
+      "approvedAt": "2026-08-06T07:56:34.212Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "e24f72abb5a3d90b9696da50",
+      "schemaVersion": 1,
+      "issueCode": "runtime.api_incompatible",
+      "scope": {
+        "stage": "exam",
+        "subject": "物理"
+      },
+      "strategyId": "prefer_openai_compat_model",
+      "kind": "ops_advisory",
+      "status": "approved",
+      "evidenceCount": 5,
+      "firstSeenAt": "2026-08-06T07:56:20.662Z",
+      "lastSeenAt": "2026-08-06T08:18:11.606Z",
+      "evidenceHashes": [
+        "0c8b1127c5b0c6a6c55843fa23bdd357e930369e9991d75d481450283b3fa6c4",
+        "693d8ce3a084968755a0bee673590bed1893e44d56964bda1b6a8ef229905fd8",
+        "28c837b0054ddb162d98dcc6e8c2dbe976ccceea3bbf6838e7e1627830125ac4",
+        "d1850e367ee9197687eb2c8d1dff4a73ae10503aad006e1adcfe9184e5355525",
+        "92c0d8bd33d53c73e4144c8ac9ab9f55ff1cccd12158271ce7d5d5dfb1c4d1d9"
+      ],
+      "summaries": [
+        "第 19 题：模型接口与当前修题/命题调用不兼容 — 本地模型请求失败 400: [{ \"error\": { \"code\": 400, \"message\": \"This model only supports Interactions API.\", \"status\": \"INVALID_ARGUMENT\" } } ]"
+      ],
+      "approvedAt": "2026-08-06T07:56:33.325Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "33cca61ce9208099428946a7",
+      "schemaVersion": 1,
+      "issueCode": "runtime.api_incompatible",
+      "scope": {
+        "stage": "exam",
+        "subject": "化学"
+      },
+      "strategyId": "prefer_openai_compat_model",
+      "kind": "ops_advisory",
+      "status": "approved",
+      "evidenceCount": 5,
+      "firstSeenAt": "2026-08-06T07:56:21.192Z",
+      "lastSeenAt": "2026-08-06T08:18:12.600Z",
+      "evidenceHashes": [
+        "50be41d2dee2f30d3cf0ec7cf74611034d83ed00d484593124874c57f55b58fa",
+        "ee08d90e593badd7d2e9e8b7b0aaa6c9e3fb33c29cff3f57f72ef0c5176b169e",
+        "8b03c0eb8e5b5d1191a2a40ab3aa5c89042174cbcc4af6ce0654d36046abca11",
+        "ee4fdcfdfc9824b417b08f15affec60e6bc6385fc277986c5cc3ded43422c701",
+        "7335d26e086c5e9a0476e2a13c0ace519d7b92b0dcdeee38b759e877b2f0ffb0"
+      ],
+      "summaries": [
+        "第 22 题：模型接口与当前修题/命题调用不兼容 — 本地模型请求失败 400: [{ \"error\": { \"code\": 400, \"message\": \"This model only supports Interactions API.\", \"status\": \"INVALID_ARGUMENT\" } } ]"
+      ],
+      "approvedAt": "2026-08-06T07:56:32.603Z",
+      "approvedBy": "settings-admin",
+      "forceApproved": true
+    },
+    {
+      "id": "5f70aa1c5b7df161c0a66a32",
+      "schemaVersion": 1,
+      "issueCode": "figure.scene.missing",
+      "scope": {
+        "stage": "exam",
+        "subject": "数学"
+      },
+      "strategyId": "require_valid_figure_scene",
+      "kind": "prompt_policy",
+      "status": "approved",
+      "evidenceCount": 5,
+      "firstSeenAt": "2026-08-10T00:17:59.915Z",
+      "lastSeenAt": "2026-08-10T03:20:30.040Z",
+      "evidenceHashes": [
+        "03563218a9c4830d4c5fd0801a33a1207aca0425c36ffe484b6b5b9973e70ba1",
+        "0d01dfb8ea1d9c54d2720cbe63489b8317a1c445d55cfa37a321053294707c8d",
+        "492e37f07cc2e4eeecd518c1ffb596b0cea437ec363bf5ec3a6e62e0d4a810f9",
+        "467b5fc5106110669efc03fd5db51ff753898ebc7dd209c517d7d5f99601c86e",
+        "563d49c2fac6b49f4bd8c1747f105f0c869f8269e36f5966319058b826302844"
+      ],
+      "summaries": [
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry / math.function / physics.mechanics），且无有效图 URI（figure_scene 未通过校验：题干出现点 D'，scene 中缺失；题干出现点 E'，scene 中缺失；题干出现点 F'，scene 中缺失）。见 docs/diagram-system.md",
+        "第 1 题：题干含「如图」等配图依赖，但缺少可校验的 figure_scene（math.geometry / math.function / physics.mechanics），且无有效图 URI（attachments 中没有 kind=figure/image 的配图项）。见 docs/diagram-system.md"
+      ],
+      "approvedAt": "2026-08-10T00:27:17.894Z",
+      "approvedBy": "auto-agree"
+    }
+  ],
+  "updatedAt": "2026-08-10T03:20:42.252Z"
+}

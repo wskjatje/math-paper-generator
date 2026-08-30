@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "packId": "mpg-listening-voice-pack-v1",
+  "license": "CC0-1.0",
+  "sourceProject": {
+    "name": "OwenTyme/voice-zero",
+    "url": "https://github.com/OwenTyme/voice-zero",
+    "commit": "490cfbee850a6d409076f477c766f567000a79b6",
+    "licenseNote": "voices/ 目录声明为 CC0；样本源自 LibriVox 公有领域朗读。"
+  },
+  "processing": {
+    "ffmpeg": "-ac 1 -ar 24000 -c:a pcm_s16le",
+    "note": "仅重采样为 24 kHz 单声道 PCM WAV，未改写语速标定数值。"
+  },
+  "slots": [
+    {
+      "slot": "narrator",
+      "file": "narrator.wav",
+      "sourceFile": "voices/christine_blachford.flac",
+      "reader": "Christine Blachford",
+      "readerUrl": "https://librivox.org/reader/614",
+      "accentAsListedByUpstream": "English",
+      "librivoxWork": "The Rosary, Track 23",
+      "librivoxUrl": "https://librivox.org/the-rosary-by-florence-louisa-barclay/",
+      "sha256": "5f194ba6510bb65f6ac45d6b0eb668ab6f05628bbe165f3f5d147172dad57437"
+    },
+    {
+      "slot": "dialogue-a",
+      "file": "dialogue-a.wav",
+      "sourceFile": "voices/david_clark.flac",
+      "reader": "David Clark",
+      "readerUrl": "https://librivox.org/reader/7408",
+      "accentAsListedByUpstream": "English",
+      "librivoxWork": "The Count of Monte Cristo (version 3), Track 117",
+      "librivoxUrl": "https://librivox.org/the-count-of-monte-cristo-version-3-by-alexandre-dumas/",
+      "sha256": "77a39ddad6eeb168a426aea261bc96f21c2a7ee060c53be61f472aeb195d895d"
+    },
+    {
+      "slot": "dialogue-b",
+      "file": "dialogue-b.wav",
+      "sourceFile": "voices/cori_samuel.flac",
+      "reader": "Cori Samuel",
+      "readerUrl": "https://librivox.org/reader/92",
+      "accentAsListedByUpstream": "English",
+      "librivoxWork": "Black Beauty (version 2), Track 1",
+      "librivoxUrl": "https://librivox.org/black-beauty-by-anna-sewell-version-2/",
+      "sha256": "590686ffd8378bf59dc8af23e15fbe5598b6cde34e0ae615a0e9c29a25214dd2"
+    }
+  ],
+  "voicePackZipSha256": "506aa754d13e9a4d33dc99b8639da153a379a813b63253536a6a53fb5a5e53d0",
+  "disclaimer": "本包为合规 CC0 参考声，供本机声纹克隆。不是北京中考/高考听力官方录音；年级语速仍须在 calibration.json 中对照真题听感标定，禁止把本包当成已标定证据。"
+}

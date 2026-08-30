@@ -173,7 +173,7 @@ export async function mergePersistWorkspaceIntegrationSettings(
   }
 
   if (!db && !pool) {
-    throw new Error("未配置 Supabase 且无可用 MySQL 连接，无法将集成配置写入数据库。");
+    throw new Error("未配置云端或本机数据库，无法将集成配置写入。");
   }
 }
 

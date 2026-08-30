@@ -37,7 +37,7 @@ export async function persistImportedBundle(bundle: SessionExamSnapshot): Promis
       return { examId: prepared.exam.id, persisted: "local" };
     }
     throw new Error(
-      "当前在设置中选择「本地」为写入位置，但目录 data/local-exams 不可写。请检查权限或改为自动 / 云端模式。",
+      "当前选择保存在本机，但本机题库目录不可写。请检查权限，或改为自动 / 云端模式。",
     );
   }
 
@@ -63,6 +63,6 @@ export async function persistImportedBundle(bundle: SessionExamSnapshot): Promis
   }
 
   throw new Error(
-    "当前无法持久化：未配置 Supabase，MySQL 不可用或未连通，且目录 data/local-exams 不可写。请配置其一后再导入。",
+    "当前无法保存：云端与本机数据库均不可用，且本机题库目录不可写。请到设置配置其一后再导入。",
   );
 }
