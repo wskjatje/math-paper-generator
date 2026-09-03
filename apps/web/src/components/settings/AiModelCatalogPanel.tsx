@@ -51,6 +51,7 @@ import {
 } from "@/lib/cloudProviderPresets.shared";
 import type { AiSettingsForm } from "@/lib/aiSettingsStorage";
 import {
+  isGoogleDiscoveryHost,
   lookupModelPrice,
   type CloudModelUnitPrice,
 } from "@/lib/cloudBilling.shared";
@@ -329,6 +330,9 @@ export function AiModelCatalogPanel({ form, onPersist }: Props) {
         outputPricePerM: price?.outputPerM ?? "",
       }));
       const bits = [`已获取 ${res.models.length} 个模型`];
+      if (res.sources?.includes("models-list-failed")) {
+        bits.push("模型列表不可达，已用官方定价页");
+      }
       if (res.currency) bits.push(`币种 ${res.currency}`);
       if (price) bits.push("已填入默认模型单价");
       else if (Object.keys(res.pricingByModel).length === 0) {
@@ -714,11 +718,12 @@ export function AiModelCatalogPanel({ form, onPersist }: Props) {
 
   const persistPricingDraft = async (
     draft: Record<string, AiTokenPricingEntry>,
+    entriesOverride?: AiModelEntry[],
   ): Promise<Record<string, AiTokenPricingEntry>> => {
     const tokenPricing: Record<string, AiTokenPricingEntry> = {
       ...(catalog.tokenPricing ?? {}),
     };
-    let nextEntries = [...entries];
+    let nextEntries = [...(entriesOverride ?? entries)];
     for (const [modelId, price] of Object.entries(draft)) {
       const inputPerM = price.inputPerM.trim();
       const outputPerM = price.outputPerM.trim();
@@ -826,8 +831,47 @@ export function AiModelCatalogPanel({ form, onPersist }: Props) {
       setPricingDraft(nextDraft);
       setLivePricingByModel(mergedLive);
 
-      // 落盘：设置里的 tokenPricing + 服务端用量金额（非仅网页态）
-      await persistPricingDraft(nextDraft);
+      // Google：把定价页/接口里已有单价的模型并入目录 extraModels（便于学科选择）
+      let expandedModels = 0;
+      const nextEntries = entries.map((e) => {
+        if (e.kind !== "cloud" || e.enabled === false) return e;
+        if (!e.baseUrl?.trim() || !isGoogleDiscoveryHost(e.baseUrl)) return e;
+        const known = new Set(modelsForCatalogEntry(e));
+        const add: string[] = [];
+        for (const [id, price] of Object.entries(mergedLive)) {
+          if (!price.inputPerM?.trim() && !price.outputPerM?.trim()) continue;
+          const bare = id.replace(/^(?:models\/|google\/)/i, "").trim();
+          if (!bare || known.has(bare) || known.has(id) || known.has(`models/${bare}`)) {
+            continue;
+          }
+          if (!add.includes(bare)) add.push(bare);
+          known.add(bare);
+        }
+        if (!add.length) return e;
+        expandedModels += add.length;
+        const extras = [...(e.extraModels ?? []), ...add];
+        // 同时写入单价草稿，避免扩容后仍「暂无单价」
+        for (const m of add) {
+          const live = lookupModelPrice(mergedLive, m);
+          if (!live) continue;
+          nextDraft[m] = {
+            inputPerM: live.inputPerM || "",
+            outputPerM: live.outputPerM || "",
+            currency:
+              nextDraft[m]?.currency ||
+              e.currency ||
+              currencyByEndpoint.get(`${e.baseUrl.trim()}\n${(e.apiKey ?? "").trim()}`) ||
+              "USD",
+          };
+        }
+        return { ...e, extraModels: extras };
+      });
+      if (expandedModels > 0) {
+        setPricingDraft({ ...nextDraft });
+      }
+
+      // 落盘：设置里的 tokenPricing + 可选扩容后的 modelEntries
+      await persistPricingDraft(nextDraft, expandedModels > 0 ? nextEntries : undefined);
       const pricingMap = pricingMapForRecompute(nextDraft);
       const recomputed = await recomputeUsageFn({
         data: { pricingByModel: pricingMap },
@@ -838,13 +882,14 @@ export function AiModelCatalogPanel({ form, onPersist }: Props) {
         endpointGroups.size === 0
           ? "无可用云服务（需已填服务地址与密钥）"
           : `已探测 ${endpointsOk}/${endpointGroups.size} 个服务`,
-        `写入 ${filled} 个模型单价`,
+        `写入 ${filled + (expandedModels > 0 ? expandedModels : 0)} 个模型单价`,
+        expandedModels > 0 ? `目录扩充 ${expandedModels} 个有价模型` : "",
         `总价 ${formatUsageTotalsLabel(summarizeUsageTotals(recomputed))}`,
-      ];
+      ].filter(Boolean);
       if (fetchErrors.length) {
         bits.push(`部分失败：${fetchErrors[0]}`);
       }
-      if (filled === 0 && Object.keys(mergedLive).length === 0) {
+      if (filled === 0 && expandedModels === 0 && Object.keys(mergedLive).length === 0) {
         bits.push("接口未返回单价，请手填后保存");
       }
       toast.success(bits.join("；"));

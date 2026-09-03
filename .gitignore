@@ -52,6 +52,9 @@ data/mysql-connection.json
 data/mysql-password-master.key
 data/ai-settings.json
 
+# 本机 AI 用量汇总（含金额估算；勿随仓库传播）
+data/ai-usage.json
+
 # 本地运行时 pid / 生成媒体（勿提交）
 .listening-tts.pid
 public/audio/**

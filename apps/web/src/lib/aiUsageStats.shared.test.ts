@@ -78,6 +78,26 @@ describe("aiUsageStats", () => {
     expect(next.byModel["deepseek-v4-flash"]?.currency).toBe("CNY");
   });
 
+  it("keeps historical cost when draft unit prices are both zero", () => {
+    const next = recomputeUsageSummaryFromPricing(
+      {
+        updatedAt: "",
+        byModel: {
+          "models/gemini-3.5-flash": {
+            model: "models/gemini-3.5-flash",
+            promptTokens: 1000,
+            completionTokens: 1000,
+            calls: 1,
+            estimatedCost: 1.63,
+            currency: "USD",
+          },
+        },
+      },
+      () => ({ inputPerM: 0, outputPerM: 0, currency: "USD" }),
+    );
+    expect(next.byModel["models/gemini-3.5-flash"]?.estimatedCost).toBe(1.63);
+  });
+
   it("parses string unit prices without inventing values", () => {
     expect(usageUnitPriceFromStrings("", "", "CNY")).toBeUndefined();
     expect(usageUnitPriceFromStrings("1", "2", "cny")).toEqual({

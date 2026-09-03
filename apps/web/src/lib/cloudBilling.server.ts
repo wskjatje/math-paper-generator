@@ -250,17 +250,28 @@ export async function fetchCloudModelsWithBilling(
 
   const sources: string[] = [];
   const pricingByModel: Record<string, CloudModelUnitPrice> = {};
+  const googleHost = isGoogleDiscoveryHost(trimmed);
 
-  const { rows, source } = await fetchModelsForEndpoint(trimmed, key);
-  const models = [
+  let rows: OpenAiModelRow[] = [];
+  try {
+    const listed = await fetchModelsForEndpoint(trimmed, key);
+    rows = listed.rows;
+    sources.push(listed.source);
+  } catch (e) {
+    // Google /models 常因网络不可达；仍可用官方定价页补单价（不臆造金额）
+    if (!googleHost) throw e;
+    console.warn(
+      "[cloudBilling] Google model list failed; falling back to docs pricing:",
+      e instanceof Error ? e.message : e,
+    );
+    sources.push("models-list-failed");
+  }
+
+  let models = [
     ...new Set(
       rows.map((r) => r.id?.trim()).filter((id): id is string => Boolean(id)),
     ),
   ].sort((a, b) => a.localeCompare(b));
-  if (!models.length) {
-    throw new Error("接口返回了模型列表，但为空");
-  }
-  sources.push(source);
 
   let fromModels = 0;
   for (const row of rows) {
@@ -275,7 +286,7 @@ export async function fetchCloudModelsWithBilling(
   if (fromModels > 0) sources.push("models-pricing");
 
   let currency: string | undefined;
-  if (!isGoogleDiscoveryHost(trimmed)) {
+  if (!googleHost) {
     currency = await fetchUserBalanceCurrency(trimmed, key);
     if (currency) sources.push("balance");
   }
@@ -294,7 +305,7 @@ export async function fetchCloudModelsWithBilling(
   }
 
   // Google /models 通常不返回单价；从官方 Gemini 定价页按模型 ID 解析（不硬编码金额）
-  if (isGoogleDiscoveryHost(trimmed)) {
+  if (googleHost) {
     try {
       const docPrices = await fetchGeminiOfficialPricing();
       const before = Object.keys(pricingByModel).length;
@@ -303,9 +314,30 @@ export async function fetchCloudModelsWithBilling(
         sources.push("gemini-docs-usd");
         if (!currency) currency = "USD";
       }
+      // 列表失败时，用定价页出现的模型 id 作为可选列表（去重别名后取 bare）
+      if (!models.length && Object.keys(docPrices).length) {
+        const bare = new Set<string>();
+        for (const id of Object.keys(docPrices)) {
+          const m = id.replace(/^(?:models\/|google\/)/i, "").trim();
+          if (m) bare.add(m);
+        }
+        models = [...bare].sort((a, b) => a.localeCompare(b));
+        sources.push("models-from-docs");
+      }
     } catch (e) {
       console.warn("[cloudBilling] gemini docs:", e);
+      if (!models.length) {
+        throw new Error(
+          `无法拉取 Google 模型列表，且官方定价页也失败：${
+            e instanceof Error ? e.message : String(e)
+          }。请检查网络/代理，或手填单价后保存。`,
+        );
+      }
     }
+  }
+
+  if (!models.length) {
+    throw new Error("接口返回了模型列表，但为空");
   }
 
   return {

@@ -88,6 +88,7 @@ export function usageUnitPriceFromStrings(
 /**
  * 用当前单价按已累计 token 重算各模型金额（历史 estimatedCost 为 0 时也能看总价）。
  * 无单价的模型保留原 estimatedCost。
+ * 单价两端为 0 且历史已有金额时保留历史（避免草稿占位「0」冲掉使用总价）。
  */
 export function recomputeUsageSummaryFromPricing(
   summary: AiUsageSummary,
@@ -104,6 +105,11 @@ export function recomputeUsageSummaryFromPricing(
           : getPrice(`models/${model}`))
       : undefined;
     if (!price) {
+      byModel[key] = { ...row };
+      continue;
+    }
+    const hist = Number(row.estimatedCost) || 0;
+    if (price.inputPerM === 0 && price.outputPerM === 0 && hist > 0) {
       byModel[key] = { ...row };
       continue;
     }
